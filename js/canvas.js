@@ -185,30 +185,69 @@ export class CanvasRenderer {
       isDragging = false;
     });
 
-    this.canvas.addEventListener("touchstart", (e) => {
-      if (e.touches.length === 1) {
-        isDragging = true;
-        prevMouseX = e.touches[0].clientX;
-        prevMouseY = e.touches[0].clientY;
+    // Multi-touch look controls for mobile
+    let lookTouchId = null;
+    let lastLookX = 0;
+    let lastLookY = 0;
+
+    window.addEventListener("touchstart", (e) => {
+      if (!this.lastState || this.lastState.gameState !== "playing") return;
+      
+      // Look for a touch that is NOT on the joystick or HUD buttons
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const touch = e.changedTouches[i];
+        const target = touch.target;
+        
+        // Ignore if touch is on HUD or joystick
+        if (target.closest(".joystick-container") || target.closest(".floating-inventory-controls") || target.closest(".hud-pill") || target.closest(".overlay") || target.closest(".btn")) {
+          continue;
+        }
+
+        // Capture look touch if none is active
+        if (lookTouchId === null) {
+          lookTouchId = touch.identifier;
+          lastLookX = touch.clientX;
+          lastLookY = touch.clientY;
+          break;
+        }
       }
     });
     
     window.addEventListener("touchmove", (e) => {
-      if (!isDragging || !this.lastState || e.touches.length !== 1) return;
+      if (lookTouchId === null || !this.lastState) return;
       const p = this.lastState.player;
       if (p.pitch === undefined) p.pitch = 0.0;
-      const dx = e.touches[0].clientX - prevMouseX;
-      const dy = e.touches[0].clientY - prevMouseY;
-      const sensitivity = 0.005;
-      p.angle += dx * sensitivity;
-      p.pitch = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, p.pitch - dy * sensitivity));
-      prevMouseX = e.touches[0].clientX;
-      prevMouseY = e.touches[0].clientY;
-    });
+
+      // Find the look touch
+      for (let i = 0; i < e.touches.length; i++) {
+        const touch = e.touches[i];
+        if (touch.identifier === lookTouchId) {
+          const dx = touch.clientX - lastLookX;
+          const dy = touch.clientY - lastLookY;
+          
+          const sensitivity = 0.007; // Slightly higher sensitivity for comfortable mobile look
+          p.angle += dx * sensitivity;
+          p.pitch = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, p.pitch - dy * sensitivity));
+          
+          lastLookX = touch.clientX;
+          lastLookY = touch.clientY;
+          break;
+        }
+      }
+    }, { passive: true });
     
-    window.addEventListener("touchend", () => {
-      isDragging = false;
-    });
+    const endLookTouch = (e) => {
+      if (lookTouchId === null) return;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === lookTouchId) {
+          lookTouchId = null;
+          break;
+        }
+      }
+    };
+
+    window.addEventListener("touchend", endLookTouch);
+    window.addEventListener("touchcancel", endLookTouch);
 
     // Request pointer lock on click if desired (only when playing and supported!)
     this.canvas.addEventListener("click", () => {

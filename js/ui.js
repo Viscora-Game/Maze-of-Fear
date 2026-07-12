@@ -1239,4 +1239,12 @@ function setupUI(game) {
     ctx.lineTo(px + Math.cos(s.player.angle) * cellSize * 0.75, py + Math.sin(s.player.angle) * cellSize * 0.75);
     ctx.stroke();
   };
+
+  // Prevent pinch-to-zoom and gesture zooming globally on iOS/Safari
+  document.addEventListener("gesturestart", (e) => {
+    e.preventDefault();
+  });
+  document.addEventListener("gesturechange", (e) => {
+    e.preventDefault();
+  });
 }

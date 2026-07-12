@@ -44,6 +44,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  touch-action: none;
 }
 
 /* --- Mobile Viewport Container (App frame) --- */
@@ -55,6 +56,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  touch-action: none;
 }
 
 .hidden {

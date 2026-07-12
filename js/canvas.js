@@ -284,6 +284,7 @@ export class CanvasRenderer {
     this.particles = [];
     this.triggeredChests = new Set();
     this.npcGroups = {};
+    this.exitPortals = [];
 
     // Load custom GLTF low-poly chest model
     this.chestModel = null;
@@ -521,6 +522,7 @@ export class CanvasRenderer {
     this.chestGroups = {};    // reset chest groups
     this.obstacleMeshes = {};
     this.npcGroups = {}; // reset NPC groups
+    this.exitPortals = [];
 
     // 1. Lighting Setup (Creepy night fog - flashlight is the absolute primary light source)
     this.ambientLight = new THREE.AmbientLight("#0f172a", 0.04); // Extremely dark blue-grey ambient (barely visible outlines)
@@ -714,18 +716,90 @@ export class CanvasRenderer {
             cellGroup.add(stairSubGroup);
           }
 
-          // D. Exit Portal
+          // D. Exit Portal (Modern, beautiful gyroscopic dimensional portal aligned with corridor walls)
           if (cell.isExit) {
-            const portalGeo = new THREE.TorusGeometry(0.32, 0.08, 8, 24);
-            const portalMat = new THREE.MeshBasicMaterial({ color: "#a855f7" });
-            const portalMesh = new THREE.Mesh(portalGeo, portalMat);
-            portalMesh.position.set(0, 0.5, 0);
-            portalMesh.rotation.y = Math.PI / 4;
-            cellGroup.add(portalMesh);
+            const portalGroup = new THREE.Group();
+            portalGroup.position.set(0, 0.58, 0);
+            
+            // Outer glowing purple ring
+            const outerGeo = new THREE.TorusGeometry(0.32, 0.05, 8, 32);
+            const outerMat = new THREE.MeshStandardMaterial({ 
+              color: "#a855f7", 
+              emissive: "#7e22ce", 
+              emissiveIntensity: 2.5,
+              roughness: 0.2,
+              metalness: 0.8
+            });
+            const outerRing = new THREE.Mesh(outerGeo, outerMat);
+            portalGroup.add(outerRing);
+            
+            // Inner glowing cyan ring (slightly smaller)
+            const innerGeo = new THREE.TorusGeometry(0.24, 0.03, 8, 32);
+            const innerMat = new THREE.MeshStandardMaterial({ 
+              color: "#06b6d4", 
+              emissive: "#0891b2", 
+              emissiveIntensity: 2.5,
+              roughness: 0.2,
+              metalness: 0.8
+            });
+            const innerRing = new THREE.Mesh(innerGeo, innerMat);
+            portalGroup.add(innerRing);
+            
+            // Vortex core disc (semi-transparent swirling dimensional membrane)
+            const coreGeo = new THREE.CircleGeometry(0.22, 32);
+            const coreMat = new THREE.MeshStandardMaterial({
+              color: "#c084fc",
+              emissive: "#a855f7",
+              emissiveIntensity: 3.0,
+              transparent: true,
+              opacity: 0.7,
+              depthWrite: false,
+              side: THREE.DoubleSide
+            });
+            const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+            portalGroup.add(coreMesh);
 
-            const portalLight = new THREE.PointLight("#c084fc", 1.8, 3.0);
-            portalLight.position.set(0, 0.5, 0);
-            cellGroup.add(portalLight);
+            // Small orbital core energy spheres
+            const energyGeo = new THREE.SphereGeometry(0.015, 6, 6);
+            const energyMat = new THREE.MeshBasicMaterial({ color: "#22d3ee" });
+            const energySpheres = [];
+            for (let i = 0; i < 4; i++) {
+              const sphere = new THREE.Mesh(energyGeo, energyMat);
+              portalGroup.add(sphere);
+              energySpheres.push(sphere);
+            }
+            
+            // Soft cyan-purple point light for illumination
+            const portalLight = new THREE.PointLight("#a855f7", 1.8, 3.0);
+            portalGroup.add(portalLight);
+            
+            // Set portal orientation based on corridor direction (faces the hallway path, blocks width)
+            const isWall = (tx, ty) => {
+              if (tx < 0 || tx >= width || ty < 0 || ty >= height) return true;
+              return grid[ty][tx].type === "wall";
+            };
+            if (isWall(x - 1, y) && isWall(x + 1, y)) {
+              portalGroup.rotation.y = 0; // Spans East-West (faces North-South corridor)
+            } else if (isWall(x, y - 1) && isWall(x, y + 1)) {
+              portalGroup.rotation.y = Math.PI / 2; // Spans North-South (faces East-West corridor)
+            } else if (isWall(x - 1, y) || isWall(x + 1, y)) {
+              portalGroup.rotation.y = 0;
+            } else {
+              portalGroup.rotation.y = Math.PI / 2;
+            }
+
+            cellGroup.add(portalGroup);
+            
+            // Save references for dynamic animation
+            this.exitPortals.push({
+              group: portalGroup,
+              outerRing: outerRing,
+              innerRing: innerRing,
+              coreMesh: coreMesh,
+              energySpheres: energySpheres,
+              light: portalLight,
+              timeOffset: Math.random() * 100
+            });
           }
 
           // E. Chests (Detailed Wood & Gold Treasure Chest)
@@ -1629,24 +1703,57 @@ export class CanvasRenderer {
               obsSubGroup.add(keyPlate);
             }
             
-            // Determine orientation of gate/barricade/codeLock obstacles based on adjacent walls
-            // Prioritize blocking the corridor between two opposite walls
+            // Determine orientation of gate/barricade/codeLock obstacles based on adjacent regions and walls
             if (type === "gate" || type === "barricade" || type === "codeLock") {
               const isWall = (tx, ty) => {
                 if (tx < 0 || tx >= width || ty < 0 || ty >= height) return true;
                 return grid[ty][tx].type === "wall";
               };
-              if (isWall(x - 1, y) && isWall(x + 1, y)) {
-                // East/West are both walls: corridor runs North/South. Run East/West (rotation 0) to block.
-                obsSubGroup.rotation.y = 0;
-              } else if (isWall(x, y - 1) && isWall(x, y + 1)) {
-                // North/South are both walls: corridor runs East/West. Run North/South (rotation 90deg) to block.
-                obsSubGroup.rotation.y = Math.PI / 2;
-              } else if (isWall(x - 1, y) || isWall(x + 1, y)) {
-                // Fallback: prioritize East/West walls (rotation 0)
-                obsSubGroup.rotation.y = 0;
+              
+              const reg = cell.region;
+              
+              // 1. Check if this is a region boundary node. If so, align perpendicular to the entry direction from the previous region.
+              let prevRegionNeighbor = null;
+              const borderDirs = [
+                { dx: 0, dy: -1, dir: "N" },
+                { dx: 0, dy: 1, dir: "S" },
+                { dx: -1, dy: 0, dir: "W" },
+                { dx: 1, dy: 0, dir: "E" }
+              ];
+              
+              for (const d of borderDirs) {
+                const nx = x + d.dx;
+                const ny = y + d.dy;
+                if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                  const neighborCell = grid[ny][nx];
+                  if (neighborCell && neighborCell.type === "floor" && neighborCell.region < reg && neighborCell.region !== -1) {
+                    prevRegionNeighbor = d.dir;
+                    break;
+                  }
+                }
+              }
+              
+              if (prevRegionNeighbor) {
+                if (prevRegionNeighbor === "N" || prevRegionNeighbor === "S") {
+                  obsSubGroup.rotation.y = 0; // blocks North-South corridor passage
+                } else {
+                  obsSubGroup.rotation.y = Math.PI / 2; // blocks East-West corridor passage
+                }
               } else {
-                obsSubGroup.rotation.y = Math.PI / 2;
+                // 2. Fallback to normal surrounding wall check
+                if (isWall(x - 1, y) && isWall(x + 1, y)) {
+                  // East/West are both walls: corridor runs North/South. Run East/West (rotation 0) to block.
+                  obsSubGroup.rotation.y = 0;
+                } else if (isWall(x, y - 1) && isWall(x, y + 1)) {
+                  // North/South are both walls: corridor runs East/West. Run North/South (rotation 90deg) to block.
+                  obsSubGroup.rotation.y = Math.PI / 2;
+                } else if (isWall(x - 1, y) || isWall(x + 1, y)) {
+                  // Fallback: West/East is wall, meaning corridor runs North/South. Run East/West (rotation 0) to block.
+                  obsSubGroup.rotation.y = 0;
+                } else {
+                  // North/South is wall, meaning corridor runs East-West. Run North/South (rotation 90deg) to block.
+                  obsSubGroup.rotation.y = Math.PI / 2;
+                }
               }
             }
 
@@ -2266,6 +2373,50 @@ export class CanvasRenderer {
           p.mesh.scale.set(p.life, p.life, p.life);
         }
       }
+    }
+
+    // Update exit portals (swirling core, opposite ring rotations, and orbital energy spheres)
+    if (this.exitPortals && this.exitPortals.length > 0) {
+      this.exitPortals.forEach(portal => {
+        const t = (Date.now() * 0.001) + portal.timeOffset;
+        
+        // 1. Swirl and pulse core disc
+        if (portal.coreMesh) {
+          portal.coreMesh.rotation.z = t * 0.5; // spin vortex
+          const s = 1.0 + Math.sin(t * 3.0) * 0.06; // breathing pulse
+          portal.coreMesh.scale.set(s, s, 1.0);
+        }
+        
+        // 2. Rotate outer & inner rings in opposite directions
+        if (portal.outerRing) {
+          portal.outerRing.rotation.z = t * 0.8;
+          portal.outerRing.rotation.x = Math.sin(t * 0.4) * 0.15;
+        }
+        if (portal.innerRing) {
+          portal.innerRing.rotation.z = -t * 1.2;
+          portal.innerRing.rotation.y = Math.cos(t * 0.5) * 0.15;
+        }
+        
+        // 3. Orbit energy spheres around the center core
+        if (portal.energySpheres && portal.energySpheres.length > 0) {
+          const numSpheres = portal.energySpheres.length;
+          for (let i = 0; i < numSpheres; i++) {
+            const sphere = portal.energySpheres[i];
+            const angle = (t * 2.0) + (i * Math.PI * 2 / numSpheres);
+            const radius = 0.14 + Math.sin(t * 4.0 + i) * 0.02; // waving radius
+            sphere.position.set(
+              Math.cos(angle) * radius,
+              Math.sin(angle) * radius,
+              Math.sin(t * 5.0 + i) * 0.02 // slight forward/back bobbing
+            );
+          }
+        }
+        
+        // 4. Pulse light intensity slightly
+        if (portal.light) {
+          portal.light.intensity = 1.6 + Math.sin(t * 4.0) * 0.3;
+        }
+      });
     }
 
     // 5. Render Scene to WebGL Viewport

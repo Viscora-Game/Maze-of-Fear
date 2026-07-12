@@ -184,23 +184,20 @@ function setupUI(game) {
       crosshair.style.display = s.gameState === "playing" ? "block" : "none";
     }
 
-    // Sync Lantern Button state
+    // Sync Lantern Button state (Toggles icon and glow border/background)
     const lanternBtn = document.getElementById("btn-toggle-lantern");
-    const lanternText = document.getElementById("btn-lantern-text");
-    if (lanternBtn && lanternText) {
-      if (s.lanternOn) {
-        lanternText.textContent = game.lang === "tr" ? "Fener Kapat (F)" : "Lantern Off (F)";
-        lanternBtn.style.background = "rgba(245, 158, 11, 0.4)";
+    if (lanternBtn) {
+      if (s.lanternOn && p.fuel > 0) {
+        lanternBtn.innerHTML = "🪔";
+        lanternBtn.style.background = "rgba(251, 191, 38, 0.35)"; // Amber active background
+        lanternBtn.style.borderColor = "rgba(251, 191, 38, 0.75)";  // Glowing amber border
+        lanternBtn.style.boxShadow = "0 0 15px rgba(251, 191, 38, 0.4)";
       } else {
-        lanternText.textContent = game.lang === "tr" ? "Fener Aç (F)" : "Lantern On (F)";
-        lanternBtn.style.background = "rgba(255, 255, 255, 0.08)";
+        lanternBtn.innerHTML = "🔦";
+        lanternBtn.style.background = "rgba(15, 23, 42, 0.45)";    // Dark inactive background
+        lanternBtn.style.borderColor = "rgba(251, 191, 38, 0.25)";  // Inactive border
+        lanternBtn.style.boxShadow = "0 0 10px rgba(0, 0, 0, 0.3)";
       }
-    }
-
-    // Sync Interact Button text
-    const interactText = document.getElementById("btn-interact-text");
-    if (interactText) {
-      interactText.textContent = game.lang === "tr" ? "Etkileşim (E / Space)" : "Interact (E / Space)";
     }
 
     // Quests

@@ -567,7 +567,7 @@ export class CanvasRenderer {
       map: this.floorTexture,
       bumpMap: this.brickBump, // realistic stone relief bump map
       bumpScale: 0.07,
-      color: "#3f4756", // dark wet slate stone/mud color
+      color: "#2b2927", // dark warm charcoal stone/soil
       roughness: 0.85
     });
 
@@ -580,7 +580,7 @@ export class CanvasRenderer {
     });
 
     const pebbleGeo = new THREE.SphereGeometry(0.035, 5, 5);
-    const pebbleMat = new THREE.MeshStandardMaterial({ color: "#78716c", roughness: 0.9 }); // grey-brown stones
+    const pebbleMat = new THREE.MeshStandardMaterial({ color: "#4e4c4a", roughness: 0.9 }); // medium-dark wet stone grey
     
     const stemMGeo = new THREE.CylinderGeometry(0.01, 0.01, 0.08, 4);
     const stemMMat = new THREE.MeshStandardMaterial({ color: "#f8fafc" });
@@ -598,6 +598,7 @@ export class CanvasRenderer {
 
     const hedgeMat = new THREE.MeshStandardMaterial({ 
       map: this.hedgeTexture, 
+      color: "#385e38", // muted organic forest green tint
       roughness: 1.0 
     });
 
@@ -642,24 +643,21 @@ export class CanvasRenderer {
             rubbleGroup.position.set((Math.random() - 0.5) * 0.35, 0, (Math.random() - 0.5) * 0.35);
             cellGroup.add(rubbleGroup);
           } else if (randVal < 0.32) {
-            // Spooky Glowing Bioluminescent Mushrooms (Blue-cyan cap + soft pointlight)
+            // Spooky Glowing Bioluminescent Mushrooms (Blue-cyan cap - performance optimized emissive material, no dynamic light)
             const mush = new THREE.Group();
             const stem = new THREE.Mesh(stemMGeo, stemMMat);
             stem.position.y = 0.04;
             
             const glowMushroomMat = new THREE.MeshStandardMaterial({
-              color: "#3b82f6", // neon blue
-              emissive: "#1d4ed8", // rich blue glow
-              emissiveIntensity: 2.2,
+              color: "#60a5fa", // bioluminescent cyan-blue
+              emissive: "#2563eb", // glowing blue
+              emissiveIntensity: 3.0, // strong emissive glow without dynamic light cost
               roughness: 0.4
             });
             const cap = new THREE.Mesh(capMGeo, glowMushroomMat);
             cap.position.y = 0.08;
             
-            const mushLight = new THREE.PointLight("#60a5fa", 0.55, 0.7); // soft blue illumination
-            mushLight.position.set(0, 0.08, 0);
-            
-            mush.add(stem, cap, mushLight);
+            mush.add(stem, cap);
             mush.position.set((Math.random() - 0.5) * 0.35, 0, (Math.random() - 0.5) * 0.35);
             cellGroup.add(mush);
           } else if (randVal < 0.46) {
@@ -667,7 +665,7 @@ export class CanvasRenderer {
             const vineGroup = new THREE.Group();
             const leafMat = new THREE.MeshStandardMaterial({ 
               map: this.hedgeTexture, 
-              color: "#14532d", // rich dark green
+              color: "#1b351e", // deep rich ivy green matching the muted walls
               roughness: 0.95 
             });
             for (let i = 0; i < 3; i++) {

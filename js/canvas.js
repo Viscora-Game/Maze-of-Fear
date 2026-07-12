@@ -1070,25 +1070,37 @@ export class CanvasRenderer {
                  npcSubGroup.add(pack);
                }
              } else if (cell.npc.id === "merchant") {
-               if (this.charactersModel) {
-                 const female = this.charactersModel.getObjectByName("FemaleRig") || this.charactersModel.getObjectByName("MaleRig");
-                 if (female) {
-                   const clone = female.clone();
-                   clone.traverse(child => {
-                     if (child.isMesh) {
-                       child.castShadow = true;
-                       child.receiveShadow = true;
-                     }
-                   });
-                   const box = new THREE.Box3().setFromObject(clone);
-                   const size = new THREE.Vector3();
-                   box.getSize(size);
-                   const finalScale = size.y > 0.1 ? 0.75 / size.y : 0.38;
-                   clone.scale.set(finalScale, finalScale, finalScale);
-                   clone.position.set(0, 0, 0);
-                   npcSubGroup.add(clone);
-                 }
-               } else {
+                if (this.charactersModel) {
+                  const clone = this.charactersModel.clone();
+                  // Hide male meshes to render only the female adult character
+                  const maleMesh = clone.getObjectByName("BaseMaleMesh");
+                  const maleRig = clone.getObjectByName("MaleRig");
+                  if (maleMesh) maleMesh.visible = false;
+                  if (maleRig) maleRig.visible = false;
+
+                  // Reset position of FemaleRig to (0, 0, 0) because the GLTF file has a translation offset of 0.6292 on X!
+                  const femaleRig = clone.getObjectByName("FemaleRig");
+                  if (femaleRig) {
+                    femaleRig.position.set(0, 0, 0);
+                  }
+
+                  clone.traverse(child => {
+                    if (child.isMesh) {
+                      child.castShadow = true;
+                      child.receiveShadow = true;
+                      if (child.material) child.material.roughness = 0.8;
+                    }
+                  });
+
+                  // Target merchant height is 0.75 units (adult female)
+                  const box = new THREE.Box3().setFromObject(clone);
+                  const size = new THREE.Vector3();
+                  box.getSize(size);
+                  const finalScale = size.y > 0.1 ? 0.75 / size.y : 0.38;
+                  clone.scale.set(finalScale, finalScale, finalScale);
+                  clone.position.set(0, 0, 0);
+                  npcSubGroup.add(clone);
+                } else {
                  const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.08, 6), new THREE.MeshStandardMaterial({ color: "#1e1b4b" }));
                  legL.position.set(-0.04, 0.04, 0);
                  const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.08, 6), new THREE.MeshStandardMaterial({ color: "#1e1b4b" }));

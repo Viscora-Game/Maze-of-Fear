@@ -165,7 +165,8 @@ export class CanvasRenderer {
       if (p.pitch === undefined) p.pitch = 0.0;
 
       if (document.pointerLockElement === this.canvas) {
-        // Pointer lock: direct mouse movement
+        // Pointer lock: direct mouse movement (ignore browser pointer lock entry/exit cursor centering jumps > 120px)
+        if (Math.abs(e.movementX) > 120 || Math.abs(e.movementY) > 120) return;
         const sensitivity = 0.0022;
         p.angle += e.movementX * sensitivity;
         p.pitch = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, p.pitch - e.movementY * sensitivity));
@@ -173,6 +174,14 @@ export class CanvasRenderer {
         // Drag: clientX/Y difference
         const dx = e.clientX - prevMouseX;
         const dy = e.clientY - prevMouseY;
+        
+        // Ignore sudden coordinates jumps > 120px when clicking/dragging
+        if (Math.abs(dx) > 120 || Math.abs(dy) > 120) {
+          prevMouseX = e.clientX;
+          prevMouseY = e.clientY;
+          return;
+        }
+        
         const sensitivity = 0.0035;
         p.angle += dx * sensitivity;
         p.pitch = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, p.pitch - dy * sensitivity));
@@ -222,6 +231,13 @@ export class CanvasRenderer {
         if (touch.identifier === lookTouchId) {
           const dx = touch.clientX - lastLookX;
           const dy = touch.clientY - lastLookY;
+          
+          // Ignore sudden coordinate jumps > 150px (multi-finger placement glitches)
+          if (Math.abs(dx) > 150 || Math.abs(dy) > 150) {
+            lastLookX = touch.clientX;
+            lastLookY = touch.clientY;
+            break;
+          }
           
           const sensitivity = 0.007; // Slightly higher sensitivity for comfortable mobile look
           p.angle += dx * sensitivity;
@@ -518,8 +534,8 @@ export class CanvasRenderer {
     }
     this.scene.add(this.lantern.target);
 
-    // 1b. Rain Particles System (Gloomy, moody falling rain)
-    const rainCount = 1000;
+    // 1b. Rain Particles System (Gloomy, moody falling rain - optimized to 400 count)
+    const rainCount = 400;
     const rainGeo = new THREE.BufferGeometry();
     const positions = new Float32Array(rainCount * 3);
     this.rainVelocities = [];
@@ -2126,20 +2142,20 @@ export class CanvasRenderer {
       this.lantern.target.updateMatrixWorld(true);
     }
 
-    // Update rain particles (making them fall around the player's camera position)
+    // Update rain particles (highly optimized direct typed array manipulation to prevent FPS drops)
     if (this.rainParticles && this.rainVelocities) {
       const posAttr = this.rainParticles.geometry.attributes.position;
+      const len = this.rainVelocities.length;
+      const array = posAttr.array || new Float32Array(len * 3);
       const camX = this.camera.position.x;
       const camZ = this.camera.position.z;
       
-      for (let i = 0; i < this.rainVelocities.length; i++) {
-        let x = posAttr.getX(i);
-        let y = posAttr.getY(i);
-        let z = posAttr.getZ(i);
+      for (let i = 0; i < len; i++) {
+        const idx = i * 3;
+        let y = array[idx + 1] - this.rainVelocities[i]; // fall down
+        let x = array[idx];
+        let z = array[idx + 2];
         
-        y -= this.rainVelocities[i]; // fall down
-        
-        // If it falls below ground or too far from camera, wrap it around the camera
         const dx = x - camX;
         const dz = z - camZ;
         if (y < 0.0 || Math.abs(dx) > 8.0 || Math.abs(dz) > 8.0) {
@@ -2148,7 +2164,9 @@ export class CanvasRenderer {
           z = camZ + (Math.random() - 0.5) * 16.0;
         }
         
-        posAttr.setXYZ(i, x, y, z);
+        array[idx] = x;
+        array[idx + 1] = y;
+        array[idx + 2] = z;
       }
       posAttr.needsUpdate = true;
     }

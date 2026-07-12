@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="description" content="Maze of Choices - A Procedural Maze Exploration Game of Risk and Decisions">
   <title>Maze of Choices</title>
-  <link rel="stylesheet" href="styles.css?v=1.0.3">
+  <link rel="stylesheet" href="styles.css?v=1.0.4">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <script>
@@ -258,13 +258,8 @@
 
     <!-- Map Modal -->
     <div id="modal-map" class="overlay hidden" style="background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 100;">
-      <div class="modal-content glass" style="max-width: 580px; width: 95%; padding: 18px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; gap: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); border: 1px solid var(--border-light);">
-        <h3 class="modal-title text-cyan glow-text" style="width: 100%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px; margin-bottom: 4px; font-size: 1.1rem;">
-          <span style="display: flex; align-items: center; gap: 6px;">🗺️ <span data-t="mapTitle">Define Haritası / Map</span></span>
-          <button id="btn-close-map" style="background: none; border: none; color: var(--gray); font-size: 1.5rem; cursor: pointer; line-height: 1;">&times;</button>
-        </h3>
-        
-        <canvas id="map-canvas" width="480" height="480" style="width: 100%; max-width: min(440px, 60vh); aspect-ratio: 1; image-rendering: pixelated; display: block; border-radius: 12px; border: 4px double #854d0e; box-shadow: 0 8px 30px rgba(0,0,0,0.6);"></canvas>
+      <div class="modal-content glass" style="max-width: 500px; width: 95%; padding: 10px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); border: 1px solid var(--border-light);">
+        <canvas id="map-canvas" width="480" height="480" style="width: 100%; max-width: min(440px, 72vh); aspect-ratio: 1; image-rendering: pixelated; display: block; border-radius: 12px; border: 4px double #854d0e; box-shadow: 0 8px 30px rgba(0,0,0,0.6);"></canvas>
         
         <div style="font-size: 0.72rem; color: var(--gray); text-align: center; line-height: 1.4; display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;">
           <span><span style="color: #f43f5e; font-weight: bold;">●</span> Konumunuz</span>

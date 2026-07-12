@@ -200,6 +200,20 @@ function setupUI(game) {
       }
     }
 
+    // Sync Sprint Button state (Toggles glow border/background based on shift state)
+    const btnRun = document.getElementById("btn-run");
+    if (btnRun) {
+      if (this.keys && this.keys["shift"]) {
+        btnRun.style.background = "rgba(249, 115, 22, 0.4)"; // Orange active background
+        btnRun.style.borderColor = "rgba(249, 115, 22, 0.85)";  // Glowing orange border
+        btnRun.style.boxShadow = "0 0 18px rgba(249, 115, 22, 0.5)";
+      } else {
+        btnRun.style.background = "rgba(15, 23, 42, 0.6)";    // Dark inactive background
+        btnRun.style.borderColor = "rgba(249, 115, 22, 0.25)";  // Inactive border
+        btnRun.style.boxShadow = "0 0 10px rgba(0, 0, 0, 0.3)";
+      }
+    }
+
     // Quests
     hud.questsList.innerHTML = "";
     
@@ -892,34 +906,19 @@ function setupUI(game) {
     btnInteract.addEventListener("touchstart", handleInteract, { passive: false });
   }
 
-  // Run / Sprint Button Binding (Simulates Shift key)
+  // Run / Sprint Button Binding (Toggles shift key for ergonomics)
   const btnRun = document.getElementById("btn-run");
   if (btnRun) {
-    const startRun = (e) => {
+    const toggleRun = (e) => {
       e.preventDefault();
-      if (game.keys) game.keys["shift"] = true;
-      btnRun.style.background = "rgba(249, 115, 22, 0.4)";
-    };
-    const endRun = (e) => {
-      e.preventDefault();
-      if (game.keys) game.keys["shift"] = false;
-      btnRun.style.background = "rgba(249, 115, 22, 0.15)";
+      if (game.keys && game.state && game.state.player) {
+        if (game.state.player.exhausted) return;
+        game.keys["shift"] = !game.keys["shift"];
+      }
     };
 
-    btnRun.addEventListener("touchstart", startRun, { passive: false });
-    btnRun.addEventListener("touchend", endRun);
-    btnRun.addEventListener("touchcancel", endRun);
-
-    // Mouse fallback for desktop testing
-    btnRun.addEventListener("mousedown", () => {
-      if (game.keys) game.keys["shift"] = true;
-    });
-    btnRun.addEventListener("mouseup", () => {
-      if (game.keys) game.keys["shift"] = false;
-    });
-    btnRun.addEventListener("mouseleave", () => {
-      if (game.keys) game.keys["shift"] = false;
-    });
+    btnRun.addEventListener("touchstart", toggleRun, { passive: false });
+    btnRun.addEventListener("click", toggleRun);
   }
 
   // Close Bag Button
@@ -1131,8 +1130,18 @@ function setupUI(game) {
             ctx.textBaseline = "middle";
             ctx.fillText("S", cx + cellSize/2, cy + cellSize/2);
           } else if (cell.isExit) {
+            // Draw a bright cyan glowing background square to highlight the Exit clearly
+            ctx.fillStyle = "rgba(34, 211, 238, 0.45)"; // Cyan glow background
+            ctx.fillRect(cx, cy, cellSize, cellSize);
+            
+            // Draw glowing cyan border
+            ctx.strokeStyle = "#06b6d4";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(cx + 1, cy + 1, cellSize - 2, cellSize - 2);
+
+            // Draw a larger ladder emoji
             ctx.fillStyle = "#9333ea";
-            ctx.font = `bold ${Math.floor(cellSize * 0.7)}px Arial`;
+            ctx.font = `bold ${Math.floor(cellSize * 0.9)}px Arial`;
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillText("🪜", cx + cellSize/2, cy + cellSize/2);

@@ -318,6 +318,7 @@ export class Game {
 
     if (p.stamina <= 2.0) {
       p.exhausted = true;
+      this.keys["shift"] = false; // Turn off sprint toggle when exhausted
     } else if (p.stamina >= 25.0) {
       p.exhausted = false;
     }

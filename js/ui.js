@@ -256,20 +256,12 @@ function setupUI(game) {
     const worldAngle = Math.atan2(dy, dx);
     const relativeAngle = (worldAngle - p.angle) * (180 / Math.PI);
     
-    // Check if player has compass item active
+    // Compass is always active from the start of the game, no inventory item required
     const compassPanel = document.getElementById("hud-compass-panel");
-    if (p.inventory.compass > 0) {
-      if (compassPanel) compassPanel.style.opacity = "1";
-      if (hud.compassNeedle) {
-        hud.compassNeedle.style.opacity = "1";
-        hud.compassNeedle.style.transform = `rotate(${relativeAngle}deg)`;
-      }
-    } else {
-      if (compassPanel) compassPanel.style.opacity = "0.15"; // Very dim dial casing when inactive
-      if (hud.compassNeedle) {
-        hud.compassNeedle.style.opacity = "0"; // Hide the needle completely
-        hud.compassNeedle.style.transform = "rotate(0deg)";
-      }
+    if (compassPanel) compassPanel.style.opacity = "1";
+    if (hud.compassNeedle) {
+      hud.compassNeedle.style.opacity = "1";
+      hud.compassNeedle.style.transform = `rotate(${relativeAngle}deg)`;
     }
   };
 

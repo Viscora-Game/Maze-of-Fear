@@ -1493,7 +1493,7 @@ export class CanvasRenderer {
             if (type === "gate" || type === "barricade" || type === "codeLock") {
               const isWall = (tx, ty) => {
                 if (tx < 0 || tx >= width || ty < 0 || ty >= height) return true;
-                return grid[ty][tx].isWall;
+                return grid[ty][tx].type === "wall";
               };
               if (isWall(x - 1, y) || isWall(x + 1, y)) {
                 // East/West neighbors are walls, corridor runs North/South.

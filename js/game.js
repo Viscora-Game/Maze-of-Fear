@@ -177,7 +177,6 @@ export class Game {
       merchantStock: {
         rope: { cost: 15, count: 2 },
         axe: { cost: 20, count: 1 }, // Added axe so player can clear roadblocks
-        compass: { cost: 10, count: 1 },
         fuel: { cost: 5, count: 4 }
       },
 

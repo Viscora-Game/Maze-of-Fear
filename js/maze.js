@@ -516,7 +516,7 @@ export function generateMaze(width, height, numFloors = 1) {
         const obType = Math.random() < 0.5 ? "barricade" : "chasm";
         targetDeadEnd.obstacle = { type: obType, resolved: false };
         targetDeadEnd.chest.content = { type: "gold", amount: 45 + Math.floor(Math.random() * 35) };
-        const items = ["compass", "fuel", "map_piece"];
+        const items = ["fuel", "map_piece"];
         targetDeadEnd.chest.content.item = items[Math.floor(Math.random() * items.length)];
       }
     }

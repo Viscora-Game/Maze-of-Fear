@@ -1495,13 +1495,16 @@ export class CanvasRenderer {
                 if (tx < 0 || tx >= width || ty < 0 || ty >= height) return true;
                 return grid[ty][tx].type === "wall";
               };
-              if (isWall(x - 1, y) || isWall(x + 1, y)) {
-                // East/West neighbors are walls, corridor runs North/South.
-                // Gate should run East/West (rotation 0) to touch both walls.
+              if (isWall(x - 1, y) && isWall(x + 1, y)) {
+                // East/West are both walls: corridor runs North/South. Run East/West (rotation 0) to block.
                 obsSubGroup.rotation.y = 0;
-              } else if (isWall(x, y - 1) || isWall(x, y + 1)) {
-                // North/South neighbors are walls, corridor runs East/West.
-                // Gate should run North/South (rotation 90deg) to touch both walls.
+              } else if (isWall(x, y - 1) && isWall(x, y + 1)) {
+                // North/South are both walls: corridor runs East/West. Run North/South (rotation 90deg) to block.
+                obsSubGroup.rotation.y = Math.PI / 2;
+              } else if (isWall(x - 1, y) || isWall(x + 1, y)) {
+                // Fallback: prioritize East/West walls (rotation 0)
+                obsSubGroup.rotation.y = 0;
+              } else {
                 obsSubGroup.rotation.y = Math.PI / 2;
               }
             }

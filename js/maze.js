@@ -190,16 +190,51 @@ export function generateMaze(width, height, numFloors = 1) {
   floors[0][1][1].isEntrance = true;
   floors[deepestNode.floor][deepestNode.y][deepestNode.x].isExit = true;
 
+  // Helper to determine if a cell is a straight corridor (has exactly 2 opposite walls)
+  const isStraightCorridor = (cell) => {
+    const { x, y, floor } = cell;
+    const grid = floors[floor];
+    const isWallCell = (tx, ty) => {
+      if (tx < 0 || tx >= width || ty < 0 || ty >= height) return true;
+      return grid[ty][tx].type === "wall";
+    };
+    const westIsWall = isWallCell(x - 1, y);
+    const eastIsWall = isWallCell(x + 1, y);
+    const northIsWall = isWallCell(x, y - 1);
+    const southIsWall = isWallCell(x, y + 1);
+    
+    // Straight North/South corridor: walls on West & East, floors on North & South
+    const isNS = westIsWall && eastIsWall && !northIsWall && !southIsWall;
+    // Straight East/West corridor: walls on North & South, floors on West & East
+    const isEW = northIsWall && southIsWall && !westIsWall && !eastIsWall;
+    return isNS || isEW;
+  };
+
+  // Helper to search for the nearest straight corridor node along the critical path to place obstacles cleanly
+  const findBestObstacleNode = (targetIndex) => {
+    for (let offset = 0; offset < 15; offset++) {
+      const idx1 = targetIndex + offset;
+      const idx2 = targetIndex - offset;
+      if (idx1 < critPath.length && isStraightCorridor(critPath[idx1])) {
+        return critPath[idx1];
+      }
+      if (idx2 >= 0 && isStraightCorridor(critPath[idx2])) {
+        return critPath[idx2];
+      }
+    }
+    return critPath[targetIndex]; // fallback
+  };
+
   // 5. Place Gates / Obstacles along the 3D Critical Path
   const pathLen = critPath.length;
-  const b1Index = Math.floor(pathLen * 0.25);
-  const b2Index = Math.floor(pathLen * 0.50);
-  const b3Index = Math.floor(pathLen * 0.75);
+  const b1Node = findBestObstacleNode(Math.floor(pathLen * 0.25));
+  const b2Node = findBestObstacleNode(Math.floor(pathLen * 0.50));
+  const b3Node = findBestObstacleNode(Math.floor(pathLen * 0.75));
 
   const barrierNodes = {
-    b1: critPath[b1Index],
-    b2: critPath[b2Index],
-    b3: critPath[b3Index]
+    b1: b1Node,
+    b2: b2Node,
+    b3: b3Node
   };
 
   // Configure checkpoint obstacles (ensuring they block paths)

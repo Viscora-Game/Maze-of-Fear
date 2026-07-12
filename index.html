@@ -157,10 +157,16 @@
         <canvas id="game-canvas"></canvas>
       </div>
 
-      <!-- Floating Translucent Joystick (Bottom-Left) -->
-      <div class="joystick-container" id="joystick-zone">
-        <div class="joystick-base" id="joystick-base">
-          <div class="joystick-handle" id="joystick-handle"></div>
+      <!-- Floating HUD Left Cluster (Joystick + Map/Bag buttons) -->
+      <div class="floating-left-controls">
+        <div class="left-btn-row">
+          <button id="btn-open-inventory" class="circle-btn btn-primary" title="Çanta">🎒</button>
+          <button id="btn-open-map" class="circle-btn btn-secondary" title="Harita">🗺️</button>
+        </div>
+        <div class="joystick-container" id="joystick-zone">
+          <div class="joystick-base" id="joystick-base">
+            <div class="joystick-handle" id="joystick-handle"></div>
+          </div>
         </div>
       </div>
 
@@ -172,33 +178,23 @@
         <span id="compass-text" style="font-size: 0.65rem;">Pusula Pasif</span>
       </div>
 
-      <!-- Floating Inventory Controls (Bottom-Right) -->
-      <div class="floating-inventory-controls">
+      <!-- Floating HUD Right Cluster (Equipped Slot + Action buttons) -->
+      <div class="floating-right-controls">
         <!-- Compact Equipped Item badge -->
-        <div class="hud-equipped-slot glass">
+        <div class="hud-equipped-slot glass" style="margin-bottom: 4px;">
           <span style="font-size: 0.65rem; color: var(--gray);">Eldeki:</span>
           <span id="hud-equipped-val" class="text-gold font-bold" style="font-size: 0.7rem;">Boş</span>
         </div>
         
-        <!-- Compact Lantern Button -->
-        <button id="btn-toggle-lantern" class="hud-bag-btn btn-secondary btn" style="border-color: rgba(245, 158, 11, 0.4); display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 14px;">
-          <span>🪔</span> <span id="btn-lantern-text">Fener Aç</span>
-        </button>
-
-        <!-- Compact Map Button -->
-        <button id="btn-open-map" class="hud-bag-btn btn-secondary btn" style="border-color: rgba(6, 182, 212, 0.4); display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 14px;">
-          <span>🗺️</span> <span id="btn-map-text">Harita</span>
-        </button>
-
-        <!-- Compact Interact Button -->
-        <button id="btn-interact" class="hud-bag-btn btn-success btn" style="border-color: rgba(34, 197, 94, 0.4); display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 14px; background: rgba(34, 197, 94, 0.25);">
-          <span>🖐️</span> <span id="btn-interact-text">Etkileşim</span>
-        </button>
-
-        <!-- Compact Bag Button -->
-        <button id="btn-open-inventory" class="hud-bag-btn btn-primary btn">
-          <span>🎒</span> <span id="btn-bag-text">Çanta</span>
-        </button>
+        <!-- Action buttons cluster -->
+        <div class="right-action-cluster">
+          <!-- Flashlight Toggle (Yellow/Gold glow) -->
+          <button id="btn-toggle-lantern" class="circle-btn action-btn-lantern" title="Fener">🔦</button>
+          <!-- Run / Sprint (Orange/Red glow) -->
+          <button id="btn-run" class="circle-btn action-btn-run" title="Koş">🏃</button>
+          <!-- Interact (Green glow, larger primary button) -->
+          <button id="btn-interact" class="circle-btn action-btn-interact" title="Etkileşim">🖐️</button>
+        </div>
       </div>
 
       <!-- Introductory Tip Overlay -->

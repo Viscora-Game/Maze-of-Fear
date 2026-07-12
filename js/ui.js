@@ -853,45 +853,87 @@ function setupUI(game) {
     });
   };
 
-  // Open Bag Button
+  // Open Bag Button (Mobile touchstart & click support)
   if (hud.btnOpenInventory) {
-    hud.btnOpenInventory.addEventListener("click", () => {
+    const handleOpenBag = (e) => {
+      e.preventDefault();
       if (game.state.gameState !== "playing") return;
       game.state.gameState = "modal";
       hud.modalInventory.classList.remove("hidden");
       selectedItemId = null;
       renderInventory();
-    });
+    };
+    hud.btnOpenInventory.addEventListener("click", handleOpenBag);
+    hud.btnOpenInventory.addEventListener("touchstart", handleOpenBag, { passive: false });
   }
 
-  // Toggle Lantern Button Click
+  // Toggle Lantern Button
   const btnToggleLantern = document.getElementById("btn-toggle-lantern");
   if (btnToggleLantern) {
-    btnToggleLantern.addEventListener("click", () => {
+    const handleToggleLantern = (e) => {
+      e.preventDefault();
       game.toggleLantern();
-    });
+    };
+    btnToggleLantern.addEventListener("click", handleToggleLantern);
+    btnToggleLantern.addEventListener("touchstart", handleToggleLantern, { passive: false });
   }
 
-  // Mobile Interact Button Click
+  // Mobile Interact Button
   const btnInteract = document.getElementById("btn-interact");
   if (btnInteract) {
-    btnInteract.addEventListener("click", () => {
+    const handleInteract = (e) => {
+      e.preventDefault();
       if (game.state && game.state.gameState === "modal") {
-        // Dispatch Escape key down to trigger the modal close logic
+        // Close modal if already in a modal view
         const escapeEvent = new KeyboardEvent("keydown", { key: "Escape" });
         window.dispatchEvent(escapeEvent);
       } else {
         game.interactWithClosest();
       }
+    };
+    btnInteract.addEventListener("click", handleInteract);
+    btnInteract.addEventListener("touchstart", handleInteract, { passive: false });
+  }
+
+  // Run / Sprint Button Binding (Simulates Shift key)
+  const btnRun = document.getElementById("btn-run");
+  if (btnRun) {
+    const startRun = (e) => {
+      e.preventDefault();
+      if (game.keys) game.keys["shift"] = true;
+      btnRun.style.background = "rgba(249, 115, 22, 0.4)";
+    };
+    const endRun = (e) => {
+      e.preventDefault();
+      if (game.keys) game.keys["shift"] = false;
+      btnRun.style.background = "rgba(249, 115, 22, 0.15)";
+    };
+
+    btnRun.addEventListener("touchstart", startRun, { passive: false });
+    btnRun.addEventListener("touchend", endRun);
+    btnRun.addEventListener("touchcancel", endRun);
+
+    // Mouse fallback for desktop testing
+    btnRun.addEventListener("mousedown", () => {
+      if (game.keys) game.keys["shift"] = true;
+    });
+    btnRun.addEventListener("mouseup", () => {
+      if (game.keys) game.keys["shift"] = false;
+    });
+    btnRun.addEventListener("mouseleave", () => {
+      if (game.keys) game.keys["shift"] = false;
     });
   }
 
   // Close Bag Button
   if (hud.btnCloseInventory) {
-    hud.btnCloseInventory.addEventListener("click", () => {
+    const handleCloseBag = (e) => {
+      e.preventDefault();
       game.state.gameState = "playing";
       hud.modalInventory.classList.add("hidden");
-    });
+    };
+    hud.btnCloseInventory.addEventListener("click", handleCloseBag);
+    hud.btnCloseInventory.addEventListener("touchstart", handleCloseBag, { passive: false });
   }
 
   // Open Map / Close Map helpers

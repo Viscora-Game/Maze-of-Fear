@@ -1659,6 +1659,18 @@ export class CanvasRenderer {
       document.exitPointerLock();
     }
 
+    // 0. Update HUD Compass Needle dynamically at 60fps (smooth relative rotation to exit)
+    if (state.gameState === "playing") {
+      const compassNeedle = document.getElementById("compass-needle");
+      if (compassNeedle && compassNeedle.style && state.exitCell) {
+        const dx = state.exitCell.x - player.visualX;
+        const dy = state.exitCell.y - player.visualY;
+        const worldAngle = Math.atan2(dy, dx);
+        const relativeAngle = (worldAngle - player.angle) * (180 / Math.PI);
+        compassNeedle.style.transform = `rotate(${relativeAngle}deg)`;
+      }
+    }
+
     // Rebuild Scene Graph when loading new floor
     const floorId = `${currentFloor}_${state.currentLevel}`;
     if (this.currentFloorId !== floorId) {

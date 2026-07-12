@@ -249,20 +249,6 @@ function setupUI(game) {
     } else {
       if (hud.equippedVal) hud.equippedVal.textContent = game.lang === "tr" ? "Boş" : "Empty";
     }
-
-    // Compass update (Dynamic pointing needle, relative to player rotation angle)
-    const dx = s.exitCell.x - p.x;
-    const dy = s.exitCell.y - p.y;
-    const worldAngle = Math.atan2(dy, dx);
-    const relativeAngle = (worldAngle - p.angle) * (180 / Math.PI);
-    
-    // Compass is always active from the start of the game, no inventory item required
-    const compassPanel = document.getElementById("hud-compass-panel");
-    if (compassPanel) compassPanel.style.opacity = "1";
-    if (hud.compassNeedle) {
-      hud.compassNeedle.style.opacity = "1";
-      hud.compassNeedle.style.transform = `rotate(${relativeAngle}deg)`;
-    }
   };
 
   // 5. Virtual Joystick Setup (Mobile & Mouse)

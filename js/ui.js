@@ -203,7 +203,7 @@ function setupUI(game) {
     // Sync Sprint Button state (Toggles glow border/background based on shift state)
     const btnRun = document.getElementById("btn-run");
     if (btnRun) {
-      if (this.keys && this.keys["shift"]) {
+      if (game.keys && game.keys["shift"]) {
         btnRun.style.background = "rgba(249, 115, 22, 0.4)"; // Orange active background
         btnRun.style.borderColor = "rgba(249, 115, 22, 0.85)";  // Glowing orange border
         btnRun.style.boxShadow = "0 0 18px rgba(249, 115, 22, 0.5)";

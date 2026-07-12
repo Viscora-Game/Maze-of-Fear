@@ -439,11 +439,9 @@ h1, h2, h3, h4 {
   touch-action: none;
 }
 
-/* --- Floating translucent Joystick (Bottom-Left) --- */
+/* --- Floating translucent Joystick --- */
 .joystick-container {
-  position: absolute;
-  bottom: 25px;
-  left: 25px;
+  position: relative;
   z-index: 10;
   width: 120px;
   height: 120px;

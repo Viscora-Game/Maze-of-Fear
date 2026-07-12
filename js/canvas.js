@@ -940,23 +940,27 @@ export class CanvasRenderer {
               }
              } else if (cell.npc.id === "traveler") {
                if (this.charactersModel) {
-                 const male = this.charactersModel.getObjectByName("MaleRig");
-                 if (male) {
-                   const clone = male.clone();
-                   clone.traverse(child => {
-                     if (child.isMesh) {
-                       child.castShadow = true;
-                       child.receiveShadow = true;
-                     }
-                   });
-                   const box = new THREE.Box3().setFromObject(clone);
-                   const size = new THREE.Vector3();
-                   box.getSize(size);
-                   const finalScale = size.y > 0.1 ? 0.75 / size.y : 0.38;
-                   clone.scale.set(finalScale, finalScale, finalScale);
-                   clone.position.set(0, 0, 0);
-                   npcSubGroup.add(clone);
-                 }
+                 const clone = this.charactersModel.clone();
+                 // Hide female meshes to render only the male traveler
+                 const femaleMesh = clone.getObjectByName("BaseFemaleMesh");
+                 const femaleRig = clone.getObjectByName("FemaleRig");
+                 if (femaleMesh) femaleMesh.visible = false;
+                 if (femaleRig) femaleRig.visible = false;
+
+                 clone.traverse(child => {
+                   if (child.isMesh) {
+                     child.castShadow = true;
+                     child.receiveShadow = true;
+                     if (child.material) child.material.roughness = 0.8;
+                   }
+                 });
+                 const box = new THREE.Box3().setFromObject(clone);
+                 const size = new THREE.Vector3();
+                 box.getSize(size);
+                 const finalScale = size.y > 0.1 ? 0.75 / size.y : 0.38;
+                 clone.scale.set(finalScale, finalScale, finalScale);
+                 clone.position.set(0, 0, 0);
+                 npcSubGroup.add(clone);
                } else {
                  // Fallback: Gezgin (Traveler) stylized low-poly model
                  const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.08, 6), new THREE.MeshStandardMaterial({ color: "#27272a" }));
@@ -1149,24 +1153,28 @@ export class CanvasRenderer {
               npcSubGroup.add(roof);
             } else if (cell.npc.id === "child") {
                if (this.charactersModel) {
-                 const male = this.charactersModel.getObjectByName("MaleRig") || this.charactersModel.getObjectByName("FemaleRig");
-                 if (male) {
-                   const clone = male.clone();
-                   clone.traverse(child => {
-                     if (child.isMesh) {
-                       child.castShadow = true;
-                       child.receiveShadow = true;
-                     }
-                   });
-                   // Target child height is 0.45 units (scaled down relative to adult 0.75).
-                   const box = new THREE.Box3().setFromObject(clone);
-                   const size = new THREE.Vector3();
-                   box.getSize(size);
-                   const finalScale = size.y > 0.1 ? 0.45 / size.y : 0.23;
-                   clone.scale.set(finalScale, finalScale, finalScale);
-                   clone.position.set(0, 0, 0);
-                   npcSubGroup.add(clone);
-                 }
+                 const clone = this.charactersModel.clone();
+                 // Hide male meshes to render only the female child character
+                 const maleMesh = clone.getObjectByName("BaseMaleMesh");
+                 const maleRig = clone.getObjectByName("MaleRig");
+                 if (maleMesh) maleMesh.visible = false;
+                 if (maleRig) maleRig.visible = false;
+
+                 clone.traverse(child => {
+                   if (child.isMesh) {
+                     child.castShadow = true;
+                     child.receiveShadow = true;
+                     if (child.material) child.material.roughness = 0.8;
+                   }
+                 });
+                 // Target child height is 0.45 units (scaled down relative to adult 0.75).
+                 const box = new THREE.Box3().setFromObject(clone);
+                 const size = new THREE.Vector3();
+                 box.getSize(size);
+                 const finalScale = size.y > 0.1 ? 0.45 / size.y : 0.23;
+                 clone.scale.set(finalScale, finalScale, finalScale);
+                 clone.position.set(0, 0, 0);
+                 npcSubGroup.add(clone);
                } else {
                  // Fallback: Child torso (Orange shirt)
                  const torso = new THREE.Mesh(

@@ -1,0 +1,1094 @@
+import { Game } from "./game.js";
+
+const init = () => {
+  const game = new Game();
+  setupUI(game);
+};
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
+} else {
+  init();
+}
+
+function setupUI(game) {
+  // 1. DOM Element Cache
+  const screens = {
+    menu: document.getElementById("screen-menu"),
+    settings: document.getElementById("screen-settings"),
+    howtoplay: document.getElementById("screen-howtoplay"),
+    game: document.getElementById("screen-game"),
+  };
+
+  const hud = {
+    healthVal: document.getElementById("hud-health-val"),
+    healthBar: document.getElementById("hud-health-bar"),
+    staminaVal: document.getElementById("hud-stamina-val"),
+    staminaBar: document.getElementById("hud-stamina-bar"),
+    goldVal: document.getElementById("hud-gold-val"),
+    fuelVal: document.getElementById("hud-fuel-val"),
+    fuelBar: document.getElementById("hud-fuel-bar"),
+    questsList: document.getElementById("hud-quests-list"),
+    compassNeedle: document.getElementById("compass-needle"),
+    compassText: document.getElementById("compass-text"),
+    levelVal: document.getElementById("hud-level-val"),
+    floorVal: document.getElementById("hud-floor-val"),
+    maxFloorVal: document.getElementById("hud-max-floor-val"),
+    btnOpenInventory: document.getElementById("btn-open-inventory"),
+    btnCloseInventory: document.getElementById("btn-close-inventory"),
+    modalInventory: document.getElementById("modal-inventory"),
+    invGrid: document.getElementById("inv-grid"),
+    invDetailPanel: document.getElementById("inv-detail-panel"),
+    invItemTitle: document.getElementById("inv-item-title"),
+    invItemDesc: document.getElementById("inv-item-desc"),
+    btnInvUse: document.getElementById("btn-inv-use"),
+    btnInvEquip: document.getElementById("btn-inv-equip"),
+    equippedVal: document.getElementById("hud-equipped-val")
+  };
+
+  const modals = {
+    dialog: document.getElementById("modal-dialog"),
+    chest: document.getElementById("modal-chest"),
+    keypad: document.getElementById("modal-keypad"),
+    ad: document.getElementById("modal-ad"),
+    end: document.getElementById("modal-end")
+  };
+
+  // 2. State & Screen Management Helper
+  const showScreen = (screenName) => {
+    Object.entries(screens).forEach(([name, el]) => {
+      if (name === screenName) el.classList.remove("hidden");
+      else el.classList.add("hidden");
+    });
+  };
+
+  const translateUI = () => {
+    // Translate all elements with [data-t]
+    document.querySelectorAll("[data-t]").forEach(el => {
+      const key = el.getAttribute("data-t");
+      el.textContent = game.t(key);
+    });
+
+    // Translate input placeholders or specific tags
+    document.querySelectorAll("[data-t-placeholder]").forEach(el => {
+      const key = el.getAttribute("data-t-placeholder");
+      el.placeholder = game.t(key);
+    });
+
+    // Re-render settings buttons check
+    document.getElementById("btn-lang-tr").classList.toggle("active", game.lang === "tr");
+    document.getElementById("btn-lang-en").classList.toggle("active", game.lang === "en");
+    document.getElementById("btn-sound").textContent = game.audio.muted ? game.t("soundOff") : game.t("soundOn");
+
+    // Difficulty buttons toggle
+    const difficulties = ["easy", "medium", "hard"];
+    difficulties.forEach(diff => {
+      document.getElementById(`btn-diff-${diff}`).classList.toggle("active", game.difficulty === diff);
+    });
+  };
+
+  // Initialize Canvas
+  const canvas = document.getElementById("game-canvas");
+  game.setCanvas(canvas);
+
+  // Translate initial UI
+  translateUI();
+
+  // 3. Main Menu Event Listeners
+  document.getElementById("btn-play").addEventListener("click", () => {
+    game.initNewGame();
+    showScreen("game");
+    game.state.gameState = "playing";
+    game.resizeCanvas();
+  });
+
+  document.getElementById("btn-settings").addEventListener("click", () => {
+    showScreen("settings");
+  });
+
+  document.getElementById("btn-howtoplay").addEventListener("click", () => {
+    showScreen("howtoplay");
+  });
+
+  // Settings Menu Listeners
+  document.getElementById("btn-lang-tr").addEventListener("click", () => {
+    game.lang = "tr";
+    localStorage.setItem("maze_lang", "tr");
+    translateUI();
+  });
+
+  document.getElementById("btn-lang-en").addEventListener("click", () => {
+    game.lang = "en";
+    localStorage.setItem("maze_lang", "en");
+    translateUI();
+  });
+
+  document.getElementById("btn-sound").addEventListener("click", () => {
+    const isMuted = game.audio.toggleMute();
+    localStorage.setItem("maze_audio", (!isMuted).toString());
+    translateUI();
+  });
+
+  const difficulties = ["easy", "medium", "hard"];
+  difficulties.forEach(diff => {
+    document.getElementById(`btn-diff-${diff}`).addEventListener("click", () => {
+      game.difficulty = diff;
+      localStorage.setItem("maze_diff", diff);
+      translateUI();
+    });
+  });
+
+  // Back Buttons
+  document.querySelectorAll(".btn-back").forEach(btn => {
+    btn.addEventListener("click", () => {
+      showScreen("menu");
+    });
+  });
+
+  // 4. In-Game HUD & Inventory Sync
+  game.onStateChange = () => {
+    const s = game.state;
+    const p = s.player;
+
+    // Level and Floor
+    if (hud.levelVal) hud.levelVal.textContent = s.currentLevel;
+    if (hud.floorVal) hud.floorVal.textContent = s.currentFloor + 1;
+    if (hud.maxFloorVal) hud.maxFloorVal.textContent = s.numFloors;
+
+    // Health
+    hud.healthVal.textContent = `${Math.ceil(p.health)}%`;
+    hud.healthBar.style.width = `${p.health}%`;
+    hud.healthBar.className = "progress-bar-fill " + (p.health < 30 ? "bg-red" : p.health < 60 ? "bg-orange" : "bg-green");
+
+    // Stamina
+    if (hud.staminaVal && hud.staminaBar) {
+      const staminaPercent = Math.ceil((p.stamina || 0) / (p.maxStamina || 100) * 100);
+      hud.staminaVal.textContent = `${staminaPercent}%`;
+      hud.staminaBar.style.width = `${staminaPercent}%`;
+      hud.staminaBar.className = "progress-bar-fill " + (staminaPercent < 25 ? "bg-red low-stamina-pulse" : "bg-gold");
+    }
+
+    // Gold
+    hud.goldVal.textContent = p.gold;
+
+    // Fuel
+    if (hud.fuelVal && hud.fuelBar) {
+      hud.fuelVal.textContent = `${Math.ceil(p.fuel)}%`;
+      hud.fuelBar.style.width = `${p.fuel}%`;
+      hud.fuelBar.className = "progress-bar-fill " + (p.fuel < 25 ? "bg-red-pulse" : "bg-gold");
+    }
+
+    // Toggle crosshair visibility in gameplay
+    const crosshair = document.getElementById("fps-crosshair");
+    if (crosshair) {
+      crosshair.style.display = s.gameState === "playing" ? "block" : "none";
+    }
+
+    // Sync Lantern Button state
+    const lanternBtn = document.getElementById("btn-toggle-lantern");
+    const lanternText = document.getElementById("btn-lantern-text");
+    if (lanternBtn && lanternText) {
+      if (s.lanternOn) {
+        lanternText.textContent = game.lang === "tr" ? "Fener Kapat (F)" : "Lantern Off (F)";
+        lanternBtn.style.background = "rgba(245, 158, 11, 0.4)";
+      } else {
+        lanternText.textContent = game.lang === "tr" ? "Fener Aç (F)" : "Lantern On (F)";
+        lanternBtn.style.background = "rgba(255, 255, 255, 0.08)";
+      }
+    }
+
+    // Sync Interact Button text
+    const interactText = document.getElementById("btn-interact-text");
+    if (interactText) {
+      interactText.textContent = game.lang === "tr" ? "Etkileşim (E / Space)" : "Interact (E / Space)";
+    }
+
+    // Quests
+    hud.questsList.innerHTML = "";
+    
+    // Main Quest
+    const mainLi = document.createElement("li");
+    mainLi.textContent = `🎯 ${game.t("exitFound")}`;
+    hud.questsList.appendChild(mainLi);
+
+    // Well & Child Quest
+    if (s.quests.childState !== "solved" && p.inventory.bucket > 0) {
+      const qLi = document.createElement("li");
+      qLi.textContent = `💧 ${game.t("npc.well.drawWater")} (1/2)`;
+      hud.questsList.appendChild(qLi);
+    } else if (s.quests.childState !== "solved" && p.inventory.bucket_full > 0) {
+      const qLi = document.createElement("li");
+      qLi.textContent = `👶 ${game.t("npc.child.greeting")} (2/2)`;
+      hud.questsList.appendChild(qLi);
+    }
+
+    // Mouse Quest
+    if (s.quests.mouseState !== "solved" && p.inventory.cheese > 0) {
+      const qLi = document.createElement("li");
+      qLi.textContent = `🐭 ${game.t("npc.mouse.hasCheese")}`;
+      hud.questsList.appendChild(qLi);
+    }
+
+    // Sync Equipped Item Val
+    const equipped = p.equippedItem;
+    if (equipped) {
+      const emojiMap = {
+        key: "🔑", shears: "✂️", bucket: "🪣", bucket_full: "💧", axe: "🪓", rope: "🪵", compass: "🧭", map_piece: "📜", fuel: "🛢️", cheese: "🧀"
+      };
+      if (hud.equippedVal) hud.equippedVal.textContent = `${emojiMap[equipped] || "📦"} ${game.t("items." + equipped + ".name")}`;
+    } else {
+      if (hud.equippedVal) hud.equippedVal.textContent = game.lang === "tr" ? "Boş" : "Empty";
+    }
+
+    // Compass update (Dynamic pointing needle)
+    const dx = s.exitCell.x - p.x;
+    const dy = s.exitCell.y - p.y;
+    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+    
+    // Check if player has compass item active
+    if (p.inventory.compass > 0) {
+      hud.compassNeedle.style.transform = `rotate(${angle + 90}deg)`; // Adjust standard offset
+      hud.compassNeedle.style.opacity = "1";
+      hud.compassText.textContent = game.t("compassActive");
+    } else {
+      hud.compassNeedle.style.transform = "rotate(0deg)";
+      hud.compassNeedle.style.opacity = "0.2";
+      hud.compassText.textContent = game.t("compassInactive");
+    }
+  };
+
+  // 5. Virtual D-Pad Hold Binding (Mobile & Mouse)
+  const bindDpad = (btnId, keyName) => {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    const setKey = (val) => {
+      if (game.keys) game.keys[keyName] = val;
+    };
+    
+    // Mouse Events
+    btn.addEventListener("mousedown", () => setKey(true));
+    btn.addEventListener("mouseup", () => setKey(false));
+    btn.addEventListener("mouseleave", () => setKey(false));
+    
+    // Touch Events (mobile friendly, prevents pinch zoom / default scrolls)
+    btn.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      setKey(true);
+    }, { passive: false });
+    btn.addEventListener("touchend", (e) => {
+      e.preventDefault();
+      setKey(false);
+    }, { passive: false });
+    btn.addEventListener("touchcancel", (e) => {
+      e.preventDefault();
+      setKey(false);
+    }, { passive: false });
+  };
+
+  bindDpad("btn-dpad-up", "arrowup");
+  bindDpad("btn-dpad-down", "arrowdown");
+  bindDpad("btn-dpad-left", "arrowleft");
+  bindDpad("btn-dpad-right", "arrowright");
+
+  // Handle resizing window
+  window.addEventListener("resize", () => {
+    game.resizeCanvas();
+  });
+
+  // 7. Modal Callbacks
+  // Dialogue Overlay (NPCs, Obstacles & Ancient Scrolls)
+  game.onDialog = (config) => {
+    modals.dialog.innerHTML = "";
+    modals.dialog.classList.remove("hidden");
+
+    // Render as a spooky ancient parchment note if it is a clue
+    if (config.isClue) {
+      const container = document.createElement("div");
+      container.className = "parchment-container animate-fade-in";
+      container.innerHTML = `
+        <div class="parchment-scroll">
+          <h2 class="parchment-title">${config.title}</h2>
+          <p class="parchment-text">${config.text.replace(/\n/g, '<br>')}</p>
+          <div class="parchment-buttons" id="dialog-buttons"></div>
+        </div>
+      `;
+      modals.dialog.appendChild(container);
+
+      const btnContainer = container.querySelector("#dialog-buttons");
+      config.choices.forEach(c => {
+        const btn = document.createElement("button");
+        btn.className = "btn-parchment";
+        btn.textContent = c.text;
+        btn.addEventListener("click", () => {
+          modals.dialog.classList.add("hidden");
+          c.action();
+        });
+        btnContainer.appendChild(btn);
+      });
+      return;
+    }
+
+    // Determine NPC avatar/emoji
+    let npcEmoji = "🚧";
+    const titleLower = config.title.toLowerCase();
+    if (titleLower.includes("gezgin") || titleLower.includes("traveler")) {
+      npcEmoji = "🤠";
+    } else if (titleLower.includes("tüccar") || titleLower.includes("merchant")) {
+      npcEmoji = "👳";
+    } else if (titleLower.includes("çocuk") || titleLower.includes("child")) {
+      npcEmoji = "👶";
+    } else if (titleLower.includes("fare") || titleLower.includes("sıçan") || titleLower.includes("mouse") || titleLower.includes("rat")) {
+      npcEmoji = "🐀";
+    }
+
+    const container = document.createElement("div");
+    container.className = "dialog-container";
+
+    container.innerHTML = `
+      <!-- NPC Speech Bubble on Left -->
+      <div class="dialog-npc-side animate-fade-in-left">
+        <div class="dialog-portrait-wrapper">
+          <div class="dialog-avatar" style="background: var(--violet);">${npcEmoji}</div>
+          <span class="dialog-name">${config.title}</span>
+        </div>
+        <div class="dialog-bubble">
+          <p style="margin: 0;">${config.text}</p>
+        </div>
+      </div>
+
+      <!-- Player Options Bubble on Right -->
+      <div class="dialog-player-side animate-fade-in-right">
+        <div class="dialog-portrait-wrapper">
+          <div class="dialog-avatar" style="background: var(--cyan);">🕵️</div>
+          <span class="dialog-name">${game.state.lang === "tr" ? "Kaşif" : "Explorer"}</span>
+        </div>
+        <div class="dialog-bubble" style="display: flex; flex-direction: column; gap: 8px;">
+          <div class="modal-buttons" id="dialog-buttons" style="flex-direction: column; width: 100%;"></div>
+        </div>
+      </div>
+    `;
+
+    modals.dialog.appendChild(container);
+
+    const btnContainer = container.querySelector("#dialog-buttons");
+    config.choices.forEach(c => {
+      const btn = document.createElement("button");
+      btn.className = "btn-modal btn-primary";
+      btn.style.width = "100%";
+      btn.style.margin = "0";
+      btn.textContent = c.text;
+      btn.addEventListener("click", () => {
+        modals.dialog.classList.add("hidden");
+        c.action();
+      });
+      btnContainer.appendChild(btn);
+    });
+  };
+
+  // Chest Overlay
+  game.onChest = (config) => {
+    modals.chest.innerHTML = "";
+    modals.chest.classList.remove("hidden");
+
+    const content = document.createElement("div");
+    content.className = "modal-content glass text-center";
+
+    if (config.isOpeningPrompt) {
+      content.innerHTML = `
+        <div class="chest-icon-anim animate-float">📦</div>
+        <h3 class="modal-title glow-text" data-t="chest.prompt">${game.t("chest.prompt")}</h3>
+        <div class="modal-buttons mt-6">
+          <button class="btn-modal btn-success" id="btn-chest-open" data-t="chest.openBtn">${game.t("chest.openBtn")}</button>
+          <button class="btn-modal btn-danger" id="btn-chest-leave" data-t="chest.leaveBtn">${game.t("chest.leaveBtn")}</button>
+        </div>
+      `;
+      modals.chest.appendChild(content);
+
+      content.querySelector("#btn-chest-open").addEventListener("click", config.onOpen);
+      content.querySelector("#btn-chest-leave").addEventListener("click", config.onLeave);
+    } else {
+      // Chest opening outcome screen
+      let adButtonHTML = "";
+      if (config.detail) {
+        // Only allow ad undo for traps
+        adButtonHTML = `<button class="btn-modal btn-warning w-full" id="btn-chest-ad" data-t="chest.adUndo">${game.t("chest.adUndo")}</button>`;
+      }
+
+      content.innerHTML = `
+        <div class="outcome-title text-violet glow-text text-2xl font-bold">${config.title}</div>
+        <p class="modal-text my-6">${config.text}</p>
+        <div class="modal-buttons flex-col gap-3">
+          ${adButtonHTML}
+          <button class="btn-modal btn-primary w-full" id="btn-chest-close">${config.detail ? game.t("chest.adClose") : game.t("close")}</button>
+        </div>
+      `;
+      modals.chest.appendChild(content);
+
+      if (config.detail) {
+        content.querySelector("#btn-chest-ad").addEventListener("click", () => {
+          modals.chest.classList.add("hidden");
+          config.onWatchAd();
+        });
+      }
+      content.querySelector("#btn-chest-close").addEventListener("click", () => {
+        modals.chest.classList.add("hidden");
+        config.onClose();
+      });
+    }
+  };
+
+  // Combination Keypad Overlay
+  game.onKeypad = (correctCode, onSubmit) => {
+    modals.keypad.innerHTML = "";
+    modals.keypad.classList.remove("hidden");
+
+    let entered = "";
+    const content = document.createElement("div");
+    content.className = "modal-content glass text-center max-w-sm";
+
+    content.innerHTML = `
+      <h3 class="modal-title text-cyan glow-text" data-t="puzzle.keypadTitle">${game.t("puzzle.keypadTitle")}</h3>
+      <div class="keypad-display" id="keypad-display">----</div>
+      <div class="keypad-grid">
+        <button class="btn-key" data-num="1">1</button>
+        <button class="btn-key" data-num="2">2</button>
+        <button class="btn-key" data-num="3">3</button>
+        <button class="btn-key" data-num="4">4</button>
+        <button class="btn-key" data-num="5">5</button>
+        <button class="btn-key" data-num="6">6</button>
+        <button class="btn-key" data-num="7">7</button>
+        <button class="btn-key" data-num="8">8</button>
+        <button class="btn-key" data-num="9">9</button>
+        <button class="btn-key btn-danger" id="btn-key-clear">C</button>
+        <button class="btn-key" data-num="0">0</button>
+        <button class="btn-key btn-success" id="btn-key-enter">OK</button>
+      </div>
+      <button class="btn-modal btn-primary mt-4 w-full" id="btn-keypad-close">${game.t("close")}</button>
+    `;
+    modals.keypad.appendChild(content);
+
+    const display = content.querySelector("#keypad-display");
+
+    const updateDisplay = () => {
+      display.textContent = entered.padEnd(4, "-");
+    };
+
+    content.querySelectorAll(".btn-key[data-num]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        if (entered.length < 4) {
+          entered += btn.getAttribute("data-num");
+          game.audio.playStep(); // button beep
+          updateDisplay();
+        }
+      });
+    });
+
+    content.querySelector("#btn-key-clear").addEventListener("click", () => {
+      entered = "";
+      game.audio.playStep();
+      updateDisplay();
+    });
+
+    content.querySelector("#btn-key-enter").addEventListener("click", () => {
+      modals.keypad.classList.add("hidden");
+      if (entered === correctCode) {
+        alert(game.t("puzzle.keypadCorrect"));
+        onSubmit(true);
+      } else {
+        alert(game.t("puzzle.keypadIncorrect"));
+        onSubmit(false);
+      }
+    });
+
+    content.querySelector("#btn-keypad-close").addEventListener("click", () => {
+      modals.keypad.classList.add("hidden");
+      game.state.gameState = "playing";
+    });
+  };
+
+  // Random Event Dialogue overlay
+  game.onEvent = (config) => {
+    modals.dialog.innerHTML = "";
+    modals.dialog.classList.remove("hidden");
+
+    const content = document.createElement("div");
+    content.className = "modal-content glass border-orange";
+
+    content.innerHTML = `
+      <h3 class="modal-title text-orange glow-text">⚠️ Olay / Event</h3>
+      <p class="modal-text">${config.text}</p>
+      <div class="modal-buttons" id="event-buttons"></div>
+    `;
+
+    modals.dialog.appendChild(content);
+
+    const btnContainer = content.querySelector("#event-buttons");
+    config.choices.forEach(c => {
+      const btn = document.createElement("button");
+      btn.className = "btn-modal btn-primary w-full text-left";
+      btn.textContent = c.text;
+      btn.addEventListener("click", () => {
+        modals.dialog.classList.add("hidden");
+        c.action();
+      });
+      btnContainer.appendChild(btn);
+    });
+  };
+
+  // Mock Rewarded Ad Overlay
+  game.onAd = (durationSeconds, onFinished, onSkip) => {
+    modals.ad.innerHTML = "";
+    modals.ad.classList.remove("hidden");
+
+    const adMockBrands = [
+      {
+        title: "Angry Goblins 3D",
+        desc: "CRUSH Goblins. DEFEND the Castle. Solve puzzles with explosions! Play FREE now!",
+        icon: "💥"
+      },
+      {
+        title: "Candy Match RPG",
+        desc: "Connect 3 jellies to cast fireballs! Level 10,000 awaits! Extremely addictive!",
+        icon: "🍬"
+      },
+      {
+        title: "Subway Run 4D",
+        desc: "Infinite running, now in 4 dimensions! Dodge temporal anomaly cars! Grab the coins!",
+        icon: "🏃‍♂️"
+      }
+    ];
+
+    const ad = adMockBrands[Math.floor(Math.random() * adMockBrands.length)];
+    let timeLeft = durationSeconds;
+
+    const content = document.createElement("div");
+    content.className = "modal-content glass ad-mock text-center";
+
+    content.innerHTML = `
+      <div class="ad-label" data-t="adWatchTitle">${game.t("adWatchTitle")}</div>
+      <div class="ad-card glass my-6">
+        <div class="ad-icon animate-bounce">${ad.icon}</div>
+        <h4 class="ad-name text-violet glow-text text-xl font-bold mt-2">${ad.title}</h4>
+        <p class="ad-desc text-gray text-sm mt-3 px-4">${ad.desc}</p>
+        <button class="btn-modal btn-success mt-4 scale-95 pointer-events-none">DOWNLOAD FREE</button>
+      </div>
+      <div class="progress-bar my-4 w-full">
+        <div class="progress-bar-fill bg-violet" id="ad-progress" style="width: 100%;"></div>
+      </div>
+      <div class="flex justify-between items-center px-4">
+        <span class="text-sm font-semibold text-gray" id="ad-timer">${game.t("adSeconds", { sec: timeLeft })}</span>
+        <button class="btn-skip disabled" id="btn-ad-skip" disabled data-t="skip">${game.t("skip")}</button>
+      </div>
+    `;
+    modals.ad.appendChild(content);
+
+    const timerText = content.querySelector("#ad-timer");
+    const progress = content.querySelector("#ad-progress");
+    const skipBtn = content.querySelector("#btn-ad-skip");
+
+    const interval = setInterval(() => {
+      timeLeft--;
+      if (timeLeft <= 0) {
+        clearInterval(interval);
+        progress.style.width = "0%";
+        timerText.textContent = game.t("adRewardText");
+        
+        // Enable Skip to claim
+        skipBtn.removeAttribute("disabled");
+        skipBtn.className = "btn-skip active";
+        skipBtn.textContent = game.t("close");
+        skipBtn.addEventListener("click", () => {
+          modals.ad.classList.add("hidden");
+          onFinished();
+        });
+      } else {
+        progress.style.width = `${(timeLeft / durationSeconds) * 100}%`;
+        timerText.textContent = game.t("adSeconds", { sec: timeLeft });
+      }
+    }, 1000);
+
+    // Initial skip button binds to early exit without reward
+    skipBtn.addEventListener("click", () => {
+      if (timeLeft > 0) {
+        clearInterval(interval);
+        modals.ad.classList.add("hidden");
+        onSkip();
+      }
+    });
+  };
+
+  // Game End Screens (Victory / Game Over)
+  game.onGameEnd = (isVictory) => {
+    modals.end.innerHTML = "";
+    modals.end.classList.remove("hidden");
+
+    const content = document.createElement("div");
+    content.className = `modal-content glass text-center ${isVictory ? "border-success" : "border-danger"}`;
+
+    const title = isVictory ? game.t("victory") : game.t("gameOver");
+    const desc = isVictory ? game.t("victoryDesc") : game.t("gameOverDesc");
+    const emoji = isVictory ? "🏆" : "💀";
+    const titleColor = isVictory ? "text-green" : "text-red";
+
+    let adReviveBtn = "";
+    if (!isVictory) {
+      // Allow watch ad to revive
+      adReviveBtn = `<button class="btn-modal btn-warning w-full py-3 mb-3 glow-box" id="btn-revive-ad">${game.t("reviveBtn")}</button>`;
+    }
+
+    content.innerHTML = `
+      <div class="end-emoji animate-float">${emoji}</div>
+      <h2 class="modal-title ${titleColor} glow-text text-3xl font-extrabold">${title}</h2>
+      <p class="modal-text my-6 px-4">${desc}</p>
+      
+      <div class="stats-panel glass py-4 px-6 mb-6 inline-block text-left w-full">
+        <div>💰 ${game.t("gold")}: <span class="font-bold text-gold">${game.state.player.gold}</span></div>
+        <div>👣 ${game.t("back")} / Steps: <span class="font-bold text-violet">${game.state.stepsTaken}</span></div>
+        <div>🧩 ${game.t("difficulty")}: <span class="font-bold text-cyan">${game.t("diff" + game.difficulty.charAt(0).toUpperCase() + game.difficulty.slice(1))}</span></div>
+      </div>
+
+      <div class="modal-buttons flex-col w-full">
+        ${adReviveBtn}
+        <button class="btn-modal btn-primary w-full py-3" id="btn-restart" data-t="restart">${game.t("restart")}</button>
+        <button class="btn-modal btn-danger w-full py-3 mt-2" id="btn-main-menu">${game.t("back")}</button>
+      </div>
+    `;
+    modals.end.appendChild(content);
+
+    if (!isVictory) {
+      content.querySelector("#btn-revive-ad").addEventListener("click", () => {
+        modals.end.classList.add("hidden");
+        game.revivePlayer();
+      });
+    }
+
+    content.querySelector("#btn-restart").addEventListener("click", () => {
+      modals.end.classList.add("hidden");
+      game.initNewGame();
+      game.state.gameState = "playing";
+      game.draw();
+    });
+
+    content.querySelector("#btn-main-menu").addEventListener("click", () => {
+      modals.end.classList.add("hidden");
+      showScreen("menu");
+    });
+  };
+
+  // --- RPG Inventory Modal Logic ---
+  let selectedItemId = null;
+
+  const renderInventory = () => {
+    const s = game.state;
+    const p = s.player;
+    hud.invGrid.innerHTML = "";
+
+    const emojiMap = {
+      key: "🔑", shears: "✂️", bucket: "🪣", bucket_full: "💧", axe: "🪓", rope: "🪵", compass: "🧭", map_piece: "📜", fuel: "🛢️", cheese: "🧀"
+    };
+
+    Object.entries(p.inventory).forEach(([itemId, count]) => {
+      if (count <= 0) return;
+
+      const slot = document.createElement("div");
+      slot.className = "inv-slot";
+      if (selectedItemId === itemId) slot.classList.add("active");
+      if (p.equippedItem === itemId) {
+        slot.style.borderColor = "var(--gold)";
+        slot.style.borderWidth = "2px";
+      }
+
+      slot.innerHTML = `
+        <div class="inv-slot-emoji">${emojiMap[itemId] || "📦"}</div>
+        <div class="inv-slot-count">x${count}</div>
+      `;
+
+      slot.addEventListener("click", () => {
+        selectedItemId = itemId;
+        renderInventory();
+        showItemDetails(itemId);
+      });
+
+      hud.invGrid.appendChild(slot);
+    });
+
+    if (!selectedItemId || p.inventory[selectedItemId] <= 0) {
+      hud.invDetailPanel.classList.add("hidden");
+      selectedItemId = null;
+    } else {
+      showItemDetails(selectedItemId);
+    }
+  };
+
+  const showItemDetails = (itemId) => {
+    const p = game.state.player;
+    hud.invDetailPanel.classList.remove("hidden");
+    
+    const name = game.t(`items.${itemId}.name`);
+    const desc = game.t(`items.${itemId}.desc`);
+
+    hud.invItemTitle.textContent = name;
+    hud.invItemDesc.textContent = desc;
+
+    // Use Button
+    const usableItems = ["fuel", "map_piece", "compass"];
+    if (usableItems.includes(itemId)) {
+      hud.btnInvUse.style.display = "block";
+      hud.btnInvUse.textContent = game.lang === "tr" ? "Kullan" : "Use";
+      
+      const newUse = hud.btnInvUse.cloneNode(true);
+      hud.btnInvUse.replaceWith(newUse);
+      hud.btnInvUse = newUse;
+      
+      hud.btnInvUse.addEventListener("click", () => {
+        game.useInventoryItem(itemId);
+        renderInventory();
+        game.onStateChange();
+      });
+    } else {
+      hud.btnInvUse.style.display = "none";
+    }
+
+    // Equip/Unequip Button
+    const isEquipped = p.equippedItem === itemId;
+    hud.btnInvEquip.textContent = isEquipped 
+      ? (game.lang === "tr" ? "Bırak" : "Unequip") 
+      : (game.lang === "tr" ? "Kuşan" : "Equip");
+
+    const newEquip = hud.btnInvEquip.cloneNode(true);
+    hud.btnInvEquip.replaceWith(newEquip);
+    hud.btnInvEquip = newEquip;
+
+    hud.btnInvEquip.addEventListener("click", () => {
+      if (isEquipped) {
+        p.equippedItem = null;
+      } else {
+        p.equippedItem = itemId;
+      }
+      renderInventory();
+      game.onStateChange();
+      game.draw();
+    });
+  };
+
+  // Open Bag Button
+  if (hud.btnOpenInventory) {
+    hud.btnOpenInventory.addEventListener("click", () => {
+      if (game.state.gameState !== "playing") return;
+      game.state.gameState = "modal";
+      hud.modalInventory.classList.remove("hidden");
+      selectedItemId = null;
+      renderInventory();
+    });
+  }
+
+  // Toggle Lantern Button Click
+  const btnToggleLantern = document.getElementById("btn-toggle-lantern");
+  if (btnToggleLantern) {
+    btnToggleLantern.addEventListener("click", () => {
+      game.toggleLantern();
+    });
+  }
+
+  // Mobile Interact Button Click
+  const btnInteract = document.getElementById("btn-interact");
+  if (btnInteract) {
+    btnInteract.addEventListener("click", () => {
+      if (game.state && game.state.gameState === "modal") {
+        // Dispatch Escape key down to trigger the modal close logic
+        const escapeEvent = new KeyboardEvent("keydown", { key: "Escape" });
+        window.dispatchEvent(escapeEvent);
+      } else {
+        game.interactWithClosest();
+      }
+    });
+  }
+
+  // Close Bag Button
+  if (hud.btnCloseInventory) {
+    hud.btnCloseInventory.addEventListener("click", () => {
+      game.state.gameState = "playing";
+      hud.modalInventory.classList.add("hidden");
+    });
+  }
+
+  // Open Map / Close Map helpers
+  let mapAnimId = null;
+  const openMap = () => {
+    if (game.state.gameState !== "playing") return;
+    game.state.gameState = "modal";
+    document.getElementById("modal-map").classList.remove("hidden");
+    
+    const updateMapLoop = () => {
+      drawMap();
+      if (!document.getElementById("modal-map").classList.contains("hidden")) {
+        mapAnimId = requestAnimationFrame(updateMapLoop);
+      }
+    };
+    updateMapLoop();
+  };
+
+  const closeMap = () => {
+    game.state.gameState = "playing";
+    document.getElementById("modal-map").classList.add("hidden");
+    if (mapAnimId) {
+      cancelAnimationFrame(mapAnimId);
+      mapAnimId = null;
+    }
+  };
+
+  // Open Map Button Click
+  const btnOpenMap = document.getElementById("btn-open-map");
+  if (btnOpenMap) {
+    btnOpenMap.addEventListener("click", () => {
+      openMap();
+    });
+  }
+
+  // Close Map Button Click
+  const btnCloseMap = document.getElementById("btn-close-map");
+  if (btnCloseMap) {
+    btnCloseMap.addEventListener("click", () => {
+      closeMap();
+    });
+  }
+
+  // Hotkeys (I/E/M and Modal Closers)
+  window.addEventListener("keydown", (e) => {
+    const k = e.key.toLowerCase();
+
+    // If a modal is active, allow closing it with Escape, Backspace, or E
+    if (game.state && game.state.gameState === "modal") {
+      if (e.key === "Escape" || e.key === "Backspace" || k === "e") {
+        e.preventDefault();
+
+        // 1. Dialogue Modal
+        const dialogModal = document.getElementById("modal-dialog");
+        if (dialogModal && !dialogModal.classList.contains("hidden")) {
+          const btns = dialogModal.querySelectorAll(".btn-modal");
+          if (btns.length > 0) {
+            // Click the last option (always Close/Cancel/Leave)
+            btns[btns.length - 1].click();
+            return;
+          }
+        }
+
+        // 2. Chest Modal
+        const chestModal = document.getElementById("modal-chest");
+        if (chestModal && !chestModal.classList.contains("hidden")) {
+          const leaveBtn = chestModal.querySelector("#btn-chest-leave");
+          const closeBtn = chestModal.querySelector("#btn-chest-close");
+          if (leaveBtn) {
+            leaveBtn.click();
+          } else if (closeBtn) {
+            closeBtn.click();
+          }
+          return;
+        }
+
+        // 3. Keypad Modal
+        const keypadModal = document.getElementById("modal-keypad");
+        if (keypadModal && !keypadModal.classList.contains("hidden")) {
+          const closeBtn = keypadModal.querySelector("#btn-keypad-close");
+          if (closeBtn) closeBtn.click();
+          return;
+        }
+
+        // 4. Inventory Modal
+        const invModal = document.getElementById("modal-inventory");
+        if (invModal && !invModal.classList.contains("hidden")) {
+          const closeBtn = document.getElementById("btn-close-inventory");
+          if (closeBtn) closeBtn.click();
+          return;
+        }
+
+        // 5. Map Modal
+        const mapModal = document.getElementById("modal-map");
+        if (mapModal && !mapModal.classList.contains("hidden")) {
+          const closeBtn = document.getElementById("btn-close-map");
+          if (closeBtn) closeBtn.click();
+          return;
+        }
+      }
+    }
+
+    if (k === "i" || k === "b") {
+      if (game.state && game.state.gameState === "playing") {
+        e.preventDefault();
+        game.state.gameState = "modal";
+        hud.modalInventory.classList.remove("hidden");
+        selectedItemId = null;
+        renderInventory();
+      } else if (game.state && game.state.gameState === "modal" && !hud.modalInventory.classList.contains("hidden")) {
+        e.preventDefault();
+        game.state.gameState = "playing";
+        hud.modalInventory.classList.add("hidden");
+      }
+    } else if (k === "m") {
+      if (game.state && game.state.gameState === "playing") {
+        e.preventDefault();
+        openMap();
+      } else if (game.state && game.state.gameState === "modal" && !document.getElementById("modal-map").classList.contains("hidden")) {
+        e.preventDefault();
+        closeMap();
+      }
+    }
+  });
+
+  // Render 2D Treasure Map on canvas
+  const drawMap = () => {
+    const s = game.state;
+    if (!s) return;
+    
+    const canvas = document.getElementById("map-canvas");
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext("2d");
+    const w = canvas.width;
+    const h = canvas.height;
+    
+    // Clear background to antique parchment
+    ctx.fillStyle = "#eedcbe";
+    ctx.fillRect(0, 0, w, h);
+    
+    const grid = s.floors[s.currentFloor];
+    const cellSize = Math.min(w / s.width, h / s.height);
+    const offsetX = (w - s.width * cellSize) / 2;
+    const offsetY = (h - s.height * cellSize) / 2;
+    
+    // Draw cells
+    for (let y = 0; y < s.height; y++) {
+      for (let x = 0; x < s.width; x++) {
+        const cell = grid[y][x];
+        const cx = offsetX + x * cellSize;
+        const cy = offsetY + y * cellSize;
+        
+        if (cell.type === "wall") {
+          // Draw hedge wall (leaf green)
+          ctx.fillStyle = "#166534";
+          ctx.fillRect(cx, cy, cellSize, cellSize);
+          ctx.strokeStyle = "#14532d";
+          ctx.lineWidth = 1;
+          ctx.strokeRect(cx, cy, cellSize, cellSize);
+        } else {
+          // Draw floor paths (clean path beige)
+          ctx.fillStyle = "#f5ebd6";
+          ctx.fillRect(cx, cy, cellSize, cellSize);
+          ctx.strokeStyle = "rgba(133, 77, 14, 0.08)";
+          ctx.lineWidth = 1;
+          ctx.strokeRect(cx, cy, cellSize, cellSize);
+          
+          // Draw start / exit indicators
+          if (cell.isEntrance) {
+            ctx.fillStyle = "#16a34a";
+            ctx.font = `bold ${Math.floor(cellSize * 0.7)}px Arial`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("S", cx + cellSize/2, cy + cellSize/2);
+          } else if (cell.isExit) {
+            ctx.fillStyle = "#9333ea";
+            ctx.font = `bold ${Math.floor(cellSize * 0.7)}px Arial`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("🪜", cx + cellSize/2, cy + cellSize/2);
+          }
+          
+          // Draw chests
+          if (cell.chest) {
+            if (cell.chest.opened) {
+              // Opened chest: draw chest emoji + red X
+              ctx.font = `${Math.floor(cellSize * 0.65)}px Arial`;
+              ctx.textAlign = "center";
+              ctx.textBaseline = "middle";
+              ctx.fillText("📦", cx + cellSize/2, cy + cellSize/2);
+              
+              ctx.strokeStyle = "#ef4444";
+              ctx.lineWidth = 2.5;
+              ctx.beginPath();
+              ctx.moveTo(cx + 2, cy + 2);
+              ctx.lineTo(cx + cellSize - 2, cy + cellSize - 2);
+              ctx.moveTo(cx + cellSize - 2, cy + 2);
+              ctx.lineTo(cx + 2, cy + cellSize - 2);
+              ctx.stroke();
+            } else {
+              // Closed chest: draw chest emoji
+              ctx.font = `${Math.floor(cellSize * 0.65)}px Arial`;
+              ctx.textAlign = "center";
+              ctx.textBaseline = "middle";
+              ctx.fillText("📦", cx + cellSize/2, cy + cellSize/2);
+            }
+          }
+          
+          // Draw NPCs (distinct colored markers with emojis per NPC type)
+          if (cell.npc) {
+            // Glowing ring for visibility
+            ctx.strokeStyle = "#fbbf24";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(cx + cellSize/2, cy + cellSize/2, cellSize * 0.38, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Colored background circle per NPC type
+            const npcColors = { well: "#2563eb", child: "#f97316", mouse: "#78716c", traveler: "#065f46", merchant: "#7c3aed" };
+            ctx.fillStyle = npcColors[cell.npc.id] || "#0284c7";
+            ctx.beginPath();
+            ctx.arc(cx + cellSize/2, cy + cellSize/2, cellSize * 0.32, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Emoji per NPC type
+            const npcEmojis = { well: "💧", child: "👦", mouse: "🐭", traveler: "🧓", merchant: "💰" };
+            ctx.font = `${Math.floor(cellSize * 0.5)}px Arial`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(npcEmojis[cell.npc.id] || "?", cx + cellSize/2, cy + cellSize/2);
+          }
+        }
+      }
+    }
+    
+    // Draw player trail
+    if (s.playerTrail && s.playerTrail.length > 0) {
+      ctx.strokeStyle = "#ef4444";
+      ctx.lineWidth = Math.max(3, cellSize * 0.2);
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      
+      // Draw dotted path line
+      ctx.setLineDash([cellSize * 0.3, cellSize * 0.3]);
+      ctx.beginPath();
+      s.playerTrail.forEach((pos, idx) => {
+        const cx = offsetX + (pos.x + 0.5) * cellSize;
+        const cy = offsetY + (pos.y + 0.5) * cellSize;
+        if (idx === 0) ctx.moveTo(cx, cy);
+        else ctx.lineTo(cx, cy);
+      });
+      ctx.stroke();
+      ctx.setLineDash([]); // reset dashes
+    }
+    
+    // Draw player current position red dot
+    const px = offsetX + s.player.x * cellSize;
+    const py = offsetY + s.player.y * cellSize;
+    
+    // Blinking pulse ring
+    const pulse = cellSize * 0.4 + Math.sin(Date.now() * 0.01) * cellSize * 0.15;
+    ctx.fillStyle = "rgba(239, 68, 68, 0.35)";
+    ctx.beginPath();
+    ctx.arc(px, py, pulse, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Inner red dot
+    ctx.fillStyle = "#ef4444";
+    ctx.beginPath();
+    ctx.arc(px, py, cellSize * 0.25, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Direction arrow pointer
+    ctx.strokeStyle = "#991b1b";
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(px, py);
+    ctx.lineTo(px + Math.cos(s.player.angle) * cellSize * 0.75, py + Math.sin(s.player.angle) * cellSize * 0.75);
+    ctx.stroke();
+  };
+}

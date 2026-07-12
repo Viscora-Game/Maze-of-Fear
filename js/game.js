@@ -645,7 +645,7 @@ export class Game {
     const grid = this.state.floors[this.state.currentFloor];
     let closestCell = null;
     let closestType = null;
-    let minDistance = 2.2; // max interaction range
+    let minDistance = 1.6; // max interaction range
 
     // Scan a 5x5 region around the player's grid cell
     const px = Math.floor(p.x);

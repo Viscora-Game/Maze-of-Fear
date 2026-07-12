@@ -429,7 +429,7 @@ export class CanvasRenderer {
         const dist = Math.hypot(p.x - (data.x + 0.5), p.y - (data.y + 0.5));
 
         // Only allow interaction if close (Three.js 3D raycast already guarantees line of sight)
-        if (dist <= 2.2) {
+        if (dist <= 1.6) {
           if (this.onEntityClick) {
             this.onEntityClick(data.type, data.cell);
           }
@@ -833,102 +833,112 @@ export class CanvasRenderer {
             npcSubGroup.userData = { type: "npc", x: x, y: y, cell: cell };
             this.npcGroups[`${x},${y}`] = npcSubGroup;
             if (cell.npc.id === "mouse") {
-              // Mouse/Rat stylized model
-              // Legs
-              const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.03, 4), new THREE.MeshStandardMaterial({ color: "#fda4af" }));
-              legL.position.set(-0.03, 0.015, 0.04);
-              const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.03, 4), new THREE.MeshStandardMaterial({ color: "#fda4af" }));
-              legR.position.set(0.03, 0.015, 0.04);
-              const legBL = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.03, 4), new THREE.MeshStandardMaterial({ color: "#fda4af" }));
-              legBL.position.set(-0.03, 0.015, -0.04);
-              const legBR = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.03, 4), new THREE.MeshStandardMaterial({ color: "#fda4af" }));
-              legBR.position.set(0.03, 0.015, -0.04);
-              npcSubGroup.add(legL, legR, legBL, legBR);
+              // 🐭 Detailed Realistic Low-Poly Mouse/Rat Model
+              const furMat = new THREE.MeshStandardMaterial({ color: "#54463c", roughness: 0.95 }); // dark warm brown fur
+              const skinMat = new THREE.MeshStandardMaterial({ color: "#f87171", roughness: 0.85 }); // soft pink skin for snout, tail, ears
+              const eyeMat = new THREE.MeshStandardMaterial({ 
+                color: "#ef4444", 
+                emissive: "#dc2626", 
+                emissiveIntensity: 3.0, // glowing red eyes in the dark!
+                roughness: 0.2 
+              });
+              const whiskerMat = new THREE.MeshBasicMaterial({ color: "#1f2937" }); // dark slate whiskers
 
-              // Elongated body
-              const body = new THREE.Mesh(
-                new THREE.SphereGeometry(0.08, 10, 10),
-                new THREE.MeshStandardMaterial({ color: "#78716c", roughness: 0.8 })
-              );
-              body.scale.set(1.4, 0.75, 0.75);
-              body.position.y = 0.06;
+              // 1. Tiny legs with claws/paws
+              const legGeo = new THREE.CylinderGeometry(0.007, 0.007, 0.035, 5);
+              const legLF = new THREE.Mesh(legGeo, furMat); legLF.position.set(-0.03, 0.015, 0.04);
+              const legRF = new THREE.Mesh(legGeo, furMat); legRF.position.set(0.03, 0.015, 0.04);
+              const legLB = new THREE.Mesh(legGeo, furMat); legLB.position.set(-0.04, 0.015, -0.04);
+              const legRB = new THREE.Mesh(legGeo, furMat); legRB.position.set(0.04, 0.015, -0.04);
+              
+              // Small pink paws
+              const pawGeo = new THREE.SphereGeometry(0.01, 5, 5);
+              const pawLF = new THREE.Mesh(pawGeo, skinMat); pawLF.position.set(-0.03, 0.002, 0.052); pawLF.scale.set(1, 0.4, 1.5);
+              const pawRF = new THREE.Mesh(pawGeo, skinMat); pawRF.position.set(0.03, 0.002, 0.052); pawRF.scale.set(1, 0.4, 1.5);
+              const pawLB = new THREE.Mesh(pawGeo, skinMat); pawLB.position.set(-0.04, 0.002, -0.052); pawLB.scale.set(1, 0.4, 1.5);
+              const pawRB = new THREE.Mesh(pawGeo, skinMat); pawRB.position.set(0.04, 0.002, -0.052); pawRB.scale.set(1, 0.4, 1.5);
+              
+              npcSubGroup.add(legLF, legRF, legLB, legRB, pawLF, pawRF, pawLB, pawRB);
+
+              // 2. Tear-shaped organic body
+              const body = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 10), furMat);
+              body.scale.set(1.4, 0.8, 0.85); // teardrop shape
+              body.position.set(0, 0.06, 0);
               npcSubGroup.add(body);
 
-              // Head
-              const head = new THREE.Mesh(
-                new THREE.SphereGeometry(0.055, 10, 10),
-                new THREE.MeshStandardMaterial({ color: "#78716c", roughness: 0.8 })
-              );
-              head.position.set(0.09, 0.09, 0);
+              // 3. Head (tapering forward)
+              const head = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 10), furMat);
+              head.position.set(0.08, 0.085, 0);
+              head.scale.set(1.2, 1.0, 1.0);
               npcSubGroup.add(head);
 
-              // Snout/Muzzle
-              const snout = new THREE.Mesh(
-                new THREE.ConeGeometry(0.02, 0.05, 8),
-                new THREE.MeshStandardMaterial({ color: "#a8a29e", roughness: 0.85 })
-              );
+              // 4. Muzzle/Snout
+              const snout = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.05, 8), furMat);
               snout.rotation.z = -Math.PI / 2;
-              snout.position.set(0.14, 0.08, 0);
+              snout.position.set(0.13, 0.075, 0);
               npcSubGroup.add(snout);
 
-              // Nose Tip
-              const noseTip = new THREE.Mesh(
-                new THREE.SphereGeometry(0.01, 6, 6),
-                new THREE.MeshStandardMaterial({ color: "#fda4af" })
-              );
-              noseTip.position.set(0.165, 0.08, 0);
+              // 5. Pink Nose Tip
+              const noseTip = new THREE.Mesh(new THREE.SphereGeometry(0.008, 6, 6), skinMat);
+              noseTip.position.set(0.156, 0.075, 0);
               npcSubGroup.add(noseTip);
 
-              // Glowing Red eyes for spooky dungeon feel!
-              const eyeMat = new THREE.MeshBasicMaterial({ color: "#ef4444" });
-              const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.008, 5, 5), eyeMat);
-              eyeL.position.set(0.12, 0.11, 0.028);
-              const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.008, 5, 5), eyeMat);
-              eyeR.position.set(0.12, 0.11, -0.028);
+              // 6. Glowing Red Eyes
+              const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.006, 6, 6), eyeMat);
+              eyeL.position.set(0.11, 0.10, 0.024);
+              const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.006, 6, 6), eyeMat);
+              eyeR.position.set(0.11, 0.10, -0.024);
               npcSubGroup.add(eyeL, eyeR);
 
-              // Pink inside Ears
-              const earL = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.03, 0.03, 0.006, 8),
-                new THREE.MeshStandardMaterial({ color: "#fda4af" })
-              );
-              earL.rotation.x = Math.PI / 2;
-              earL.rotation.y = -Math.PI / 6;
-              earL.position.set(0.08, 0.13, 0.045);
+              // 7. Dynamic layered ears (outer fur + inner pink)
+              const earGroupL = new THREE.Group();
+              const earOutL = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.004, 8), furMat);
+              earOutL.rotation.x = Math.PI / 2;
+              const earInL = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.004, 8), skinMat);
+              earInL.rotation.x = Math.PI / 2;
+              earInL.position.z = 0.002; // layer inside
+              earGroupL.add(earOutL, earInL);
+              earGroupL.rotation.set(0.2, -0.4, 0);
+              earGroupL.position.set(0.07, 0.125, 0.038);
 
-              const earR = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.03, 0.03, 0.006, 8),
-                new THREE.MeshStandardMaterial({ color: "#fda4af" })
-              );
-              earR.rotation.x = Math.PI / 2;
-              earR.rotation.y = Math.PI / 6;
-              earR.position.set(0.08, 0.13, -0.045);
-              npcSubGroup.add(earL, earR);
+              const earGroupR = new THREE.Group();
+              const earOutR = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.004, 8), furMat);
+              earOutR.rotation.x = Math.PI / 2;
+              const earInR = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.004, 8), skinMat);
+              earInR.rotation.x = Math.PI / 2;
+              earInR.position.z = -0.002; // layer inside
+              earGroupR.add(earOutR, earInR);
+              earGroupR.rotation.set(-0.2, 0.4, 0);
+              earGroupR.position.set(0.07, 0.125, -0.038);
 
-              // Curved pink tail
-              const tail = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.004, 0.002, 0.16, 6),
-                new THREE.MeshStandardMaterial({ color: "#fda4af" })
-              );
-              tail.rotation.z = -Math.PI / 4;
-              tail.position.set(-0.12, 0.05, 0);
-              npcSubGroup.add(tail);
+              npcSubGroup.add(earGroupL, earGroupR);
 
-              // Whiskers
-              const whiskerMat = new THREE.MeshBasicMaterial({ color: "#1c1917" });
+              // 8. Natural curved segmented pink tail
+              const tailGroup = new THREE.Group();
+              const t1 = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.004, 0.08, 5), skinMat);
+              t1.position.set(0, 0.03, 0);
+              t1.rotation.z = -Math.PI / 6;
+              const t2 = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.002, 0.09, 5), skinMat);
+              t2.position.set(0.02, 0.08, 0.01);
+              t2.rotation.z = Math.PI / 4;
+              tailGroup.add(t1, t2);
+              tailGroup.position.set(-0.10, 0.02, 0);
+              npcSubGroup.add(tailGroup);
+
+              // 9. Detailed whiskers
               for (let i = -1; i <= 1; i++) {
-                const whL = new THREE.Mesh(new THREE.CylinderGeometry(0.001, 0.001, 0.06, 4), whiskerMat);
+                const whL = new THREE.Mesh(new THREE.CylinderGeometry(0.001, 0.001, 0.07, 4), whiskerMat);
                 whL.rotation.x = Math.PI / 2;
-                whL.rotation.y = i * 0.2;
-                whL.position.set(0.14, 0.08, 0.025);
+                whL.rotation.y = i * 0.25;
+                whL.position.set(0.13, 0.075, 0.02);
                 
-                const whR = new THREE.Mesh(new THREE.CylinderGeometry(0.001, 0.001, 0.06, 4), whiskerMat);
+                const whR = new THREE.Mesh(new THREE.CylinderGeometry(0.001, 0.001, 0.07, 4), whiskerMat);
                 whR.rotation.x = Math.PI / 2;
-                whR.rotation.y = -i * 0.2;
-                whR.position.set(0.14, 0.08, -0.025);
+                whR.rotation.y = -i * 0.25;
+                whR.position.set(0.13, 0.075, -0.02);
                 npcSubGroup.add(whL, whR);
               }
-            } else if (cell.npc.id === "traveler") {
+             } else if (cell.npc.id === "traveler") {
                if (this.charactersModel) {
                  const male = this.charactersModel.getObjectByName("MaleRig");
                  if (male) {
@@ -1370,22 +1380,76 @@ export class CanvasRenderer {
               beamBottom.position.set(0, 0.08, 0);
               obsSubGroup.add(beamTop, beamBottom);
             } else if (type === "ivy") {
-              const bushMat1 = new THREE.MeshStandardMaterial({ color: "#065f46", roughness: 0.95 });
-              const bushMat2 = new THREE.MeshStandardMaterial({ color: "#0f766e", roughness: 0.95 });
-              const bushMat3 = new THREE.MeshStandardMaterial({ color: "#15803d", roughness: 0.95 });
-              
-              const offsets = [
-                { x: 0, y: 0.28, z: 0, r: 0.22, m: bushMat1 },
-                { x: -0.12, y: 0.24, z: 0.08, r: 0.16, m: bushMat2 },
-                { x: 0.12, y: 0.24, z: -0.08, r: 0.16, m: bushMat3 },
-                { x: -0.08, y: 0.36, z: -0.08, r: 0.14, m: bushMat2 },
-                { x: 0.08, y: 0.36, z: 0.08, r: 0.14, m: bushMat1 }
+              // 🌿 Realistic Overgrown Thorny Ivy/Foliage Barricade
+              const branchMat = new THREE.MeshStandardMaterial({ color: "#2d1a10", roughness: 0.95 }); // dark brown woody branches
+              const leafMat = new THREE.MeshStandardMaterial({ 
+                map: this.hedgeTexture, 
+                color: "#1e3f20", // rich organic forest green tint
+                roughness: 0.95 
+              });
+              const berryMat = new THREE.MeshStandardMaterial({ 
+                color: "#ef4444", 
+                emissive: "#b91c1c", 
+                emissiveIntensity: 0.8,
+                roughness: 0.4 
+              });
+
+              // 1. Cross-barrier branches (thorny vines)
+              const b1 = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.02, 1.1, 6), branchMat);
+              b1.position.set(0, 0.45, 0);
+              b1.rotation.z = Math.PI / 4.5;
+              b1.rotation.y = Math.PI / 8;
+              const b2 = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.02, 1.1, 6), branchMat);
+              b2.position.set(0, 0.45, 0);
+              b2.rotation.z = -Math.PI / 4.5;
+              b2.rotation.y = -Math.PI / 8;
+              const b3 = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.9, 6), branchMat);
+              b3.position.set(0, 0.7, 0.05);
+              b3.rotation.x = Math.PI / 2.2;
+              obsSubGroup.add(b1, b2, b3);
+
+              // 2. Multi-sphere overlapping leafy hedge structure (mapped with this.hedgeTexture)
+              const foliageOffsets = [
+                { x: 0, y: 0.25, z: 0, r: 0.22 },
+                { x: -0.16, y: 0.22, z: 0.1, r: 0.18 },
+                { x: 0.16, y: 0.22, z: -0.1, r: 0.18 },
+                { x: -0.08, y: 0.42, z: -0.06, r: 0.16 },
+                { x: 0.08, y: 0.42, z: 0.06, r: 0.16 },
+                
+                { x: -0.28, y: 0.35, z: 0, r: 0.15 },
+                { x: 0.28, y: 0.35, z: 0, r: 0.15 },
+                { x: 0, y: 0.55, z: -0.04, r: 0.16 },
+                { x: -0.14, y: 0.58, z: 0.04, r: 0.13 },
+                { x: 0.14, y: 0.58, z: -0.04, r: 0.13 },
+                
+                { x: -0.22, y: 0.72, z: 0.02, r: 0.14 },
+                { x: 0.22, y: 0.72, z: -0.02, r: 0.14 },
+                { x: 0, y: 0.85, z: 0, r: 0.15 }
               ];
-              for (const o of offsets) {
-                const sp = new THREE.Mesh(new THREE.SphereGeometry(o.r, 8, 8), o.m);
-                sp.position.set(o.x, o.y, o.z);
-                obsSubGroup.add(sp);
+              for (const o of foliageOffsets) {
+                const foliage = new THREE.Mesh(new THREE.SphereGeometry(o.r, 8, 8), leafMat);
+                foliage.position.set(o.x, o.y, o.z);
+                // Random scale/rotation to make texture mapping look organic and non-repeating
+                foliage.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
+                foliage.scale.set(1.0, 0.95 + Math.random() * 0.1, 1.0);
+                obsSubGroup.add(foliage);
               }
+
+              // 3. Small poison berries (gives detail and color variation)
+              const berryOffsets = [
+                { x: -0.1, y: 0.3, z: 0.15 },
+                { x: 0.1, y: 0.35, z: 0.12 },
+                { x: -0.2, y: 0.45, z: -0.08 },
+                { x: 0.2, y: 0.5, z: 0.06 },
+                { x: 0, y: 0.65, z: 0.12 },
+                { x: -0.08, y: 0.75, z: -0.08 },
+                { x: 0.08, y: 0.8, z: 0.08 }
+              ];
+              for (const b of berryOffsets) {
+                const berry = new THREE.Mesh(new THREE.SphereGeometry(0.016, 5, 5), berryMat);
+                berry.position.set(b.x, b.y, b.z);
+                 obsSubGroup.add(berry);
+               }
             } else if (type === "barricade") {
               // Crossed planks bound together (widened to 0.95 to block the corridor)
               const plank1 = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.12, 0.04), woodMat);

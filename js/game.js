@@ -488,11 +488,7 @@ export class Game {
       this.state.lastCheckPoint = { x: p.x, y: p.y, floor: this.state.currentFloor };
     }
 
-    // Trigger Random event
-    if (this.state.stepsTaken >= this.state.nextEventSteps) {
-      this.triggerRandomEvent();
-      return;
-    }
+    // Random events trigger disabled as per user request
 
     // Update Day/Night Cycle (80-second loop: 40s Day, 40s Night)
     this.state.timeOfDay = (this.state.timeOfDay + dt * 0.0125) % 1.0;

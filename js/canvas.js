@@ -884,10 +884,10 @@ export class CanvasRenderer {
               npcSubGroup.add(noseTip);
 
               // 6. Glowing Red Eyes
-              const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.006, 6, 6), eyeMat);
-              eyeL.position.set(0.11, 0.10, 0.024);
-              const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.006, 6, 6), eyeMat);
-              eyeR.position.set(0.11, 0.10, -0.024);
+              const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.01, 8, 8), eyeMat);
+              eyeL.position.set(0.125, 0.115, 0.032);
+              const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.01, 8, 8), eyeMat);
+              eyeR.position.set(0.125, 0.115, -0.032);
               npcSubGroup.add(eyeL, eyeR);
 
               // 7. Dynamic layered ears (outer fur + inner pink)
@@ -2047,35 +2047,61 @@ export class CanvasRenderer {
         const { x, y, cell } = npcGroup.userData;
         
         if (cell.npc && cell.npc.id !== "well") {
-          const dx = player.visualX - (x + 0.5);
-          const dz = player.visualY - (y + 0.5);
-          const dist = Math.hypot(dx, dz);
-          
-          if (dist < 6.0) {
-            const targetAngle = Math.atan2(dx, dz);
-            const baseAngle = cell.npc.id === "mouse" ? targetAngle - Math.PI / 2 : targetAngle;
-            
-            let diff = baseAngle - npcGroup.rotation.y;
-            // Shortest path angle wrap-around interpolation
-            diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-            npcGroup.rotation.y += diff * 0.12;
-          }
+          if (cell.npc.id === "mouse" && cell.npc.disappearing) {
+            const elapsed = (Date.now() - cell.npc.disappearStartTime) / 1000;
+            if (cell.npc.facingAngle === undefined) {
+              cell.npc.facingAngle = npcGroup.rotation.y;
+            }
 
-          // Procedural Idle animations to make them feel alive (breathing and minor arm sways)
-          if (cell.npc.id !== "mouse") {
+            // Move forward along the direction it was looking when it started running
+            // Snout points towards local +X, so dx = cos(angle), dz = -sin(angle)
+            const distTraveled = elapsed * 0.65; // speed of 0.65 units per second
+            npcGroup.position.x = (x + 0.5) + distTraveled * Math.cos(cell.npc.facingAngle);
+            npcGroup.position.z = (y + 0.5) - distTraveled * Math.sin(cell.npc.facingAngle);
+            npcGroup.rotation.y = cell.npc.facingAngle;
+
+            // Running waddle (rapid bobbing on Y)
             const model = npcGroup.children[0];
             if (model) {
-              // Breathing bobbing
-              model.position.y = Math.sin(time) * 0.012;
+              model.position.y = Math.abs(Math.sin(elapsed * 25)) * 0.025;
+            }
 
-              // Arms breathing/swaying (if skeletal bones are loaded)
-              const armL = typeof model.getObjectByName === "function" ? (model.getObjectByName("upper_arm.L") || model.getObjectByName("shoulder.L")) : null;
-              const armR = typeof model.getObjectByName === "function" ? (model.getObjectByName("upper_arm.R") || model.getObjectByName("shoulder.R")) : null;
-              if (armL) {
-                armL.rotation.z = Math.sin(time * 0.8) * 0.05;
+            // Shrink to zero over 3 seconds
+            const scaleFactor = Math.max(0, 1 - (elapsed / 3.0));
+            npcGroup.scale.set(scaleFactor, scaleFactor, scaleFactor);
+          } else {
+            const dx = player.visualX - (x + 0.5);
+            const dz = player.visualY - (y + 0.5);
+            const dist = Math.hypot(dx, dz);
+            
+            if (dist < 6.0) {
+              const targetAngle = Math.atan2(dx, dz);
+              const baseAngle = cell.npc.id === "mouse" ? targetAngle - Math.PI / 2 : targetAngle;
+              
+              let diff = baseAngle - npcGroup.rotation.y;
+              // Shortest path angle wrap-around interpolation
+              diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+              npcGroup.rotation.y += diff * 0.12;
+            }
+
+            // Procedural Idle animations to make them feel alive (breathing and minor arm sways)
+            if (cell.npc.id !== "mouse") {
+              const model = npcGroup.children[0];
+              if (model) {
+                // Breathing bobbing
+                model.position.y = Math.sin(time) * 0.012;
+
+                // Arms breathing/swaying (if skeletal bones are loaded)
+                const armL = typeof model.getObjectByName === "function" ? (model.getObjectByName("upper_arm.L") || model.getObjectByName("shoulder.L")) : null;
+                const armR = typeof model.getObjectByName === "function" ? (model.getObjectByName("upper_arm.R") || model.getObjectByName("shoulder.R")) : null;
+                if (armL) armL.rotation.z = Math.sin(time * 0.8) * 0.05;
+                if (armR) armR.rotation.z = -Math.sin(time * 0.8) * 0.05;
               }
-              if (armR) {
-                armR.rotation.z = -Math.sin(time * 0.8) * 0.05;
+            } else {
+              // Mouse idle sniffing (slight head wiggle)
+              const model = npcGroup.children[0];
+              if (model) {
+                model.position.y = Math.sin(time * 2.0) * 0.004;
               }
             }
           }

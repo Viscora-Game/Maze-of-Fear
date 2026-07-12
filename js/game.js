@@ -872,7 +872,13 @@ export class Game {
             inv.cheese--;
             this.state.quests.mouseState = "solved";
             
-            // Clear adjacent wall nodes
+            // Trigger 3D run-away animation
+            if (cell.npc) {
+              cell.npc.disappearing = true;
+              cell.npc.disappearStartTime = Date.now();
+            }
+
+            // Clear adjacent wall nodes (mouse eats through paths)
             const dirs = [[0, -1], [0, 1], [-1, 0], [1, 0]];
             dirs.forEach(([dx, dy]) => {
               const nx = cell.x + dx;
@@ -889,6 +895,14 @@ export class Game {
             this.audio.playUnlock();
             this.state.gameState = "playing";
             if (this.onStateChange) this.onStateChange();
+
+            // Completely remove the mouse from the grid cell after walking animation finishes (3 seconds)
+            setTimeout(() => {
+              if (cell.npc && cell.npc.id === "mouse") {
+                cell.npc = null;
+                if (this.onStateChange) this.onStateChange();
+              }
+            }, 3000);
           }
         });
       } else {

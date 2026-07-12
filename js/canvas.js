@@ -1519,9 +1519,9 @@ export class CanvasRenderer {
           wallBlock.position.set(0, 0.64, 0);
           colGroup.add(wallBlock);
 
-          // 2. Stone brick cap on top of the hedge wall
+          // 2. Stone brick cap on top of the hedge wall (placed at Y=1.305 to eliminate coplanar Z-fighting glitch)
           const stoneCap = new THREE.Mesh(wallCapGeo, capMat);
-          stoneCap.position.set(0, 1.255, 0);
+          stoneCap.position.set(0, 1.305, 0);
           colGroup.add(stoneCap);
 
           cellGroup.add(colGroup);

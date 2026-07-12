@@ -30,7 +30,6 @@ function setupUI(game) {
     fuelBar: document.getElementById("hud-fuel-bar"),
     questsList: document.getElementById("hud-quests-list"),
     compassNeedle: document.getElementById("compass-needle"),
-    compassText: document.getElementById("compass-text"),
     levelVal: document.getElementById("hud-level-val"),
     floorVal: document.getElementById("hud-floor-val"),
     maxFloorVal: document.getElementById("hud-max-floor-val"),
@@ -251,20 +250,26 @@ function setupUI(game) {
       if (hud.equippedVal) hud.equippedVal.textContent = game.lang === "tr" ? "Boş" : "Empty";
     }
 
-    // Compass update (Dynamic pointing needle)
+    // Compass update (Dynamic pointing needle, relative to player rotation angle)
     const dx = s.exitCell.x - p.x;
     const dy = s.exitCell.y - p.y;
-    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+    const worldAngle = Math.atan2(dy, dx);
+    const relativeAngle = (worldAngle - p.angle) * (180 / Math.PI);
     
     // Check if player has compass item active
+    const compassPanel = document.getElementById("hud-compass-panel");
     if (p.inventory.compass > 0) {
-      hud.compassNeedle.style.transform = `rotate(${angle + 90}deg)`; // Adjust standard offset
-      hud.compassNeedle.style.opacity = "1";
-      hud.compassText.textContent = game.t("compassActive");
+      if (compassPanel) compassPanel.style.opacity = "1";
+      if (hud.compassNeedle) {
+        hud.compassNeedle.style.opacity = "1";
+        hud.compassNeedle.style.transform = `rotate(${relativeAngle}deg)`;
+      }
     } else {
-      hud.compassNeedle.style.transform = "rotate(0deg)";
-      hud.compassNeedle.style.opacity = "0.2";
-      hud.compassText.textContent = game.t("compassInactive");
+      if (compassPanel) compassPanel.style.opacity = "0.15"; // Very dim dial casing when inactive
+      if (hud.compassNeedle) {
+        hud.compassNeedle.style.opacity = "0"; // Hide the needle completely
+        hud.compassNeedle.style.transform = "rotate(0deg)";
+      }
     }
   };
 

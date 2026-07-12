@@ -922,17 +922,41 @@ function setupUI(game) {
   // Open Map Button Click
   const btnOpenMap = document.getElementById("btn-open-map");
   if (btnOpenMap) {
-    btnOpenMap.addEventListener("click", () => {
-      openMap();
-    });
+    const handleOpen = (e) => {
+      e.preventDefault();
+      const mapModal = document.getElementById("modal-map");
+      if (mapModal && !mapModal.classList.contains("hidden")) {
+        closeMap();
+      } else {
+        openMap();
+      }
+    };
+    btnOpenMap.addEventListener("click", handleOpen);
+    btnOpenMap.addEventListener("touchstart", handleOpen, { passive: false });
   }
 
-  // Close Map Button Click
+  // Close Map Button Click & Backdrop Click (Mobile friendly!)
   const btnCloseMap = document.getElementById("btn-close-map");
   if (btnCloseMap) {
-    btnCloseMap.addEventListener("click", () => {
+    const handleClose = (e) => {
+      e.preventDefault();
       closeMap();
-    });
+    };
+    btnCloseMap.addEventListener("click", handleClose);
+    btnCloseMap.addEventListener("touchstart", handleClose, { passive: false });
+  }
+
+  const modalMap = document.getElementById("modal-map");
+  if (modalMap) {
+    const handleBackdrop = (e) => {
+      // Close map if user taps/clicks the dark background overlay itself
+      if (e.target === modalMap) {
+        e.preventDefault();
+        closeMap();
+      }
+    };
+    modalMap.addEventListener("click", handleBackdrop);
+    modalMap.addEventListener("touchstart", handleBackdrop, { passive: false });
   }
 
   // Hotkeys (I/E/M and Modal Closers)

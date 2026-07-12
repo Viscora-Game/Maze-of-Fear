@@ -185,24 +185,18 @@ export class CanvasRenderer {
       isDragging = false;
     });
 
-    // Multi-touch look controls for mobile
+    // Multi-touch look controls for mobile - bound directly to canvas
     let lookTouchId = null;
     let lastLookX = 0;
     let lastLookY = 0;
 
-    window.addEventListener("touchstart", (e) => {
+    this.canvas.addEventListener("touchstart", (e) => {
       if (!this.lastState || this.lastState.gameState !== "playing") return;
       
-      // Look for a touch that is NOT on the joystick or HUD buttons
+      // Look for a touch that starts on the canvas
       for (let i = 0; i < e.changedTouches.length; i++) {
         const touch = e.changedTouches[i];
-        const target = touch.target;
         
-        // Ignore if touch is on HUD or joystick
-        if (target.closest(".joystick-container") || target.closest(".floating-inventory-controls") || target.closest(".hud-pill") || target.closest(".overlay") || target.closest(".btn")) {
-          continue;
-        }
-
         // Capture look touch if none is active
         if (lookTouchId === null) {
           lookTouchId = touch.identifier;
@@ -211,9 +205,9 @@ export class CanvasRenderer {
           break;
         }
       }
-    });
+    }, { passive: true });
     
-    window.addEventListener("touchmove", (e) => {
+    this.canvas.addEventListener("touchmove", (e) => {
       if (lookTouchId === null || !this.lastState) return;
       
       // Prevent page scrolling/bouncing from canceling touch drags
@@ -250,8 +244,8 @@ export class CanvasRenderer {
       }
     };
 
-    window.addEventListener("touchend", endLookTouch);
-    window.addEventListener("touchcancel", endLookTouch);
+    this.canvas.addEventListener("touchend", endLookTouch);
+    this.canvas.addEventListener("touchcancel", endLookTouch);
 
     // Request pointer lock on click if desired (only when playing and supported!)
     this.canvas.addEventListener("click", () => {

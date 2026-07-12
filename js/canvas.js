@@ -416,11 +416,29 @@ export class CanvasRenderer {
     const cx = Math.floor(x2);
     const cy = Math.floor(y2);
     if (px === cx && py === cy) return true;
-    if (px === cx || py === cy) return true; // Directly adjacent cardinally: no wall between them
-    const corner1 = (px < 0 || px >= width || cy < 0 || cy >= height) || (grid[cy] && grid[cy][px] && grid[cy][px].type === "wall");
-    const corner2 = (cx < 0 || cx >= width || py < 0 || py >= height) || (grid[py] && grid[py][cx] && grid[py][cx].type === "wall");
-    if (corner1 && corner2) return false; // Diagonally blocked by walls on both sides
-    return true;
+
+    // Cardinally adjacent: no cell in between, so line of sight is clear
+    if (Math.abs(px - cx) + Math.abs(py - cy) === 1) return true;
+
+    // Cardinally separated by 2 cells: check the middle cell for wall blockers
+    if (px === cx && Math.abs(py - cy) === 2) {
+      const midY = (py + cy) / 2;
+      return grid[midY] && grid[midY][px] && grid[midY][px].type !== "wall";
+    }
+    if (py === cy && Math.abs(px - cx) === 2) {
+      const midX = (px + cx) / 2;
+      return grid[py] && grid[py][midX] && grid[py][midX].type !== "wall";
+    }
+
+    // Diagonally adjacent: check both corners
+    if (Math.abs(px - cx) === 1 && Math.abs(py - cy) === 1) {
+      const corner1 = (px < 0 || px >= width || cy < 0 || cy >= height) || (grid[cy] && grid[cy][px] && grid[cy][px].type === "wall");
+      const corner2 = (cx < 0 || cx >= width || py < 0 || py >= height) || (grid[py] && grid[py][cx] && grid[py][cx].type === "wall");
+      if (corner1 && corner2) return false;
+      return true;
+    }
+
+    return false; // Beyond interaction range
   }
 
   handleCanvasClick(e) {

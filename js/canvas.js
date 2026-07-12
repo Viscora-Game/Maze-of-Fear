@@ -215,6 +215,10 @@ export class CanvasRenderer {
     
     window.addEventListener("touchmove", (e) => {
       if (lookTouchId === null || !this.lastState) return;
+      
+      // Prevent page scrolling/bouncing from canceling touch drags
+      if (e.cancelable) e.preventDefault();
+      
       const p = this.lastState.player;
       if (p.pitch === undefined) p.pitch = 0.0;
 
@@ -234,7 +238,7 @@ export class CanvasRenderer {
           break;
         }
       }
-    }, { passive: true });
+    }, { passive: false });
     
     const endLookTouch = (e) => {
       if (lookTouchId === null) return;

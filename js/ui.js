@@ -324,6 +324,7 @@ function setupUI(game) {
 
     window.addEventListener("touchmove", (e) => {
       if (!joystickActive) return;
+      if (e.cancelable) e.preventDefault(); // Prevent default page bounce/scrolling
       for (let i = 0; i < e.touches.length; i++) {
         if (e.touches[i].identifier === joystickTouchId) {
           handleMove(e.touches[i].clientX, e.touches[i].clientY);

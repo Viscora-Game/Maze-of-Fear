@@ -323,7 +323,7 @@ export class Game {
     }
 
     let isRunning = false;
-    if (isShiftPressed && isMoving && !p.exhausted && moveDir === 1) {
+    if (isShiftPressed && isMoving && !p.exhausted && moveDir > 0.5) {
       isRunning = true;
     }
     p.isRunning = isRunning;
@@ -452,9 +452,9 @@ export class Game {
       }
     }
 
-    // 5. Fuel & event decrement (triggered only when player is actively walking)
+    // 5. Steps & event decrement (fuel consumption disabled)
     if (isMoving) {
-      p.fuel = Math.max(0, p.fuel - 0.08 * dt * 60);
+      p.fuel = 100; // Keep fuel at 100 always
       this.state.stepsTaken += dt * 15;
 
       // Footstep audio timing (runs faster when sprinting)

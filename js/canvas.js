@@ -207,7 +207,7 @@ export class CanvasRenderer {
       }
     }, { passive: true });
     
-    this.canvas.addEventListener("touchmove", (e) => {
+    window.addEventListener("touchmove", (e) => {
       if (lookTouchId === null || !this.lastState) return;
       
       // Prevent page scrolling/bouncing from canceling touch drags
@@ -244,8 +244,8 @@ export class CanvasRenderer {
       }
     };
 
-    this.canvas.addEventListener("touchend", endLookTouch);
-    this.canvas.addEventListener("touchcancel", endLookTouch);
+    window.addEventListener("touchend", endLookTouch);
+    window.addEventListener("touchcancel", endLookTouch);
 
     // Request pointer lock on click if desired (only when playing and supported!)
     this.canvas.addEventListener("click", () => {

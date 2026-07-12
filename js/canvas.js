@@ -1200,6 +1200,12 @@ export class CanvasRenderer {
                  if (maleMesh) maleMesh.visible = false;
                  if (maleRig) maleRig.visible = false;
 
+                 // Reset position of FemaleRig to (0, 0, 0) because the GLTF file has a translation offset of 0.6292 on X!
+                 const femaleRig = clone.getObjectByName("FemaleRig");
+                 if (femaleRig) {
+                   femaleRig.position.set(0, 0, 0);
+                 }
+
                  clone.traverse(child => {
                    if (child.isMesh) {
                      child.castShadow = true;

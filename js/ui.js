@@ -257,38 +257,119 @@ function setupUI(game) {
     }
   };
 
-  // 5. Virtual D-Pad Hold Binding (Mobile & Mouse)
-  const bindDpad = (btnId, keyName) => {
-    const btn = document.getElementById(btnId);
-    if (!btn) return;
-    const setKey = (val) => {
-      if (game.keys) game.keys[keyName] = val;
-    };
-    
-    // Mouse Events
-    btn.addEventListener("mousedown", () => setKey(true));
-    btn.addEventListener("mouseup", () => setKey(false));
-    btn.addEventListener("mouseleave", () => setKey(false));
-    
-    // Touch Events (mobile friendly, prevents pinch zoom / default scrolls)
-    btn.addEventListener("touchstart", (e) => {
-      e.preventDefault();
-      setKey(true);
-    }, { passive: false });
-    btn.addEventListener("touchend", (e) => {
-      e.preventDefault();
-      setKey(false);
-    }, { passive: false });
-    btn.addEventListener("touchcancel", (e) => {
-      e.preventDefault();
-      setKey(false);
-    }, { passive: false });
-  };
+  // 5. Virtual Joystick Setup (Mobile & Mouse)
+  const joystickZone = document.getElementById("joystick-zone");
+  const joystickBase = document.getElementById("joystick-base");
+  const joystickHandle = document.getElementById("joystick-handle");
 
-  bindDpad("btn-dpad-up", "arrowup");
-  bindDpad("btn-dpad-down", "arrowdown");
-  bindDpad("btn-dpad-left", "arrowleft");
-  bindDpad("btn-dpad-right", "arrowright");
+  if (joystickZone && joystickBase && joystickHandle) {
+    let joystickActive = false;
+    let joystickTouchId = null;
+    let startX = 0;
+    let startY = 0;
+    const maxDistance = 40; // Max visual displacement in pixels
+
+    const handleStart = (clientX, clientY, touchId = null) => {
+      joystickActive = true;
+      joystickTouchId = touchId;
+      
+      const rect = joystickBase.getBoundingClientRect();
+      startX = rect.left + rect.width / 2;
+      startY = rect.top + rect.height / 2;
+    };
+
+    const handleMove = (clientX, clientY) => {
+      if (!joystickActive) return;
+
+      let dx = clientX - startX;
+      let dy = clientY - startY;
+      const distance = Math.hypot(dx, dy);
+
+      if (distance > maxDistance) {
+        dx = (dx / distance) * maxDistance;
+        dy = (dy / distance) * maxDistance;
+      }
+
+      // Move visual handle
+      joystickHandle.style.transform = `translate(${dx}px, ${dy}px)`;
+
+      // Map to game inputs:
+      // X maps to strafeDir (left/right, positive is right)
+      // Y maps to moveDir (forward/backward, positive Y is forward, so invert screen Y delta)
+      if (game.joystick) {
+        game.joystick.x = dx / maxDistance;
+        game.joystick.y = -dy / maxDistance;
+      }
+    };
+
+    const handleEnd = () => {
+      if (!joystickActive) return;
+      joystickActive = false;
+      joystickTouchId = null;
+      
+      // Reset position
+      joystickHandle.style.transform = "translate(0px, 0px)";
+      if (game.joystick) {
+        game.joystick.x = 0;
+        game.joystick.y = 0;
+      }
+    };
+
+    // Touch listeners
+    joystickZone.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      const touch = e.changedTouches[0];
+      handleStart(touch.clientX, touch.clientY, touch.identifier);
+    }, { passive: false });
+
+    window.addEventListener("touchmove", (e) => {
+      if (!joystickActive) return;
+      for (let i = 0; i < e.touches.length; i++) {
+        if (e.touches[i].identifier === joystickTouchId) {
+          handleMove(e.touches[i].clientX, e.touches[i].clientY);
+          break;
+        }
+      }
+    }, { passive: false });
+
+    window.addEventListener("touchend", (e) => {
+      if (!joystickActive) return;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === joystickTouchId) {
+          handleEnd();
+          break;
+        }
+      }
+    });
+
+    window.addEventListener("touchcancel", (e) => {
+      if (!joystickActive) return;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === joystickTouchId) {
+          handleEnd();
+          break;
+        }
+      }
+    });
+
+    // Mouse fallback for testing
+    joystickZone.addEventListener("mousedown", (e) => {
+      handleStart(e.clientX, e.clientY);
+      
+      const mouseMove = (me) => {
+        handleMove(me.clientX, me.clientY);
+      };
+      
+      const mouseUp = () => {
+        handleEnd();
+        window.removeEventListener("mousemove", mouseMove);
+        window.removeEventListener("mouseup", mouseUp);
+      };
+      
+      window.addEventListener("mousemove", mouseMove);
+      window.addEventListener("mouseup", mouseUp);
+    });
+  }
 
   // Handle resizing window
   window.addEventListener("resize", () => {

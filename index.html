@@ -157,13 +157,11 @@
         <canvas id="game-canvas"></canvas>
       </div>
 
-      <!-- Floating Translucent D-Pad (Bottom-Left) -->
-      <div class="floating-dpad">
-        <button class="btn-dpad" id="btn-dpad-up">▲</button>
-        <button class="btn-dpad" id="btn-dpad-left">◀</button>
-        <div class="dpad-center"></div>
-        <button class="btn-dpad" id="btn-dpad-right">▶</button>
-        <button class="btn-dpad" id="btn-dpad-down">▼</button>
+      <!-- Floating Translucent Joystick (Bottom-Left) -->
+      <div class="joystick-container" id="joystick-zone">
+        <div class="joystick-base" id="joystick-base">
+          <div class="joystick-handle" id="joystick-handle"></div>
+        </div>
       </div>
 
       <!-- Floating Translucent Compass Radar (Bottom-Center) -->
@@ -184,23 +182,30 @@
         
         <!-- Compact Lantern Button -->
         <button id="btn-toggle-lantern" class="hud-bag-btn btn-secondary btn" style="border-color: rgba(245, 158, 11, 0.4); display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 14px;">
-          <span>🪔</span> <span id="btn-lantern-text">Fener Aç (F)</span>
+          <span>🪔</span> <span id="btn-lantern-text">Fener Aç</span>
         </button>
 
         <!-- Compact Map Button -->
         <button id="btn-open-map" class="hud-bag-btn btn-secondary btn" style="border-color: rgba(6, 182, 212, 0.4); display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 14px;">
-          <span>🗺️</span> <span id="btn-map-text">Harita (M)</span>
+          <span>🗺️</span> <span id="btn-map-text">Harita</span>
         </button>
 
         <!-- Compact Interact Button -->
         <button id="btn-interact" class="hud-bag-btn btn-success btn" style="border-color: rgba(34, 197, 94, 0.4); display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 14px; background: rgba(34, 197, 94, 0.25);">
-          <span>🖐️</span> <span id="btn-interact-text">Etkileşim (E / Space)</span>
+          <span>🖐️</span> <span id="btn-interact-text">Etkileşim</span>
         </button>
 
         <!-- Compact Bag Button -->
         <button id="btn-open-inventory" class="hud-bag-btn btn-primary btn">
-          <span>🎒</span> <span data-t="inventoryTitle">Bag (I)</span>
+          <span>🎒</span> <span id="btn-bag-text">Çanta</span>
         </button>
+      </div>
+
+      <!-- Introductory Tip Overlay -->
+      <div id="intro-tip-overlay" class="intro-tip-overlay">
+        <div class="intro-tip-content">
+          <p class="intro-tip-text">Fenerinizi açın, burası çok karanlık...</p>
+        </div>
       </div>
 
     </div>

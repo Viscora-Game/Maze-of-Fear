@@ -19,6 +19,7 @@ export class Game {
     this.state = null;
     this.renderer = null;
     this.canvas = null;
+    this.joystick = { x: 0, y: 0 };
 
     // Keyboard inputs
     this.keys = {};
@@ -294,14 +295,20 @@ export class Game {
 
     // 2. Forward/Backward Movement & Sideways Strafing inputs
     let moveDir = 0;
-    if (this.keys["w"] || this.keys["arrowup"]) moveDir = 1;
-    if (this.keys["s"] || this.keys["arrowdown"]) moveDir = -1;
-
     let strafeDir = 0;
-    if (this.keys["a"] || this.keys["arrowleft"]) strafeDir = -1;
-    if (this.keys["d"] || this.keys["arrowright"]) strafeDir = 1;
 
-    const isMoving = moveDir !== 0 || strafeDir !== 0;
+    const hasJoystick = this.joystick && (Math.abs(this.joystick.x) > 0.05 || Math.abs(this.joystick.y) > 0.05);
+    if (hasJoystick) {
+      moveDir = this.joystick.y;
+      strafeDir = this.joystick.x;
+    } else {
+      if (this.keys["w"] || this.keys["arrowup"]) moveDir = 1;
+      if (this.keys["s"] || this.keys["arrowdown"]) moveDir = -1;
+      if (this.keys["a"] || this.keys["arrowleft"]) strafeDir = -1;
+      if (this.keys["d"] || this.keys["arrowright"]) strafeDir = 1;
+    }
+
+    const isMoving = hasJoystick || moveDir !== 0 || strafeDir !== 0;
 
     // Running & Stamina logic with exhaustion hysteresis to prevent high-frequency oscillation
     const isShiftPressed = !!(this.keys["shift"]);

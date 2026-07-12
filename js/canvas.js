@@ -210,10 +210,10 @@ export class CanvasRenderer {
       isDragging = false;
     });
 
-    // Request pointer lock on click if desired (only when playing!)
+    // Request pointer lock on click if desired (only when playing and supported!)
     this.canvas.addEventListener("click", () => {
       if (this.lastState && this.lastState.gameState !== "playing") return;
-      if (document.pointerLockElement !== this.canvas) {
+      if (document.pointerLockElement !== this.canvas && this.canvas.requestPointerLock) {
         this.canvas.requestPointerLock();
       }
     });

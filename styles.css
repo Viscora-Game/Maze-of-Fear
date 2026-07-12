@@ -436,50 +436,86 @@ h1, h2, h3, h4 {
   display: block;
 }
 
-/* --- Floating translucent D-Pad (Bottom-Left) --- */
-.floating-dpad {
+/* --- Floating translucent Joystick (Bottom-Left) --- */
+.joystick-container {
   position: absolute;
-  bottom: 20px;
-  left: 20px;
+  bottom: 25px;
+  left: 25px;
   z-index: 10;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, 1fr);
-  gap: 4px;
-  width: 104px;
-  height: 104px;
-}
-
-.floating-dpad .btn-dpad {
-  background: rgba(15, 23, 42, 0.65);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1.5px solid rgba(255, 255, 255, 0.08);
-  border-radius: 50%;
+  width: 120px;
+  height: 120px;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 1rem;
-  color: var(--cyan);
+  touch-action: none;
+}
+
+.joystick-base {
+  width: 100px;
+  height: 100px;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 2px solid rgba(6, 182, 212, 0.25);
+  border-radius: 50%;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+}
+
+.joystick-handle {
+  width: 46px;
+  height: 46px;
+  background: radial-gradient(circle, var(--cyan) 0%, #0891b2 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  position: absolute;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4), 0 0 10px rgba(6, 182, 212, 0.4);
+  transition: transform 0.05s ease-out;
   cursor: pointer;
-  width: 32px;
-  height: 32px;
-  transition: all 0.1s ease;
-  outline: none;
 }
 
-.floating-dpad .btn-dpad:active {
-  background: var(--cyan-glow);
-  color: white;
-  transform: scale(0.9);
+/* --- Introductory Tip Overlay --- */
+.intro-tip-overlay {
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 100;
+  pointer-events: none;
+  text-align: center;
+  width: 90%;
+  max-width: 420px;
+  animation: fadeInOut 5s forwards;
 }
 
-.floating-dpad #btn-dpad-up { grid-column: 2; grid-row: 1; }
-.floating-dpad #btn-dpad-left { grid-column: 1; grid-row: 2; }
-.floating-dpad #btn-dpad-right { grid-column: 3; grid-row: 2; }
-.floating-dpad #btn-dpad-down { grid-column: 2; grid-row: 3; }
-.floating-dpad .dpad-center {
-  display: none;
+.intro-tip-content {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(245, 158, 11, 0.35);
+  border-radius: 12px;
+  padding: 14px 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+}
+
+.intro-tip-text {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #fffbeb;
+  text-shadow: 0 2px 10px rgba(245, 158, 11, 0.35);
+  letter-spacing: 0.5px;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translate(-50%, -40%); }
+  12% { opacity: 1; transform: translate(-50%, -50%); }
+  85% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -55%); visibility: hidden; }
 }
 
 /* --- Floating translucent Compass (Bottom-Center) --- */
@@ -522,12 +558,12 @@ h1, h2, h3, h4 {
 /* --- Floating Inventory Controls (Bottom-Right) --- */
 .floating-inventory-controls {
   position: absolute;
-  bottom: 20px;
-  right: 20px;
+  bottom: 40px;
+  right: 25px;
   z-index: 10;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   align-items: flex-end;
 }
 

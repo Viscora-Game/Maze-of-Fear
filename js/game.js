@@ -628,19 +628,15 @@ export class Game {
 
   // Proximity Scan & Interact helper methods
   hasLineOfSight(x1, y1, x2, y2, grid) {
-    const steps = 10;
-    for (let i = 1; i < steps; i++) {
-      const t = i / steps;
-      const sx = x1 + (x2 - x1) * t;
-      const sy = y1 + (y2 - y1) * t;
-      const cx = Math.floor(sx);
-      const cy = Math.floor(sy);
-      if (cx >= 0 && cx < this.state.width && cy >= 0 && cy < this.state.height) {
-        if (grid[cy][cx].type === "wall") {
-          return false;
-        }
-      }
-    }
+    const px = Math.floor(x1);
+    const py = Math.floor(y1);
+    const cx = Math.floor(x2);
+    const cy = Math.floor(y2);
+    if (px === cx && py === cy) return true;
+    if (px === cx || py === cy) return true; // Directly adjacent cardinally: no wall between them
+    const corner1 = (px < 0 || px >= this.state.width || cy < 0 || cy >= this.state.height) || (grid[cy] && grid[cy][px] && grid[cy][px].type === "wall");
+    const corner2 = (cx < 0 || cx >= this.state.width || py < 0 || py >= this.state.height) || (grid[py] && grid[py][cx] && grid[py][cx].type === "wall");
+    if (corner1 && corner2) return false; // Diagonally blocked by walls on both sides
     return true;
   }
 
@@ -649,7 +645,7 @@ export class Game {
     const grid = this.state.floors[this.state.currentFloor];
     let closestCell = null;
     let closestType = null;
-    let minDistance = 1.6; // max interaction range
+    let minDistance = 2.2; // max interaction range
 
     // Scan a 5x5 region around the player's grid cell
     const px = Math.floor(p.x);

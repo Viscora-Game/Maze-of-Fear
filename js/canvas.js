@@ -395,19 +395,15 @@ export class CanvasRenderer {
   }
 
   hasLineOfSight(x1, y1, x2, y2, grid, width, height) {
-    const steps = 10;
-    for (let i = 1; i < steps; i++) {
-      const t = i / steps;
-      const sx = x1 + (x2 - x1) * t;
-      const sy = y1 + (y2 - y1) * t;
-      const cx = Math.floor(sx);
-      const cy = Math.floor(sy);
-      if (cx >= 0 && cx < width && cy >= 0 && cy < height) {
-        if (grid[cy][cx].type === "wall") {
-          return false;
-        }
-      }
-    }
+    const px = Math.floor(x1);
+    const py = Math.floor(y1);
+    const cx = Math.floor(x2);
+    const cy = Math.floor(y2);
+    if (px === cx && py === cy) return true;
+    if (px === cx || py === cy) return true; // Directly adjacent cardinally: no wall between them
+    const corner1 = (px < 0 || px >= width || cy < 0 || cy >= height) || (grid[cy] && grid[cy][px] && grid[cy][px].type === "wall");
+    const corner2 = (cx < 0 || cx >= width || py < 0 || py >= height) || (grid[py] && grid[py][cx] && grid[py][cx].type === "wall");
+    if (corner1 && corner2) return false; // Diagonally blocked by walls on both sides
     return true;
   }
 
@@ -432,11 +428,8 @@ export class CanvasRenderer {
         const p = this.lastState.player;
         const dist = Math.hypot(p.x - (data.x + 0.5), p.y - (data.y + 0.5));
 
-        const grid = this.lastState.floors[this.lastState.currentFloor];
-        const hasLOS = this.hasLineOfSight(p.x, p.y, data.x + 0.5, data.y + 0.5, grid, this.lastState.width, this.lastState.height);
-
-        // Only allow interaction if close and has clear line of sight (no warning alert if far or blocked)
-        if (dist <= 1.6 && hasLOS) {
+        // Only allow interaction if close (Three.js 3D raycast already guarantees line of sight)
+        if (dist <= 2.2) {
           if (this.onEntityClick) {
             this.onEntityClick(data.type, data.cell);
           }

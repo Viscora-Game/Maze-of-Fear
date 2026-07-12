@@ -564,8 +564,11 @@ export class CanvasRenderer {
     // 2. Pre-allocate and reuse common geometries and materials to avoid GC stutters and GPU upload lag
     const floorGeo = new THREE.PlaneGeometry(1, 1);
     const floorMat = new THREE.MeshStandardMaterial({ 
-      map: this.hedgeTexture,
-      roughness: 0.95
+      map: this.floorTexture,
+      bumpMap: this.brickBump, // realistic stone relief bump map
+      bumpScale: 0.07,
+      color: "#3f4756", // dark wet slate stone/mud color
+      roughness: 0.85
     });
 
     const woodMat = new THREE.MeshStandardMaterial({ 
@@ -622,37 +625,60 @@ export class CanvasRenderer {
           floorMesh.position.set(0, 0, 0);
           cellGroup.add(floorMesh);
 
-          // Random Floor Details (Pebbles, Mushrooms, Flowers)
+          // Random Floor Details (Rubble clusters, Glowing bioluminescent mushrooms, Creeping vines)
           const randVal = Math.random();
-          if (randVal < 0.15) {
-            // Pebbles
-            const pebble = new THREE.Mesh(pebbleGeo, pebbleMat);
-            pebble.scale.set(1.4, 0.4, 1.0);
-            pebble.position.set((Math.random() - 0.5) * 0.35, 0.01, (Math.random() - 0.5) * 0.35);
-            cellGroup.add(pebble);
-          } else if (randVal < 0.28) {
-            // Mushroom
+          if (randVal < 0.18) {
+            // Rubble clusters (2-4 small stones clustered together)
+            const rubbleGroup = new THREE.Group();
+            const numStones = 2 + Math.floor(Math.random() * 3);
+            for (let i = 0; i < numStones; i++) {
+              const stone = new THREE.Mesh(pebbleGeo, pebbleMat);
+              const s = 0.5 + Math.random() * 0.8;
+              stone.scale.set(s * 1.5, s * 0.4, s * 1.0);
+              stone.position.set((Math.random() - 0.5) * 0.18, 0.005, (Math.random() - 0.5) * 0.18);
+              stone.rotation.set(0, Math.random() * Math.PI, 0);
+              rubbleGroup.add(stone);
+            }
+            rubbleGroup.position.set((Math.random() - 0.5) * 0.35, 0, (Math.random() - 0.5) * 0.35);
+            cellGroup.add(rubbleGroup);
+          } else if (randVal < 0.32) {
+            // Spooky Glowing Bioluminescent Mushrooms (Blue-cyan cap + soft pointlight)
             const mush = new THREE.Group();
             const stem = new THREE.Mesh(stemMGeo, stemMMat);
             stem.position.y = 0.04;
-            const cap = new THREE.Mesh(capMGeo, capMMat);
+            
+            const glowMushroomMat = new THREE.MeshStandardMaterial({
+              color: "#3b82f6", // neon blue
+              emissive: "#1d4ed8", // rich blue glow
+              emissiveIntensity: 2.2,
+              roughness: 0.4
+            });
+            const cap = new THREE.Mesh(capMGeo, glowMushroomMat);
             cap.position.y = 0.08;
-            mush.add(stem, cap);
+            
+            const mushLight = new THREE.PointLight("#60a5fa", 0.55, 0.7); // soft blue illumination
+            mushLight.position.set(0, 0.08, 0);
+            
+            mush.add(stem, cap, mushLight);
             mush.position.set((Math.random() - 0.5) * 0.35, 0, (Math.random() - 0.5) * 0.35);
             cellGroup.add(mush);
-          } else if (randVal < 0.45) {
-            // Wild Flowers (More flowers for garden look)
-            const fl = new THREE.Group();
-            const stem = new THREE.Mesh(stemFGeo, stemFMat);
-            stem.position.y = 0.06;
-            const petals = new THREE.Mesh(
-              petalsFGeo,
-              Math.random() > 0.5 ? petalsPinkMat : petalsGoldMat
-            );
-            petals.position.y = 0.12;
-            fl.add(stem, petals);
-            fl.position.set((Math.random() - 0.5) * 0.35, 0, (Math.random() - 0.5) * 0.35);
-            cellGroup.add(fl);
+          } else if (randVal < 0.46) {
+            // Creeping Dark Green Vines / Ivy Sprouts creeping on the stone path
+            const vineGroup = new THREE.Group();
+            const leafMat = new THREE.MeshStandardMaterial({ 
+              map: this.hedgeTexture, 
+              color: "#14532d", // rich dark green
+              roughness: 0.95 
+            });
+            for (let i = 0; i < 3; i++) {
+              const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.04 + Math.random() * 0.02, 6, 6), leafMat);
+              leaf.scale.set(1.5, 0.2, 1.0);
+              leaf.position.set((Math.random() - 0.5) * 0.22, 0.005, (Math.random() - 0.5) * 0.22);
+              leaf.rotation.set(0, Math.random() * Math.PI, 0);
+              vineGroup.add(leaf);
+            }
+            vineGroup.position.set((Math.random() - 0.5) * 0.35, 0, (Math.random() - 0.5) * 0.35);
+            cellGroup.add(vineGroup);
           }
 
           // Removed Ceiling for open-air sky experience

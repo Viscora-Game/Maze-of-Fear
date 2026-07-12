@@ -1073,17 +1073,20 @@ export class CanvasRenderer {
              } else if (cell.npc.id === "traveler") {
                if (this.charactersModel) {
                  const clone = this.charactersModel.clone();
-                 // Hide female meshes to render only the male traveler
+                 // REMOVE female meshes entirely (not just hide) so Box3 isn't polluted
                  const femaleMesh = clone.getObjectByName("BaseFemaleMesh");
                  const femaleRig = clone.getObjectByName("FemaleRig");
-                 if (femaleMesh) femaleMesh.visible = false;
-                 if (femaleRig) femaleRig.visible = false;
+                 if (femaleMesh && femaleMesh.parent) femaleMesh.parent.remove(femaleMesh);
+                 if (femaleRig && femaleRig.parent) femaleRig.parent.remove(femaleRig);
 
                  clone.traverse(child => {
                    if (child.isMesh) {
                      child.castShadow = true;
                      child.receiveShadow = true;
-                     if (child.material) child.material.roughness = 0.8;
+                     if (child.material) {
+                       child.material = child.material.clone();
+                       child.material.roughness = 0.8;
+                     }
                    }
                  });
                  const box = new THREE.Box3().setFromObject(clone);
@@ -1164,11 +1167,11 @@ export class CanvasRenderer {
              } else if (cell.npc.id === "merchant") {
                 if (this.charactersModel) {
                   const clone = this.charactersModel.clone();
-                  // Hide male meshes to render only the female adult character
+                  // REMOVE male meshes entirely (not just hide) so Box3 isn't polluted
                   const maleMesh = clone.getObjectByName("BaseMaleMesh");
                   const maleRig = clone.getObjectByName("MaleRig");
-                  if (maleMesh) maleMesh.visible = false;
-                  if (maleRig) maleRig.visible = false;
+                  if (maleMesh && maleMesh.parent) maleMesh.parent.remove(maleMesh);
+                  if (maleRig && maleRig.parent) maleRig.parent.remove(maleRig);
 
                   // Reset position of FemaleRig to (0, 0, 0) because the GLTF file has a translation offset of 0.6292 on X!
                   const femaleRig = clone.getObjectByName("FemaleRig");
@@ -1180,7 +1183,10 @@ export class CanvasRenderer {
                     if (child.isMesh) {
                       child.castShadow = true;
                       child.receiveShadow = true;
-                      if (child.material) child.material.roughness = 0.8;
+                      if (child.material) {
+                        child.material = child.material.clone();
+                        child.material.roughness = 0.8;
+                      }
                     }
                   });
 
@@ -1298,11 +1304,11 @@ export class CanvasRenderer {
             } else if (cell.npc.id === "child") {
                if (this.charactersModel) {
                  const clone = this.charactersModel.clone();
-                 // Hide male meshes to render only the female child character
+                 // REMOVE male meshes entirely (not just hide) so Box3 isn't polluted
                  const maleMesh = clone.getObjectByName("BaseMaleMesh");
                  const maleRig = clone.getObjectByName("MaleRig");
-                 if (maleMesh) maleMesh.visible = false;
-                 if (maleRig) maleRig.visible = false;
+                 if (maleMesh && maleMesh.parent) maleMesh.parent.remove(maleMesh);
+                 if (maleRig && maleRig.parent) maleRig.parent.remove(maleRig);
 
                  // Reset position of FemaleRig to (0, 0, 0) because the GLTF file has a translation offset of 0.6292 on X!
                  const femaleRig = clone.getObjectByName("FemaleRig");
@@ -1314,7 +1320,10 @@ export class CanvasRenderer {
                    if (child.isMesh) {
                      child.castShadow = true;
                      child.receiveShadow = true;
-                     if (child.material) child.material.roughness = 0.8;
+                     if (child.material) {
+                       child.material = child.material.clone();
+                       child.material.roughness = 0.8;
+                     }
                    }
                  });
                  // Target child height is 0.45 units (scaled down relative to adult 0.75).

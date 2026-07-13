@@ -1270,12 +1270,30 @@ function setupUI(game) {
     ctx.arc(px, py, cellSize * 0.25, 0, Math.PI * 2);
     ctx.fill();
     
-    // Direction arrow pointer
-    ctx.strokeStyle = "#991b1b";
-    ctx.lineWidth = 2.5;
+    // Direction arrow pointer (High-visibility golden compass arrowhead style)
+    const angle = s.player.angle;
+    
+    // Tip of the arrow (pointing in facing direction)
+    const tipX = px + Math.cos(angle) * cellSize * 0.75;
+    const tipY = py + Math.sin(angle) * cellSize * 0.75;
+    
+    // Left and right base wings of the arrowhead
+    const leftX = px + Math.cos(angle - 2.5) * cellSize * 0.35;
+    const leftY = py + Math.sin(angle - 2.5) * cellSize * 0.35;
+    
+    const rightX = px + Math.cos(angle + 2.5) * cellSize * 0.35;
+    const rightY = py + Math.sin(angle + 2.5) * cellSize * 0.35;
+    
+    ctx.fillStyle = "#fbbf24"; // Bright gold arrowhead
+    ctx.strokeStyle = "#991b1b"; // Crimson outline
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(px, py);
-    ctx.lineTo(px + Math.cos(s.player.angle) * cellSize * 0.75, py + Math.sin(s.player.angle) * cellSize * 0.75);
+    ctx.moveTo(tipX, tipY);
+    ctx.lineTo(leftX, leftY);
+    ctx.lineTo(px, py); // crease back to player center
+    ctx.lineTo(rightX, rightY);
+    ctx.closePath();
+    ctx.fill();
     ctx.stroke();
   };
 

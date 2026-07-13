@@ -929,4 +929,48 @@ export class AudioEngine {
     osc2.stop(now + 1.6);
     noise.stop(now + 1.6);
   }
+
+  playShadowGroan(distance) {
+    if (this.muted || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    
+    const maxDist = 12.0;
+    if (distance > maxDist) return;
+    const volumeFactor = 1.0 - (distance / maxDist);
+    const volume = 0.20 * volumeFactor;
+    
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = this.noiseBuffer;
+    
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = "bandpass";
+    filter.frequency.setValueAtTime(250, now);
+    filter.frequency.exponentialRampToValueAtTime(100, now + 1.8);
+    filter.Q.setValueAtTime(4.0, now);
+    
+    const osc = this.ctx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(55, now);
+    osc.frequency.linearRampToValueAtTime(45, now + 1.8);
+    
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(volume * 0.4, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.8);
+    
+    const oscGain = this.ctx.createGain();
+    oscGain.gain.setValueAtTime(volume * 0.6, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.8);
+    
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.masterGain);
+    
+    osc.connect(oscGain);
+    oscGain.connect(this.masterGain);
+    
+    noise.start(now);
+    osc.start(now);
+    noise.stop(now + 1.9);
+    osc.stop(now + 1.9);
+  }
 }

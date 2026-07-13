@@ -185,8 +185,9 @@ export class Game {
         y: 0,
         floor: 0,
         burnTime: 0,
-        spawnTimer: 30.0 + Math.random() * 20.0, // spawn check every 30-50 seconds
-        speed: 1.4 // slightly slower than player walk (1.8)
+        spawnTimer: 15.0 + Math.random() * 10.0, // spawn check every 15-25 seconds
+        speed: 1.35, // balanced speed
+        soundTimer: 0.5
       }
     };
 
@@ -1040,12 +1041,13 @@ export class Game {
       text: this.t("close"),
       action: () => {
         this.state.gameState = "playing";
-         const stock = this.state.merchantStock;
-         if (npc.id === "merchant" && stock && stock.cheese.count === 0 && stock.bucket.count === 0) {
-           npc.disappearing = true;
-           npc.disappearStartTime = Date.now();
-           this.audio.playGhostFade();
-         }
+        const stock = this.state.merchantStock;
+        const isSoldOut = npc.id === "merchant" && stock && Object.values(stock).every(info => info.count === 0);
+        if (isSoldOut) {
+          npc.disappearing = true;
+          npc.disappearStartTime = Date.now();
+          this.audio.playGhostFade();
+        }
         if (this.onStateChange) this.onStateChange();
       }
     });
@@ -1210,6 +1212,70 @@ export class Game {
     }
   }
 
+  findPathToPlayer(smX, smY, pX, pY, grid, width, height) {
+    const startX = Math.floor(smX);
+    const startY = Math.floor(smY);
+    const targetX = Math.floor(pX);
+    const targetY = Math.floor(pY);
+    
+    if (startX === targetX && startY === targetY) {
+      return null;
+    }
+    
+    const queue = [[startX, startY]];
+    const parent = {};
+    const visited = {};
+    visited[`${startX},${startY}`] = true;
+    
+    let found = false;
+    const dirs = [
+      [0, 1],  // South
+      [0, -1], // North
+      [1, 0],  // East
+      [-1, 0]  // West
+    ];
+    
+    while (queue.length > 0) {
+      const [cx, cy] = queue.shift();
+      if (cx === targetX && cy === targetY) {
+        found = true;
+        break;
+      }
+      
+      for (const [dx, dy] of dirs) {
+        const nx = cx + dx;
+        const ny = cy + dy;
+        
+        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+          const key = `${nx},${ny}`;
+          if (!visited[key] && grid[ny][nx].type !== "wall") {
+            visited[key] = true;
+            parent[key] = `${cx},${cy}`;
+            queue.push([nx, ny]);
+          }
+        }
+      }
+    }
+    
+    if (!found) return null;
+    
+    // Backtrack to find path step
+    let curr = `${targetX},${targetY}`;
+    const path = [];
+    while (curr) {
+      path.push(curr);
+      curr = parent[curr];
+    }
+    
+    path.reverse();
+    if (path.length > 1) {
+      const [nx, ny] = path[1].split(",").map(Number);
+      return { x: nx + 0.5, y: ny + 0.5 };
+    }
+    
+    return null;
+  }
+
   updateShadowMonster(dt) {
     const s = this.state;
     if (!s || !s.shadowMonster) return;
@@ -1222,28 +1288,29 @@ export class Game {
     if (!sm.active) {
       sm.spawnTimer -= dt;
       if (sm.spawnTimer <= 0) {
-        sm.spawnTimer = 35.0 + Math.random() * 25.0; // Reset spawn timer
+        sm.spawnTimer = 15.0 + Math.random() * 10.0; // Reset spawn timer (15-25 seconds)
         
-        // Spawn shadow monster in a path cell 6 to 10 units away from the player
+        // Spawn shadow monster in a path cell 3 to 6 units away from the player
         const pCellX = Math.floor(p.x);
         const pCellY = Math.floor(p.y);
         const grid = s.floors[s.currentFloor];
         
         let spawned = false;
         for (let attempt = 0; attempt < 50; attempt++) {
-          const rx = pCellX + Math.floor((Math.random() - 0.5) * 18);
-          const ry = pCellY + Math.floor((Math.random() - 0.5) * 18);
+          const rx = pCellX + Math.floor((Math.random() - 0.5) * 12);
+          const ry = pCellY + Math.floor((Math.random() - 0.5) * 12);
           if (rx >= 0 && rx < s.width && ry >= 0 && ry < s.height) {
             const dx = rx - pCellX;
             const dy = ry - pCellY;
             const dist = Math.hypot(dx, dy);
-            if (dist >= 6 && dist <= 10 && grid[ry][rx].type === "path" && !grid[ry][rx].isExit) {
+            if (dist >= 3.0 && dist <= 6.0 && grid[ry][rx].type === "path" && !grid[ry][rx].isExit) {
               sm.active = true;
               sm.x = rx + 0.5;
               sm.y = ry + 0.5;
               sm.floor = s.currentFloor;
               sm.burnTime = 0;
-              sm.speed = 1.3 + Math.random() * 0.2; // slightly slower than player walking speed (1.8)
+              sm.speed = 1.25 + Math.random() * 0.15;
+              sm.soundTimer = 0.5; // Play sound immediately after spawn
               this.audio.playShadowSpawn();
               spawned = true;
               break;
@@ -1257,23 +1324,30 @@ export class Game {
     // If active but player changed floors, auto-despawn
     if (sm.floor !== s.currentFloor) {
       sm.active = false;
-      sm.spawnTimer = 15.0;
+      sm.spawnTimer = 10.0;
       return;
+    }
+    
+    const dist = Math.hypot(sm.x - p.x, sm.y - p.y);
+    
+    // Play periodic ambient groan sound relative to distance
+    if (sm.soundTimer !== undefined) {
+      sm.soundTimer -= dt;
+      if (sm.soundTimer <= 0) {
+        sm.soundTimer = 3.5 + Math.random() * 2.0; // every 3.5-5.5 seconds
+        this.audio.playShadowGroan(dist);
+      }
     }
     
     // Check if player's flashlight is shining on the shadow monster
     let isBurned = false;
     if (s.lanternOn) {
-      const dx = sm.x - p.x;
-      const dy = sm.y - p.y;
-      const dist = Math.hypot(dx, dy);
-      
       if (dist < 8.0) { // flashlight beam range limit
         // Calculate angle between player look direction and monster direction
         const lookX = Math.cos(p.angle);
         const lookY = Math.sin(p.angle);
-        const dirX = dx / dist;
-        const dirY = dy / dist;
+        const dirX = (sm.x - p.x) / dist;
+        const dirY = (sm.y - p.y) / dist;
         
         const dot = lookX * dirX + lookY * dirY;
         if (dot > 0.866) { // ~30 degrees cone
@@ -1289,7 +1363,7 @@ export class Game {
           // If burned for 2 seconds, it dissolves
           if (sm.burnTime >= 2.0) {
             sm.active = false;
-            sm.spawnTimer = 45.0 + Math.random() * 30.0;
+            sm.spawnTimer = 25.0 + Math.random() * 15.0; // next spawn
             this.audio.playShadowBurn();
             if (this.onStateChange) this.onStateChange();
             return;
@@ -1305,47 +1379,56 @@ export class Game {
     
     // Movement logic
     const grid = s.floors[s.currentFloor];
-    let runX = 0;
-    let runY = 0;
     
     if (sm.burnTime > 0) {
       // Flee away from player
-      runX = sm.x - p.x;
-      runY = sm.y - p.y;
+      let runX = sm.x - p.x;
+      let runY = sm.y - p.y;
       const len = Math.hypot(runX, runY);
       if (len > 0.001) {
-        runX = (runX / len) * sm.speed * 1.4 * dt; // flee faster
-        runY = (runY / len) * sm.speed * 1.4 * dt;
+        runX = (runX / len) * sm.speed * 1.35 * dt; // flee faster
+        runY = (runY / len) * sm.speed * 1.35 * dt;
       }
+      
+      let nextX = sm.x + runX;
+      let nextY = sm.y + runY;
+      
+      const canMoveTo = (tx, ty) => {
+        const gx = Math.floor(tx);
+        const gy = Math.floor(ty);
+        if (gx < 0 || gx >= s.width || gy < 0 || gy >= s.height) return false;
+        const cell = grid[gy][gx];
+        return cell.type !== "wall";
+      };
+      
+      if (canMoveTo(nextX, sm.y)) sm.x = nextX;
+      if (canMoveTo(sm.x, nextY)) sm.y = nextY;
+      
     } else {
-      // Chase player
-      runX = p.x - sm.x;
-      runY = p.y - sm.y;
-      const len = Math.hypot(runX, runY);
-      if (len > 0.001) {
-        runX = (runX / len) * sm.speed * dt;
-        runY = (runY / len) * sm.speed * dt;
+      // Chase player using smart BFS pathfinding through corridors
+      const nextStep = this.findPathToPlayer(sm.x, sm.y, p.x, p.y, grid, s.width, s.height);
+      if (nextStep) {
+        let chaseX = nextStep.x - sm.x;
+        let chaseY = nextStep.y - sm.y;
+        const len = Math.hypot(chaseX, chaseY);
+        if (len > 0.001) {
+          sm.x += (chaseX / len) * sm.speed * dt;
+          sm.y += (chaseY / len) * sm.speed * dt;
+        }
+      } else {
+        // Fallback: move directly towards player coordinates
+        let chaseX = p.x - sm.x;
+        let chaseY = p.y - sm.y;
+        const len = Math.hypot(chaseX, chaseY);
+        if (len > 0.001) {
+          sm.x += (chaseX / len) * sm.speed * dt;
+          sm.y += (chaseY / len) * sm.speed * dt;
+        }
       }
     }
     
-    let nextX = sm.x + runX;
-    let nextY = sm.y + runY;
-    
-    const canMoveTo = (tx, ty) => {
-      const gx = Math.floor(tx);
-      const gy = Math.floor(ty);
-      if (gx < 0 || gx >= s.width || gy < 0 || gy >= s.height) return false;
-      const cell = grid[gy][gx];
-      return cell.type !== "wall";
-    };
-    
-    // Sliding collision check
-    if (canMoveTo(nextX, sm.y)) sm.x = nextX;
-    if (canMoveTo(sm.x, nextY)) sm.y = nextY;
-    
     // Check Jumpscare range
-    const pDist = Math.hypot(sm.x - p.x, sm.y - p.y);
-    if (pDist < 0.65) {
+    if (dist < 0.65) {
       this.triggerJumpscare();
     }
   }
@@ -1356,7 +1439,7 @@ export class Game {
     
     s.gameState = "modal";
     s.shadowMonster.active = false;
-    s.shadowMonster.spawnTimer = 50.0 + Math.random() * 30.0;
+    s.shadowMonster.spawnTimer = 25.0 + Math.random() * 15.0;
     
     this.audio.playJumpscare();
     

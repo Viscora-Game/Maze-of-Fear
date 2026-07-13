@@ -934,6 +934,12 @@ function setupUI(game) {
   const closeMap = () => {
     game.state.gameState = "playing";
     document.getElementById("modal-map").classList.add("hidden");
+    
+    // Hide instructions and cancel reveal mode
+    const instructions = document.getElementById("map-instructions");
+    if (instructions) instructions.style.display = "none";
+    if (game.state) game.state.mapRevealMode = false;
+    
     if (mapAnimId) {
       cancelAnimationFrame(mapAnimId);
       mapAnimId = null;
@@ -978,6 +984,39 @@ function setupUI(game) {
     };
     modalMap.addEventListener("click", handleBackdrop);
     modalMap.addEventListener("touchstart", handleBackdrop, { passive: false });
+  }
+
+  // Handle map click/touch for Map Piece target selection
+  const mapCanvas = document.getElementById("map-canvas");
+  if (mapCanvas) {
+    const handleMapClick = (e) => {
+      if (!game.state || !game.state.mapRevealMode) return;
+      
+      e.preventDefault();
+      
+      const rect = mapCanvas.getBoundingClientRect();
+      let clientX, clientY;
+      
+      if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else if (e.changedTouches && e.changedTouches.length > 0) {
+        clientX = e.changedTouches[0].clientX;
+        clientY = e.changedTouches[0].clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
+      
+      const x = ((clientX - rect.left) / rect.width) * mapCanvas.width;
+      const y = ((clientY - rect.top) / rect.height) * mapCanvas.height;
+      
+      game.revealMapAt(x, y, mapCanvas.width, mapCanvas.height);
+      closeMap();
+    };
+    
+    mapCanvas.addEventListener("click", handleMapClick);
+    mapCanvas.addEventListener("touchstart", handleMapClick, { passive: false });
   }
 
   // Hotkeys (I/E/M and Modal Closers)

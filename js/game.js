@@ -250,12 +250,12 @@ export class Game {
     const w = this.state.width;
     const h = this.state.height;
     const f = this.state.currentFloor;
-    const radius = 10; // reveal cells up to 10 units away (prevents visible pop-in with linear fog)
+    const radius = 3; // reveal cells up to 3 units away cardinally and diagonally
     
     for (let dy = -radius; dy <= radius; dy++) {
       for (let dx = -radius; dx <= radius; dx++) {
-        // Euclidean distance check to make it a perfect circular reveal area
-        if (dx * dx + dy * dy <= 110.25) { // 10.5 squared
+        // Euclidean distance check to make it a perfect circular reveal area of radius 3
+        if (dx * dx + dy * dy <= 12.25) { // 3.5 squared
           const nx = px + dx;
           const ny = py + dy;
           if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
@@ -1104,20 +1104,28 @@ export class Game {
       this.audio.playPickup();
       if (this.onStateChange) this.onStateChange();
     } else if (itemId === "map_piece") {
-      p.inventory.map_piece--;
-      const radius = 2;
-      const cellX = Math.floor(p.x);
-      const cellY = Math.floor(p.y);
-      for (let dy = -radius; dy <= radius; dy++) {
-        for (let dx = -radius; dx <= radius; dx++) {
-          const nx = cellX + dx;
-          const ny = cellY + dy;
-          if (nx >= 0 && nx < this.state.width && ny >= 0 && ny < this.state.height) {
-            this.state.visitedMap[this.state.currentFloor][ny][nx] = true;
-          }
+      this.state.mapRevealMode = true;
+      
+      // Close inventory modal
+      const invModal = document.getElementById("modal-inventory");
+      if (invModal) invModal.classList.add("hidden");
+      
+      // Open map modal
+      const mapModal = document.getElementById("modal-map");
+      if (mapModal) {
+        mapModal.classList.remove("hidden");
+        this.state.gameState = "modal";
+        
+        // Setup visual instructions overlay
+        const instructions = document.getElementById("map-instructions");
+        if (instructions) {
+          instructions.style.display = "block";
+          instructions.textContent = this.lang === "tr" 
+            ? "Haritada açmak istediğiniz 5x5'lik alana tıklayın!" 
+            : "Click on the map to reveal a 5x5 area!";
         }
       }
-      this.audio.playPickup();
+      
       if (this.onStateChange) this.onStateChange();
     } else if (itemId === "compass") {
       const dx = this.state.exitCell.x - p.x;
@@ -1134,6 +1142,59 @@ export class Game {
         
       alert(`${this.t("compassActive")} (${dirTrans})`);
       this.audio.playUnlock();
+    }
+  }
+
+  revealMapAt(canvasX, canvasY, canvasWidth, canvasHeight) {
+    const s = this.state;
+    if (!s || !s.mapRevealMode) return;
+    
+    // Check if player actually has a map piece
+    const p = this.player;
+    if (!p || !p.inventory || (p.inventory.map_piece || 0) <= 0) {
+      s.mapRevealMode = false;
+      const instructions = document.getElementById("map-instructions");
+      if (instructions) instructions.style.display = "none";
+      return;
+    }
+    
+    // Calculate cell coordinates based on the layout logic in drawMap()
+    const cellSize = Math.min(canvasWidth / s.width, canvasHeight / s.height);
+    const offsetX = (canvasWidth - s.width * cellSize) / 2;
+    const offsetY = (canvasHeight - s.height * cellSize) / 2;
+    
+    const clickX = canvasX - offsetX;
+    const clickY = canvasY - offsetY;
+    
+    const cellX = Math.floor(clickX / cellSize);
+    const cellY = Math.floor(clickY / cellSize);
+    
+    // Validate cell bounds
+    if (cellX >= 0 && cellX < s.width && cellY >= 0 && cellY < s.height) {
+      // Reveal 5x5 area around clicked cell
+      const radius = 2;
+      for (let dy = -radius; dy <= radius; dy++) {
+        for (let dx = -radius; dx <= radius; dx++) {
+          const nx = cellX + dx;
+          const ny = cellY + dy;
+          if (nx >= 0 && nx < s.width && ny >= 0 && ny < s.height) {
+            s.visitedMap[s.currentFloor][ny][nx] = true;
+          }
+        }
+      }
+      
+      // Consume the map piece
+      p.inventory.map_piece--;
+      s.mapRevealMode = false;
+      
+      // Play pickup sound as chime
+      this.audio.playPickup();
+      
+      // Hide visual instructions
+      const instructions = document.getElementById("map-instructions");
+      if (instructions) instructions.style.display = "none";
+      
+      if (this.onStateChange) this.onStateChange();
     }
   }
 

@@ -867,13 +867,15 @@ export class Game {
         choices.push({
           text: this.t("npc.child.giveWater"),
           action: () => {
-            inv.bucket_full--;
-            inv.bucket++;
-            inv.key++;
-            this.state.quests.childState = "solved";
-            this.audio.playPickup();
-            this.state.gameState = "playing";
-            if (this.onStateChange) this.onStateChange();
+             inv.bucket_full--;
+             inv.bucket++;
+             inv.key++;
+             this.state.quests.childState = "solved";
+             npc.disappearing = true;
+             npc.disappearStartTime = Date.now();
+             this.audio.playPickup();
+             this.state.gameState = "playing";
+             if (this.onStateChange) this.onStateChange();
           }
         });
       } else {
@@ -943,13 +945,15 @@ export class Game {
             : this.t("directionNames." + (vert || horiz || "south"));
 
           text = this.t("npc.traveler.exitHint", { direction: dirTrans });
-          choices = [{
-            text: this.t("npc.traveler.farewell"),
-            action: () => {
-              this.state.gameState = "playing";
-              if (this.onStateChange) this.onStateChange();
-            }
-          }];
+            choices = [{
+              text: this.t("npc.traveler.farewell"),
+              action: () => {
+                this.state.gameState = "playing";
+                npc.disappearing = true;
+                npc.disappearStartTime = Date.now();
+                if (this.onStateChange) this.onStateChange();
+              }
+            }];
           if (this.onDialog) this.onDialog({ title, text, choices });
         }
       });
@@ -957,13 +961,15 @@ export class Game {
         text: this.t("npc.traveler.askCode"),
         action: () => {
           text = this.t("npc.traveler.codeHint");
-          choices = [{
-            text: this.t("npc.traveler.farewell"),
-            action: () => {
-              this.state.gameState = "playing";
-              if (this.onStateChange) this.onStateChange();
-            }
-          }];
+            choices = [{
+              text: this.t("npc.traveler.farewell"),
+              action: () => {
+                this.state.gameState = "playing";
+                npc.disappearing = true;
+                npc.disappearStartTime = Date.now();
+                if (this.onStateChange) this.onStateChange();
+              }
+            }];
           if (this.onDialog) this.onDialog({ title, text, choices });
         }
       });
@@ -994,6 +1000,11 @@ export class Game {
       text: this.t("close"),
       action: () => {
         this.state.gameState = "playing";
+        const stock = this.state.merchantStock;
+        if (npc.id === "merchant" && stock && stock.cheese.count === 0 && stock.bucket.count === 0) {
+          npc.disappearing = true;
+          npc.disappearStartTime = Date.now();
+        }
         if (this.onStateChange) this.onStateChange();
       }
     });

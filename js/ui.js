@@ -411,8 +411,8 @@ function setupUI(game) {
       npcEmoji = "🤠";
     } else if (titleLower.includes("tüccar") || titleLower.includes("merchant")) {
       npcEmoji = "👳";
-    } else if (titleLower.includes("çocuk") || titleLower.includes("child")) {
-      npcEmoji = "👶";
+    } else if (titleLower.includes("çocuk") || titleLower.includes("child") || titleLower.includes("genç") || titleLower.includes("youth") || titleLower.includes("teen")) {
+      npcEmoji = "👦";
     } else if (titleLower.includes("fare") || titleLower.includes("sıçan") || titleLower.includes("mouse") || titleLower.includes("rat")) {
       npcEmoji = "🐀";
     }

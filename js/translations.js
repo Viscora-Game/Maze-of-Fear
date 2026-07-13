@@ -103,7 +103,7 @@ export const translations = {
         done: "Goodbye"
       },
       child: {
-        name: "Lost Child",
+        name: "Lost Youth",
         greeting: "I'm so thirsty... and I lost my way. Have you seen any water?",
         noWater: "I saw a well somewhere in these ruins, but I don't have anything to carry water in...",
         hasWater: "You have fresh well water! Can I have a drink?",
@@ -283,7 +283,7 @@ export const translations = {
         done: "Güle güle"
       },
       child: {
-        name: "Kayıp Çocuk",
+        name: "Kayıp Genç",
         greeting: "Çok susadım... ve yolumu kaybettim. Hiç su gördün mü?",
         noWater: "Bu harabelerde bir kuyu görmüştüm ama su taşıyacak hiçbir şeyim yok...",
         hasWater: "Taze kuyu suyun var! Bir yudum içebilir miyim?",

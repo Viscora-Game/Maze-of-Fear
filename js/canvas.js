@@ -548,6 +548,11 @@ export class CanvasRenderer {
           const boxScaled = new THREE.Box3().setFromObject(fbx);
           fbx.position.y = -boxScaled.min.y;
           
+          fbx.userData.initialY = fbx.position.y;
+          fbx.userData.initialScaleX = scaleFactor;
+          fbx.userData.initialScaleY = scaleFactor;
+          fbx.userData.initialScaleZ = scaleFactor;
+          
           this[modelProp] = fbx;
           console.log(`FBX Character ${name} loaded, scaled to ${targetHeight}m, and foot-aligned successfully!`);
           if (this.lastState) {
@@ -2180,6 +2185,41 @@ export class CanvasRenderer {
             // Shrink to zero over 3 seconds
             const scaleFactor = Math.max(0, 1 - (elapsed / 3.0));
             npcGroup.scale.set(scaleFactor, scaleFactor, scaleFactor);
+          } else if (cell.npc.id !== "mouse" && cell.npc.disappearing) {
+            const elapsed = (Date.now() - cell.npc.disappearStartTime) / 1000;
+            const model = npcGroup.children[0];
+            if (model) {
+              // 1. From 0.0s to 1.8s: Turn into a dark shadow (multiply color by factor going from 1.0 to 0.0)
+              // 2. From 1.8s to 3.8s: Fade out opacity from 1.0 to 0.0
+              const shadowFactor = Math.max(0.0, 1.0 - (elapsed / 1.8));
+              const alphaFactor = Math.max(0.0, 1.0 - Math.max(0.0, (elapsed - 1.8) / 2.0));
+              
+              model.traverse((child) => {
+                if (child.isMesh && child.material) {
+                  const mats = Array.isArray(child.material) ? child.material : [child.material];
+                  mats.forEach(m => {
+                    if (m.userData) {
+                      // Store original color if not already stored
+                      if (!m.userData.originalColor) {
+                        m.userData.originalColor = m.color.clone();
+                      }
+                      m.color.copy(m.userData.originalColor).multiplyScalar(shadowFactor);
+                    }
+                    m.transparent = true;
+                    m.opacity = alphaFactor;
+                  });
+                }
+              });
+              
+              // Haunting rise upwards as they fade into the afterworld
+              const initY = (model.userData && model.userData.initialY !== undefined) ? model.userData.initialY : 0.32;
+              model.position.y = initY + elapsed * 0.08;
+            }
+            
+            if (elapsed >= 3.8) {
+              cell.npc = null;
+              if (this.lastState) this.rebuildScene(this.lastState);
+            }
           } else {
             const dx = player.visualX - (x + 0.5);
             const dz = player.visualY - (y + 0.5);
@@ -2200,8 +2240,20 @@ export class CanvasRenderer {
             if (cell.npc.id !== "mouse") {
               const model = npcGroup.children[0];
               if (model) {
-                // Breathing bobbing
-                model.position.y = Math.sin(time) * 0.012;
+                const hasInitialY = model.userData && model.userData.initialY !== undefined;
+                const hasInitialScaleY = model.userData && model.userData.initialScaleY !== undefined;
+
+                if (hasInitialY && hasInitialScaleY) {
+                  // Ensure Y-position is locked to its initial Y feet alignment offset to prevent leg clipping!
+                  model.position.y = model.userData.initialY;
+
+                  // Scale Y breathing (feet remain anchored, chest/torso expands up and down slightly!)
+                  const breathingScale = 1.0 + Math.sin(time) * 0.015;
+                  model.scale.y = model.userData.initialScaleY * breathingScale;
+                } else {
+                  // Fallback for placeholder meshes (cylinders/spheres)
+                  model.position.y = 0.32 + Math.sin(time) * 0.012; // fallback Y bobbing
+                }
 
                 // Arms breathing/swaying (if skeletal bones are loaded)
                 const armL = typeof model.getObjectByName === "function" ? (model.getObjectByName("upper_arm.L") || model.getObjectByName("shoulder.L")) : null;

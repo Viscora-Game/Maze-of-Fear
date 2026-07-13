@@ -1071,225 +1071,55 @@ export class CanvasRenderer {
                 npcSubGroup.add(whL, whR);
               }
              } else if (cell.npc.id === "traveler") {
-               // 🧙 Yaşlı Gezgin — Full procedural low-poly character (no GLTF dependency)
-               const tSkin = new THREE.MeshStandardMaterial({ color: "#dbb896", roughness: 0.8 });
-               const tCoat = new THREE.MeshStandardMaterial({ color: "#1a4731", roughness: 0.85 });
-               const tBoot = new THREE.MeshStandardMaterial({ color: "#3b1a06", roughness: 0.9 });
-               const tBelt = new THREE.MeshStandardMaterial({ color: "#78350f", roughness: 0.7 });
-               const tPant = new THREE.MeshStandardMaterial({ color: "#1c1917", roughness: 0.85 });
-
-               // Boots
-               const bootL = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.06, 0.14), tBoot);
-               bootL.position.set(-0.08, 0.03, 0.02);
-               const bootR = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.06, 0.14), tBoot);
-               bootR.position.set(0.08, 0.03, 0.02);
-               npcSubGroup.add(bootL, bootR);
-
-               // Legs (dark pants)
-               const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.22, 6), tPant);
-               legL.position.set(-0.08, 0.17, 0);
-               const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.22, 6), tPant);
-               legR.position.set(0.08, 0.17, 0);
-               npcSubGroup.add(legL, legR);
-
-               // Torso/Coat — long flowing coat
-               const coat = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 0.45, 8), tCoat);
-               coat.position.y = 0.50;
-               npcSubGroup.add(coat);
-
-               // Belt with gold buckle
-               const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.155, 0.155, 0.04, 8), tBelt);
-               belt.position.y = 0.38;
-               const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.05, 0.01), new THREE.MeshStandardMaterial({ color: "#fbbf24", metalness: 0.9 }));
-               buckle.position.set(0, 0.38, 0.155);
-               npcSubGroup.add(belt, buckle);
-
-               // Shoulder straps (backpack)
-               const strapMat = new THREE.MeshStandardMaterial({ color: "#5c3310" });
-               const strapL = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.38, 0.01), strapMat);
-               strapL.position.set(-0.06, 0.52, 0.14);
-               strapL.rotation.z = -0.12;
-               const strapR = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.38, 0.01), strapMat);
-               strapR.position.set(0.06, 0.52, 0.14);
-               strapR.rotation.z = 0.12;
-               npcSubGroup.add(strapL, strapR);
-
-               // Arms with sleeves
-               const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.30, 6), tCoat);
-               armL.position.set(-0.18, 0.55, 0.06);
-               armL.rotation.set(0.4, 0, -0.25);
-               const handL = new THREE.Mesh(new THREE.SphereGeometry(0.035, 6, 6), tSkin);
-               handL.position.set(-0.14, 0.40, 0.18);
-               npcSubGroup.add(armL, handL);
-
-               const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.30, 6), tCoat);
-               armR.position.set(0.18, 0.55, 0.02);
-               armR.rotation.set(0.12, 0, 0.15);
-               const handR = new THREE.Mesh(new THREE.SphereGeometry(0.035, 6, 6), tSkin);
-               handR.position.set(0.20, 0.40, 0.06);
-               npcSubGroup.add(armR, handR);
-
-               // Neck
-               const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.06, 6), tSkin);
-               neck.position.y = 0.75;
-               npcSubGroup.add(neck);
-
-               // Head
-               const head = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 10), tSkin);
-               head.position.y = 0.85;
-               head.scale.set(1.0, 1.1, 1.0);
-               npcSubGroup.add(head);
-
-               // Eyes — small dark beads
-               const eyeM = new THREE.MeshBasicMaterial({ color: "#18181b" });
-               const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.018, 5, 5), eyeM);
-               eyeL.position.set(-0.04, 0.87, 0.10);
-               const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.018, 5, 5), eyeM);
-               eyeR.position.set(0.04, 0.87, 0.10);
-               npcSubGroup.add(eyeL, eyeR);
-
-               // Bushy eyebrows
-               const browMat = new THREE.MeshStandardMaterial({ color: "#6b7280", roughness: 0.9 });
-               const browL = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.012, 0.02), browMat);
-               browL.position.set(-0.04, 0.90, 0.10);
-               browL.rotation.z = 0.15;
-               const browR = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.012, 0.02), browMat);
-               browR.position.set(0.04, 0.90, 0.10);
-               browR.rotation.z = -0.15;
-               npcSubGroup.add(browL, browR);
-
-               // Hood / weathered hat
-               const hoodMat = new THREE.MeshStandardMaterial({ color: "#14532d", roughness: 0.9 });
-               const hood = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 8, 0, Math.PI * 2, 0, Math.PI / 2), hoodMat);
-               hood.position.set(0, 0.88, -0.02);
-               hood.rotation.x = 0.15;
-               npcSubGroup.add(hood);
-
-               // Grey beard
-               const beardMat = new THREE.MeshStandardMaterial({ color: "#9ca3af", roughness: 0.95 });
-               const beard = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.14, 6), beardMat);
-               beard.position.set(0, 0.72, 0.08);
-               beard.rotation.x = -0.2;
-               npcSubGroup.add(beard);
-
-               // Wooden walking staff (held in left hand)
-               const staffMat = new THREE.MeshStandardMaterial({ color: "#5c3310", roughness: 0.85 });
-               const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.022, 1.1, 6), staffMat);
-               staff.position.set(-0.20, 0.50, 0.18);
-               staff.rotation.set(0.1, 0, -0.08);
-               npcSubGroup.add(staff);
-
-               // Glowing green lantern tip at top of staff
-               const lanternGeo = new THREE.SphereGeometry(0.03, 6, 6);
-               const lanternMat = new THREE.MeshStandardMaterial({ color: "#4ade80", emissive: "#22c55e", emissiveIntensity: 3.0 });
-               const lantern = new THREE.Mesh(lanternGeo, lanternMat);
-               lantern.position.set(-0.21, 1.08, 0.20);
-               npcSubGroup.add(lantern);
-
-               // Backpack
-               const pack = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.30, 0.16), woodMat);
-               pack.position.set(0, 0.52, -0.16);
-               npcSubGroup.add(pack);
+               if (this.charactersModel && typeof THREE.SkeletonUtils !== "undefined") {
+                 const clone = THREE.SkeletonUtils.clone(this.charactersModel);
+                 const femaleMesh = clone.getObjectByName("BaseFemaleMesh");
+                 const femaleRig = clone.getObjectByName("FemaleRig");
+                 if (femaleMesh && femaleMesh.parent) femaleMesh.parent.remove(femaleMesh);
+                 if (femaleRig && femaleRig.parent) femaleRig.parent.remove(femaleRig);
+                 clone.traverse(ch => { if (ch.isMesh) { ch.castShadow = true; ch.receiveShadow = true; if (ch.material) { ch.material = ch.material.clone(); ch.material.roughness = 0.8; } } });
+                 const box = new THREE.Box3().setFromObject(clone);
+                 const size = new THREE.Vector3(); box.getSize(size);
+                 const s = size.y > 0.01 ? 0.75 / size.y : 0.38;
+                 clone.scale.set(s, s, s);
+                 const center = new THREE.Vector3(); box.getCenter(center);
+                 clone.position.set(-center.x * s, -box.min.y * s, -center.z * s);
+                 npcSubGroup.add(clone);
+               } else {
+                 const coat = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 0.45, 8), new THREE.MeshStandardMaterial({ color: "#1a4731", roughness: 0.85 }));
+                 coat.position.y = 0.50; npcSubGroup.add(coat);
+                 const head = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 10), new THREE.MeshStandardMaterial({ color: "#dbb896", roughness: 0.8 }));
+                 head.position.y = 0.85; npcSubGroup.add(head);
+                 const hood = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 8, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: "#14532d", roughness: 0.9 }));
+                 hood.position.set(0, 0.88, -0.02); npcSubGroup.add(hood);
+                 const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.022, 1.1, 6), new THREE.MeshStandardMaterial({ color: "#5c3310", roughness: 0.85 }));
+                 staff.position.set(-0.20, 0.50, 0.18); npcSubGroup.add(staff);
+               }
              } else if (cell.npc.id === "merchant") {
-               // 🧞 Tüccar — Full procedural low-poly merchant character (no GLTF dependency)
-               const mSkin = new THREE.MeshStandardMaterial({ color: "#dbb896", roughness: 0.8 });
-               const mRobe = new THREE.MeshStandardMaterial({ color: "#4c1d95", roughness: 0.8 });
-               const mSash = new THREE.MeshStandardMaterial({ color: "#b45309", roughness: 0.6 });
-
-               // Pointed shoes
-               const shoeL = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.05, 0.14), new THREE.MeshStandardMaterial({ color: "#7f1d1d" }));
-               shoeL.position.set(-0.08, 0.025, 0.03);
-               const shoeR = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.05, 0.14), new THREE.MeshStandardMaterial({ color: "#7f1d1d" }));
-               shoeR.position.set(0.08, 0.025, 0.03);
-               npcSubGroup.add(shoeL, shoeR);
-
-               // Legs
-               const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.20, 6), new THREE.MeshStandardMaterial({ color: "#1e1b4b" }));
-               legL.position.set(-0.08, 0.15, 0);
-               const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.20, 6), new THREE.MeshStandardMaterial({ color: "#1e1b4b" }));
-               legR.position.set(0.08, 0.15, 0);
-               npcSubGroup.add(legL, legR);
-
-               // Long flowing robe
-               const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.20, 0.48, 8), mRobe);
-               robe.position.y = 0.49;
-               npcSubGroup.add(robe);
-
-               // Golden ornate sash/belt
-               const sash = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.05, 8), mSash);
-               sash.position.y = 0.38;
-               npcSubGroup.add(sash);
-
-               // Leather pouch hanging from belt
-               const pouch = new THREE.Mesh(new THREE.SphereGeometry(0.04, 6, 6), new THREE.MeshStandardMaterial({ color: "#78350f" }));
-               pouch.position.set(-0.10, 0.30, 0.14);
-               pouch.scale.set(1, 1.2, 0.8);
-               npcSubGroup.add(pouch);
-
-               // Arms
-               const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.28, 6), mRobe);
-               armL.position.set(-0.19, 0.54, 0.04);
-               armL.rotation.set(0.5, 0, -0.35);
-               const handL = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 6), mSkin);
-               handL.position.set(-0.16, 0.40, 0.16);
-               npcSubGroup.add(armL, handL);
-
-               const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.28, 6), mRobe);
-               armR.position.set(0.19, 0.54, 0.04);
-               armR.rotation.set(0.3, 0, 0.3);
-               const handR = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 6), mSkin);
-               handR.position.set(0.18, 0.42, 0.12);
-               npcSubGroup.add(armR, handR);
-
-               // Shiny gold coin in right hand
-               const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.005, 10), new THREE.MeshStandardMaterial({ color: "#fbbf24", metalness: 0.95, emissive: "#d97706", emissiveIntensity: 0.5 }));
-               coin.position.set(0.18, 0.42, 0.15);
-               coin.rotation.x = Math.PI / 2;
-               npcSubGroup.add(coin);
-
-               // Neck
-               const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.05, 6), mSkin);
-               neck.position.y = 0.75;
-               npcSubGroup.add(neck);
-
-               // Head
-               const head = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 10), mSkin);
-               head.position.y = 0.85;
-               npcSubGroup.add(head);
-
-               // Dark beard
-               const beard = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.14, 6), new THREE.MeshStandardMaterial({ color: "#1c1917", roughness: 0.95 }));
-               beard.position.set(0, 0.72, 0.08);
-               beard.rotation.x = -0.2;
-               npcSubGroup.add(beard);
-
-               // Eyes
-               const mEyeMat = new THREE.MeshBasicMaterial({ color: "#18181b" });
-               const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.016, 5, 5), mEyeMat);
-               eyeL.position.set(-0.04, 0.87, 0.10);
-               const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.016, 5, 5), mEyeMat);
-               eyeR.position.set(0.04, 0.87, 0.10);
-               npcSubGroup.add(eyeL, eyeR);
-
-               // Golden turban with red jewel
-               const turban = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 8), new THREE.MeshStandardMaterial({ color: "#b45309", roughness: 0.6 }));
-               turban.position.y = 0.95;
-               turban.scale.set(1.1, 0.75, 1.1);
-               const jewel = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 6), new THREE.MeshStandardMaterial({ color: "#ef4444", emissive: "#dc2626", emissiveIntensity: 1.5, metalness: 0.9 }));
-               jewel.position.set(0, 0.96, 0.13);
-               npcSubGroup.add(turban, jewel);
-
-               // Large trade pack on back
-               const pack = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.36, 0.22), woodMat);
-               pack.position.set(0, 0.52, -0.18);
-               npcSubGroup.add(pack);
-
-               // Pack straps
-               const pStrapL = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.35, 0.01), new THREE.MeshStandardMaterial({ color: "#5c3310" }));
-               pStrapL.position.set(-0.07, 0.52, 0.14);
-               const pStrapR = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.35, 0.01), new THREE.MeshStandardMaterial({ color: "#5c3310" }));
-               pStrapR.position.set(0.07, 0.52, 0.14);
-               npcSubGroup.add(pStrapL, pStrapR);
+               if (this.charactersModel && typeof THREE.SkeletonUtils !== "undefined") {
+                 const clone = THREE.SkeletonUtils.clone(this.charactersModel);
+                 const maleMesh = clone.getObjectByName("BaseMaleMesh");
+                 const maleRig = clone.getObjectByName("MaleRig");
+                 if (maleMesh && maleMesh.parent) maleMesh.parent.remove(maleMesh);
+                 if (maleRig && maleRig.parent) maleRig.parent.remove(maleRig);
+                 const femaleRig = clone.getObjectByName("FemaleRig");
+                 if (femaleRig) femaleRig.position.set(0, 0, 0);
+                 clone.traverse(ch => { if (ch.isMesh) { ch.castShadow = true; ch.receiveShadow = true; if (ch.material) { ch.material = ch.material.clone(); ch.material.roughness = 0.8; } } });
+                 const box = new THREE.Box3().setFromObject(clone);
+                 const size = new THREE.Vector3(); box.getSize(size);
+                 const s = size.y > 0.01 ? 0.75 / size.y : 0.38;
+                 clone.scale.set(s, s, s);
+                 const center = new THREE.Vector3(); box.getCenter(center);
+                 clone.position.set(-center.x * s, -box.min.y * s, -center.z * s);
+                 npcSubGroup.add(clone);
+               } else {
+                 const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.20, 0.48, 8), new THREE.MeshStandardMaterial({ color: "#4c1d95", roughness: 0.8 }));
+                 robe.position.y = 0.49; npcSubGroup.add(robe);
+                 const head = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 10), new THREE.MeshStandardMaterial({ color: "#dbb896", roughness: 0.8 }));
+                 head.position.y = 0.85; npcSubGroup.add(head);
+                 const turban = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 8), new THREE.MeshStandardMaterial({ color: "#b45309", roughness: 0.6 }));
+                 turban.position.y = 0.95; turban.scale.set(1.1, 0.75, 1.1); npcSubGroup.add(turban);
+               }
             } else if (cell.npc.id === "well") {
               // Stone Well
               const wellBase = new THREE.Mesh(
@@ -1325,101 +1155,30 @@ export class CanvasRenderer {
               roof.rotation.x = 0.12;
               npcSubGroup.add(roof);
             } else if (cell.npc.id === "child") {
-               // 👶 Kayıp Çocuk — Full procedural low-poly child character (no GLTF dependency)
-               const cSkin = new THREE.MeshStandardMaterial({ color: "#f5d5b8", roughness: 0.8 });
-               const cShirt = new THREE.MeshStandardMaterial({ color: "#ea580c", roughness: 0.8 });
-               const cPants = new THREE.MeshStandardMaterial({ color: "#2563eb", roughness: 0.85 });
-
-               // Brown shoes
-               const shoeL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.04, 0.10), new THREE.MeshStandardMaterial({ color: "#78350f" }));
-               shoeL.position.set(-0.06, 0.02, 0.02);
-               const shoeR = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.04, 0.10), new THREE.MeshStandardMaterial({ color: "#78350f" }));
-               shoeR.position.set(0.06, 0.02, 0.02);
-               npcSubGroup.add(shoeL, shoeR);
-
-               // Blue pants legs
-               const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.16, 6), cPants);
-               legL.position.set(-0.06, 0.12, 0);
-               const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.16, 6), cPants);
-               legR.position.set(0.06, 0.12, 0);
-               npcSubGroup.add(legL, legR);
-
-               // Orange shirt torso
-               const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.10, 0.24, 8), cShirt);
-               torso.position.y = 0.32;
-               npcSubGroup.add(torso);
-
-               // Arms in crying position (raised to face)
-               const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.16, 6), cShirt);
-               armL.position.set(-0.10, 0.38, 0.06);
-               armL.rotation.set(0.9, 0, 0.5);
-               const handL = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 6), cSkin);
-               handL.position.set(-0.04, 0.48, 0.10);
-               npcSubGroup.add(armL, handL);
-
-               const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.16, 6), cShirt);
-               armR.position.set(0.10, 0.38, 0.06);
-               armR.rotation.set(0.9, 0, -0.5);
-               const handR = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 6), cSkin);
-               handR.position.set(0.04, 0.48, 0.10);
-               npcSubGroup.add(armR, handR);
-
-               // Neck
-               const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 0.04, 6), cSkin);
-               neck.position.y = 0.46;
-               npcSubGroup.add(neck);
-
-               // Head (slightly larger proportionally for child)
-               const head = new THREE.Mesh(new THREE.SphereGeometry(0.10, 10, 10), cSkin);
-               head.position.y = 0.56;
-               head.scale.set(1.0, 1.05, 1.0);
-               npcSubGroup.add(head);
-
-               // Big blue eyes (child-proportioned)
-               const cEyeMat = new THREE.MeshBasicMaterial({ color: "#1e3a8a" });
-               const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.018, 6, 6), cEyeMat);
-               eyeL.position.set(-0.035, 0.57, 0.085);
-               const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.018, 6, 6), cEyeMat);
-               eyeR.position.set(0.035, 0.57, 0.085);
-               npcSubGroup.add(eyeL, eyeR);
-
-               // Eye whites
-               const whiteMat = new THREE.MeshBasicMaterial({ color: "#f8fafc" });
-               const whiteL = new THREE.Mesh(new THREE.SphereGeometry(0.022, 6, 6), whiteMat);
-               whiteL.position.set(-0.035, 0.57, 0.08);
-               const whiteR = new THREE.Mesh(new THREE.SphereGeometry(0.022, 6, 6), whiteMat);
-               whiteR.position.set(0.035, 0.57, 0.08);
-               npcSubGroup.add(whiteL, whiteR);
-
-               // Tear drops (small glowing cyan spheres under eyes)
-               const tearMat = new THREE.MeshStandardMaterial({ color: "#67e8f9", emissive: "#22d3ee", emissiveIntensity: 1.5, transparent: true, opacity: 0.8 });
-               const tearL = new THREE.Mesh(new THREE.SphereGeometry(0.008, 4, 4), tearMat);
-               tearL.position.set(-0.035, 0.545, 0.09);
-               const tearR = new THREE.Mesh(new THREE.SphereGeometry(0.008, 4, 4), tearMat);
-               tearR.position.set(0.035, 0.545, 0.09);
-               npcSubGroup.add(tearL, tearR);
-
-               // Small sad mouth
-               const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.006, 0.01), new THREE.MeshBasicMaterial({ color: "#be123c" }));
-               mouth.position.set(0, 0.535, 0.09);
-               npcSubGroup.add(mouth);
-
-               // Brown hair
-               const hairMat = new THREE.MeshStandardMaterial({ color: "#451a03", roughness: 0.9 });
-               const hairBack = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), hairMat);
-               hairBack.position.set(0, 0.57, -0.02);
-               const hairTop = new THREE.Mesh(new THREE.SphereGeometry(0.10, 8, 8), hairMat);
-               hairTop.position.set(0, 0.63, 0);
-               npcSubGroup.add(hairBack, hairTop);
-
-               // Red cap
-               const capMat = new THREE.MeshStandardMaterial({ color: "#dc2626", roughness: 0.75 });
-               const capDome = new THREE.Mesh(new THREE.SphereGeometry(0.105, 10, 10, 0, Math.PI * 2, 0, Math.PI / 2), capMat);
-               capDome.position.set(0, 0.60, 0);
-               const visor = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.012, 0.06), capMat);
-               visor.position.set(0, 0.59, 0.10);
-               visor.rotation.x = 0.12;
-               npcSubGroup.add(capDome, visor);
+               if (this.charactersModel && typeof THREE.SkeletonUtils !== "undefined") {
+                 const clone = THREE.SkeletonUtils.clone(this.charactersModel);
+                 const maleMesh = clone.getObjectByName("BaseMaleMesh");
+                 const maleRig = clone.getObjectByName("MaleRig");
+                 if (maleMesh && maleMesh.parent) maleMesh.parent.remove(maleMesh);
+                 if (maleRig && maleRig.parent) maleRig.parent.remove(maleRig);
+                 const femaleRig = clone.getObjectByName("FemaleRig");
+                 if (femaleRig) femaleRig.position.set(0, 0, 0);
+                 clone.traverse(ch => { if (ch.isMesh) { ch.castShadow = true; ch.receiveShadow = true; if (ch.material) { ch.material = ch.material.clone(); ch.material.roughness = 0.8; } } });
+                 const box = new THREE.Box3().setFromObject(clone);
+                 const size = new THREE.Vector3(); box.getSize(size);
+                 const s = size.y > 0.01 ? 0.45 / size.y : 0.23;
+                 clone.scale.set(s, s, s);
+                 const center = new THREE.Vector3(); box.getCenter(center);
+                 clone.position.set(-center.x * s, -box.min.y * s, -center.z * s);
+                 npcSubGroup.add(clone);
+               } else {
+                 const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.10, 0.24, 8), new THREE.MeshStandardMaterial({ color: "#ea580c", roughness: 0.8 }));
+                 torso.position.y = 0.32; npcSubGroup.add(torso);
+                 const head = new THREE.Mesh(new THREE.SphereGeometry(0.10, 10, 10), new THREE.MeshStandardMaterial({ color: "#f5d5b8", roughness: 0.8 }));
+                 head.position.y = 0.56; npcSubGroup.add(head);
+                 const cap = new THREE.Mesh(new THREE.SphereGeometry(0.105, 10, 10, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: "#dc2626", roughness: 0.75 }));
+                 cap.position.set(0, 0.60, 0); npcSubGroup.add(cap);
+               }
              } else {
               const npcMesh = new THREE.Mesh(
                 new THREE.SphereGeometry(0.10, 12, 12),

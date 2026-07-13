@@ -294,6 +294,7 @@ export class CanvasRenderer {
     this.travelerModel = null;
     this.merchantModel = null;
     this.childModel = null;
+    this.monsterModel = null;
     this.loadCharactersAsset();
 
     // Load custom GLTF low-poly black flashlight model
@@ -521,12 +522,24 @@ export class CanvasRenderer {
             } else if (child.isMesh) {
               child.castShadow = true;
               child.receiveShadow = true;
-              child.material = new THREE.MeshStandardMaterial({
-                map: texture,
-                color: new THREE.Color("#444444"), // Dim base color to prevent overexposure/glowing under bright close flashlight
-                roughness: 0.95, // matte retro diffuse look
-                metalness: 0.05
-              });
+              if (name === "monster") {
+                // Scarier, darker transparent shadow look
+                child.material = new THREE.MeshStandardMaterial({
+                  map: texture,
+                  color: new THREE.Color("#111111"), // very dark overlay
+                  transparent: true,
+                  opacity: 0.85,
+                  roughness: 0.90,
+                  metalness: 0.10
+                });
+              } else {
+                child.material = new THREE.MeshStandardMaterial({
+                  map: texture,
+                  color: new THREE.Color("#444444"), // Dim base color to prevent overexposure/glowing under bright close flashlight
+                  roughness: 0.95, // matte retro diffuse look
+                  metalness: 0.05
+                });
+              }
             }
           });
           toRemove.forEach(obj => {
@@ -567,6 +580,7 @@ export class CanvasRenderer {
     loadChar('traveler', 0.75, 'travelerModel');
     loadChar('merchant', 0.75, 'merchantModel');
     loadChar('child', 0.45, 'childModel');
+    loadChar('monster', 0.85, 'monsterModel');
   }
 
   hasLineOfSight(x1, y1, x2, y2, grid, width, height) {
@@ -2323,19 +2337,30 @@ export class CanvasRenderer {
         if (!this.shadowMonsterMesh) {
           this.shadowMonsterMesh = new THREE.Group();
           
-          // Torso mesh (creepy dark floating sphere)
-          const bodyGeom = new THREE.SphereGeometry(0.32, 16, 16);
-          const bodyMat = new THREE.MeshStandardMaterial({
-            color: 0x050505,
-            roughness: 0.9,
-            metalness: 0.1,
-            transparent: true,
-            opacity: 0.85
-          });
-          const bodyMesh = new THREE.Mesh(bodyGeom, bodyMat);
-          bodyMesh.name = "body";
-          bodyMesh.position.y = 0.5;
-          this.shadowMonsterMesh.add(bodyMesh);
+          if (this.monsterModel) {
+            // Instantiate the 3D low-poly monster FBX model!
+            const monsterInstance = this.monsterModel.clone();
+            monsterInstance.name = "body";
+            
+            // Adjust position slightly to center it on the ground
+            monsterInstance.position.set(0, 0, 0);
+            
+            this.shadowMonsterMesh.add(monsterInstance);
+          } else {
+            // Torso mesh fallback (creepy dark floating sphere)
+            const bodyGeom = new THREE.SphereGeometry(0.32, 16, 16);
+            const bodyMat = new THREE.MeshStandardMaterial({
+              color: 0x050505,
+              roughness: 0.9,
+              metalness: 0.1,
+              transparent: true,
+              opacity: 0.85
+            });
+            const bodyMesh = new THREE.Mesh(bodyGeom, bodyMat);
+            bodyMesh.name = "body";
+            bodyMesh.position.y = 0.5;
+            this.shadowMonsterMesh.add(bodyMesh);
+          }
           
           // Glowing red eyes
           const eyeGeom = new THREE.SphereGeometry(0.04, 8, 8);
@@ -2343,17 +2368,17 @@ export class CanvasRenderer {
           
           const eyeL = new THREE.Mesh(eyeGeom, eyeMat);
           eyeL.name = "eyeL";
-          eyeL.position.set(-0.1, 0.6, 0.28);
+          eyeL.position.set(-0.09, 0.72, 0.16);
           
           const eyeR = new THREE.Mesh(eyeGeom, eyeMat);
           eyeR.name = "eyeR";
-          eyeR.position.set(0.1, 0.6, 0.28);
+          eyeR.position.set(0.09, 0.72, 0.16);
           
           this.shadowMonsterMesh.add(eyeL, eyeR);
           
           // Red point light casting eerie red glow
-          const shadowLight = new THREE.PointLight(0xff0000, 0.6, 3.0);
-          shadowLight.position.set(0, 0.6, 0.3);
+          const shadowLight = new THREE.PointLight(0xff0000, 0.7, 3.0);
+          shadowLight.position.set(0, 0.72, 0.2);
           this.shadowMonsterMesh.add(shadowLight);
           
           this.scene.add(this.shadowMonsterMesh);
@@ -2369,11 +2394,15 @@ export class CanvasRenderer {
         this.shadowMonsterMesh.rotation.y = Math.atan2(dx, dz);
         
         // Handle burning opacity fading
-        const bodyMesh = this.shadowMonsterMesh.getObjectByName("body");
-        if (bodyMesh && bodyMesh.material) {
-          const burnRatio = Math.max(0.15, 1.0 - (sm.burnTime / 2.0));
-          bodyMesh.material.opacity = 0.85 * burnRatio;
-        }
+        const burnRatio = Math.max(0.15, 1.0 - (sm.burnTime / 2.0));
+        this.shadowMonsterMesh.traverse((child) => {
+          if (child.isMesh && child.name !== "eyeL" && child.name !== "eyeR") {
+            if (child.material) {
+              child.material.transparent = true;
+              child.material.opacity = 0.85 * burnRatio;
+            }
+          }
+        });
         
         // Pulsate eyes to look alive and creepy
         const eyeL = this.shadowMonsterMesh.getObjectByName("eyeL");

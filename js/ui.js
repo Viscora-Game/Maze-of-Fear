@@ -1157,7 +1157,7 @@ function setupUI(game) {
           }
           
           // Draw NPCs (distinct colored markers with emojis per NPC type)
-          if (cell.npc) {
+          if (cell.npc && !cell.npc.disappearing) {
             // Glowing ring for visibility
             ctx.strokeStyle = "#fbbf24";
             ctx.lineWidth = 2;

@@ -1078,12 +1078,11 @@ export class CanvasRenderer {
                  if (femaleMesh && femaleMesh.parent) femaleMesh.parent.remove(femaleMesh);
                  if (femaleRig && femaleRig.parent) femaleRig.parent.remove(femaleRig);
                  clone.traverse(ch => { if (ch.isMesh) { ch.castShadow = true; ch.receiveShadow = true; if (ch.material) { ch.material = ch.material.clone(); ch.material.roughness = 0.8; } } });
-                 const box = new THREE.Box3().setFromObject(clone);
-                 const size = new THREE.Vector3(); box.getSize(size);
-                 const s = size.y > 0.01 ? 0.75 / size.y : 0.38;
+                 
+                 // Male traveler height is ~1.05 in GLTF. Scale to 0.72m.
+                 const s = 0.72;
                  clone.scale.set(s, s, s);
-                 const center = new THREE.Vector3(); box.getCenter(center);
-                 clone.position.set(-center.x * s, -box.min.y * s, -center.z * s);
+                 clone.position.set(0, 0, 0); // Sits correctly on floor
                  npcSubGroup.add(clone);
                } else {
                  const coat = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 0.45, 8), new THREE.MeshStandardMaterial({ color: "#1a4731", roughness: 0.85 }));
@@ -1105,12 +1104,11 @@ export class CanvasRenderer {
                  const femaleRig = clone.getObjectByName("FemaleRig");
                  if (femaleRig) femaleRig.position.set(0, 0, 0);
                  clone.traverse(ch => { if (ch.isMesh) { ch.castShadow = true; ch.receiveShadow = true; if (ch.material) { ch.material = ch.material.clone(); ch.material.roughness = 0.8; } } });
-                 const box = new THREE.Box3().setFromObject(clone);
-                 const size = new THREE.Vector3(); box.getSize(size);
-                 const s = size.y > 0.01 ? 0.75 / size.y : 0.38;
+                 
+                 // Female merchant height is ~0.95 in GLTF. Scale to 0.78m.
+                 const s = 0.78;
                  clone.scale.set(s, s, s);
-                 const center = new THREE.Vector3(); box.getCenter(center);
-                 clone.position.set(-center.x * s, -box.min.y * s, -center.z * s);
+                 clone.position.set(0, 0, 0); // Position at floor level
                  npcSubGroup.add(clone);
                } else {
                  const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.20, 0.48, 8), new THREE.MeshStandardMaterial({ color: "#4c1d95", roughness: 0.8 }));
@@ -1152,9 +1150,8 @@ export class CanvasRenderer {
 
               const roof = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.03, 0.32), woodMat);
               roof.position.set(0, 0.46, 0);
-              roof.rotation.x = 0.12;
               npcSubGroup.add(roof);
-            } else if (cell.npc.id === "child") {
+             } else if (cell.npc.id === "child") {
                if (this.charactersModel && typeof THREE.SkeletonUtils !== "undefined") {
                  const clone = THREE.SkeletonUtils.clone(this.charactersModel);
                  const maleMesh = clone.getObjectByName("BaseMaleMesh");
@@ -1164,12 +1161,11 @@ export class CanvasRenderer {
                  const femaleRig = clone.getObjectByName("FemaleRig");
                  if (femaleRig) femaleRig.position.set(0, 0, 0);
                  clone.traverse(ch => { if (ch.isMesh) { ch.castShadow = true; ch.receiveShadow = true; if (ch.material) { ch.material = ch.material.clone(); ch.material.roughness = 0.8; } } });
-                 const box = new THREE.Box3().setFromObject(clone);
-                 const size = new THREE.Vector3(); box.getSize(size);
-                 const s = size.y > 0.01 ? 0.45 / size.y : 0.23;
+                 
+                 // Scale child to ~0.45m height.
+                 const s = 0.47;
                  clone.scale.set(s, s, s);
-                 const center = new THREE.Vector3(); box.getCenter(center);
-                 clone.position.set(-center.x * s, -box.min.y * s, -center.z * s);
+                 clone.position.set(0, 0, 0); // Position at floor level
                  npcSubGroup.add(clone);
                } else {
                  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.10, 0.24, 8), new THREE.MeshStandardMaterial({ color: "#ea580c", roughness: 0.8 }));

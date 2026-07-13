@@ -1961,7 +1961,7 @@ export class CanvasRenderer {
         const distSq = dx * dx + dy * dy;
         const isNear = distSq <= 132.25; // 11.5 cells radius (smoothly fades to 100% fog before culling)
         
-        this.cellGroups[y][x].visible = state.devMode || (visitedMap[currentFloor][y][x] && isNear);
+        this.cellGroups[y][x].visible = state.devMode || isNear;
 
         if (cell.chest) {
           if (this.chestGoldMeshes[`${x},${y}`]) {

@@ -579,6 +579,7 @@ function setupUI(game) {
     content.querySelector("#btn-keypad-close").addEventListener("click", () => {
       modals.keypad.classList.add("hidden");
       game.state.gameState = "playing";
+      if (game.onStateChange) game.onStateChange();
     });
   };
 

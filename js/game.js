@@ -629,9 +629,11 @@ export class Game {
                 cell.obstacle.resolved = true;
                 this.audio.playUnlock();
                 this.state.gameState = "playing";
+                if (this.onStateChange) this.onStateChange();
               } else {
-                this.damagePlayer(10);
                 this.state.gameState = "playing";
+                this.damagePlayer(10);
+                if (this.onStateChange) this.onStateChange();
               }
             });
           }

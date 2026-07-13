@@ -541,7 +541,7 @@ function setupUI(game) {
     const lanternBtn = document.getElementById("btn-toggle-lantern");
     if (lanternBtn) {
       if (s.lanternOn && p.fuel > 0) {
-        lanternBtn.innerHTML = "🪔";
+        lanternBtn.innerHTML = "🔦✨";
         lanternBtn.style.background = "rgba(251, 191, 38, 0.35)"; // Amber active background
         lanternBtn.style.borderColor = "rgba(251, 191, 38, 0.75)";  // Glowing amber border
         lanternBtn.style.boxShadow = "0 0 15px rgba(251, 191, 38, 0.4)";

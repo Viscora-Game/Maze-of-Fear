@@ -542,7 +542,6 @@ export class Game {
 
     // 5. Steps & event decrement (fuel consumption disabled)
     if (isMoving) {
-      p.fuel = 100; // Keep fuel at 100 always
       this.state.stepsTaken += dt * 15;
 
       // Footstep audio timing (runs faster when sprinting)
@@ -585,8 +584,13 @@ export class Game {
     // Update Day/Night Cycle (80-second loop: 40s Day, 40s Night)
     this.state.timeOfDay = (this.state.timeOfDay + dt * 0.0125) % 1.0;
 
-    // Fuel consumption (disabled as per user request, fuel stays at 100)
-    p.fuel = 100;
+    // Fuel consumption when lantern is ON
+    if (this.state.lanternOn && p.fuel > 0) {
+      p.fuel = Math.max(0, p.fuel - dt * 0.8); // 0.8% fuel per second
+      if (p.fuel === 0) {
+        this.state.lanternOn = false; // Turn off automatically when out of fuel
+      }
+    }
 
     // Track player trail (deduplicated cell visits)
     const currentCell = { x: Math.floor(p.x), y: Math.floor(p.y) };
@@ -1231,7 +1235,7 @@ export class Game {
 
   // Use items
   useInventoryItem(itemId) {
-    if (this.state.gameState !== "playing") return;
+    if (this.state.gameState !== "playing" && this.state.gameState !== "modal") return;
     const p = this.state.player;
     if (p.inventory[itemId] <= 0) return;
 

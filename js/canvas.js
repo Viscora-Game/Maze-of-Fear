@@ -372,7 +372,14 @@ export class CanvasRenderer {
               if (nameLower.includes("rock") || nameLower.includes("rocher") || 
                   parentNameLower.includes("rock") || parentNameLower.includes("rocher") ||
                   nameLower.includes("simple") || parentNameLower.includes("simple")) {
-                m.color.set("#52525b"); // Slate stone grey
+                m.color.set("#27272a"); // Charcoal dark grey
+                if (m.emissive) m.emissive.set("#000000"); // Ensure absolutely no glowing
+              } else if (nameLower.includes("flower") || nameLower.includes("fleur") || 
+                         parentNameLower.includes("flower") || parentNameLower.includes("fleur")) {
+                // Darken flowers by 70% to desaturate them and blend them into the gloomy environment
+                if (m.color) {
+                  m.color.multiplyScalar(0.30);
+                }
               }
             });
           }
@@ -500,7 +507,7 @@ export class CanvasRenderer {
     const loader = new THREE.FBXLoader();
     const textureLoader = new THREE.TextureLoader();
 
-    const loadChar = (name, scaleVal, modelProp) => {
+    const loadChar = (name, targetHeight, modelProp) => {
       loader.load(`assets/models/characters/${name}.fbx`, (fbx) => {
         textureLoader.load(`assets/models/characters/${name}.png`, (texture) => {
           texture.magFilter = THREE.NearestFilter;
@@ -525,11 +532,23 @@ export class CanvasRenderer {
             if (obj.parent) obj.parent.remove(obj);
           });
 
-          fbx.scale.set(scaleVal, scaleVal, scaleVal);
-          fbx.rotation.x = -Math.PI / 2;
+          // Reset rotation (stand upright by default)
+          fbx.rotation.set(0, 0, 0);
+
+          // Get raw size to scale mathematically to target height (using max dimension as height)
+          const box = new THREE.Box3().setFromObject(fbx);
+          const size = new THREE.Vector3();
+          box.getSize(size);
+          const rawHeight = Math.max(size.x, size.y, size.z);
+          const scaleFactor = targetHeight / (rawHeight > 0.001 ? rawHeight : 1.0);
+          fbx.scale.set(scaleFactor, scaleFactor, scaleFactor);
+
+          // Align feet to Y = 0 based on scaled bounding box
+          const boxScaled = new THREE.Box3().setFromObject(fbx);
+          fbx.position.y = -boxScaled.min.y;
           
           this[modelProp] = fbx;
-          console.log(`FBX Character ${name} loaded and skinned successfully!`);
+          console.log(`FBX Character ${name} loaded, scaled to ${targetHeight}m, and foot-aligned successfully!`);
           if (this.lastState) {
             this.rebuildScene(this.lastState);
           }
@@ -539,9 +558,9 @@ export class CanvasRenderer {
       });
     };
 
-    loadChar('traveler', 0.0075, 'travelerModel');
-    loadChar('merchant', 0.0075, 'merchantModel');
-    loadChar('child', 0.0042, 'childModel');
+    loadChar('traveler', 0.75, 'travelerModel');
+    loadChar('merchant', 0.75, 'merchantModel');
+    loadChar('child', 0.45, 'childModel');
   }
 
   hasLineOfSight(x1, y1, x2, y2, grid, width, height) {
@@ -677,7 +696,7 @@ export class CanvasRenderer {
     this.scene.add(this.dirLight);
 
     // Flashlight SpotLight - PRIMARY neutral white light source with realistic flashlight properties (decay = 1.8, range = 11.0m)
-    this.lantern = new THREE.SpotLight("#ffffff", 16.0, 11.0, Math.PI / 6.0, 0.85, 1.8);
+    this.lantern = new THREE.SpotLight("#ffffff", 12.0, 11.0, Math.PI / 6.0, 0.85, 1.8);
     this.lantern.castShadow = false; // Disable shadows to prevent hand/self-shadow blocking bugs
     this.scene.add(this.lantern);
 
@@ -743,15 +762,15 @@ export class CanvasRenderer {
     const stemFGeo = new THREE.CylinderGeometry(0.006, 0.006, 0.12, 4);
     const stemFMat = new THREE.MeshStandardMaterial({ color: "#4ade80" });
     const petalsFGeo = new THREE.SphereGeometry(0.024, 6, 6);
-    const petalsPinkMat = new THREE.MeshStandardMaterial({ color: "#f472b6", roughness: 0.7 });
-    const petalsGoldMat = new THREE.MeshStandardMaterial({ color: "#facc15", roughness: 0.7 });
+    const petalsPinkMat = new THREE.MeshStandardMaterial({ color: "#581c87", roughness: 0.8 }); // Deep gothic purple
+    const petalsGoldMat = new THREE.MeshStandardMaterial({ color: "#78350f", roughness: 0.8 }); // Muted autumn amber
 
     const wallGeo = new THREE.BoxGeometry(1.005, 1.28, 1.005);
     const wallCapGeo = new THREE.BoxGeometry(1.005, 0.05, 1.005);
 
     const hedgeMat = new THREE.MeshStandardMaterial({ 
       map: this.hedgeTexture, 
-      color: "#162816", // Extremely dark, muted moss/forest green for horror atmosphere
+      color: "#0d120d", // Extremely dark, muted charcoal green (prevents walls being overly green)
       roughness: 0.98 
     });
 
@@ -862,7 +881,7 @@ export class CanvasRenderer {
                // Fallback: Procedural green leaves (spheres)
                const leafMat = new THREE.MeshStandardMaterial({ 
                  map: this.hedgeTexture, 
-                 color: "#1b351e", // deep rich ivy green matching the muted walls
+                 color: "#0d120d", // deep rich muted charcoal green matching the walls
                  roughness: 0.95 
                });
                for (let i = 0; i < 3; i++) {
@@ -1914,7 +1933,7 @@ export class CanvasRenderer {
     // Toggle lantern light and flame core visibility
     if (this.lantern) {
       if (state.lanternOn && player.fuel > 0) {
-        this.lantern.intensity = 16.0; // Distance-decay flashlight beam to keep texture details and colors rich
+        this.lantern.intensity = 12.0; // Distance-decay flashlight beam to keep texture details and colors rich
         if (this.lanternFlame) this.lanternFlame.visible = true;
       } else {
         this.lantern.intensity = 0.0; // completely off

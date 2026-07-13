@@ -6,6 +6,28 @@ import { randomEvents, deathEvents } from "./events.js?v=13";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
+const jumpscare3Url = new URL('../assets/jumpscare_3.png', import.meta.url).href;
+const jumpscare4Url = new URL('../assets/jumpscare_4.png', import.meta.url).href;
+const jumpscare5Url = new URL('../assets/jumpscare_5.png', import.meta.url).href;
+const jumpscare6Url = new URL('../assets/jumpscare_6.png', import.meta.url).href;
+
+const jumpscareConfigs = [
+  { url: jumpscareNormalUrl, filter: "" },
+  { url: jumpscareChestUrl, filter: "" },
+  { url: jumpscare3Url, filter: "" },
+  { url: jumpscare4Url, filter: "" },
+  { url: jumpscare5Url, filter: "" },
+  { url: jumpscare6Url, filter: "" },
+  // 4 extra realistic variations using CSS filters
+  // Variant 7: Blood Red Demonic Look (Chest Base)
+  { url: jumpscareChestUrl, filter: "hue-rotate(180deg) saturate(3.5) brightness(0.7) contrast(1.6)" },
+  // Variant 8: Toxic Night Vision (Variant 3 Base)
+  { url: jumpscare3Url, filter: "hue-rotate(90deg) saturate(2.5) contrast(1.4) brightness(0.85)" },
+  // Variant 9: Inverted Spectral Phantom (Variant 5 Base)
+  { url: jumpscare5Url, filter: "invert(1) contrast(1.6) brightness(1.05)" },
+  // Variant 10: Hellfire Skull (Variant 6 Base)
+  { url: jumpscare6Url, filter: "hue-rotate(330deg) saturate(3.5) contrast(1.5) sepia(0.8)" }
+];
 
 export class Game {
   constructor() {
@@ -60,7 +82,18 @@ export class Game {
     if (!overlay) return;
     const img = overlay.querySelector("img");
     if (img) {
-      img.src = type === "chest" ? jumpscareChestUrl : jumpscareNormalUrl;
+      let config;
+      if (type === "normal") {
+        // Monster caught player -> use the main shadow monster face
+        config = jumpscareConfigs[0];
+      } else {
+        // Randomly pick one of the 10 variations!
+        const idx = Math.floor(Math.random() * jumpscareConfigs.length);
+        config = jumpscareConfigs[idx];
+      }
+      img.src = config.url;
+      // Default filter is brightness(1.2) contrast(1.3) transform(scale(1.1)). Combine with custom filter.
+      img.style.filter = (config.filter ? `${config.filter} ` : "") + "brightness(1.2) contrast(1.3)";
     }
   }
 

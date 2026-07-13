@@ -522,11 +522,12 @@ export function generateMaze(width, height, numFloors = 1) {
       let chestContent = {};
       if (roll < 0.50) {
         const rewardRoll = Math.random();
-        if (rewardRoll < 0.3) {
-          chestContent = { type: "gold", amount: 15 + Math.floor(Math.random() * 20) };
-        } else if (rewardRoll < 0.6) {
-          const items = ["map_piece"];
-          chestContent = { type: "item", item: items[Math.floor(Math.random() * items.length)], gold: 10 };
+        if (rewardRoll < 0.25) {
+          chestContent = { type: "gold", amount: 15 + Math.floor(Math.random() * 25) };
+        } else if (rewardRoll < 0.85) {
+          const items = ["key", "shears", "axe", "rope", "compass", "map_piece", "fuel", "cheese"];
+          const pickedItem = items[Math.floor(Math.random() * items.length)];
+          chestContent = { type: "item", item: pickedItem, gold: 5 + Math.floor(Math.random() * 11) };
         } else {
           chestContent = { type: "gold", amount: 10 };
         }

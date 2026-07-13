@@ -80,6 +80,21 @@
         </div>
       </div>
 
+      <!-- Analog Mode Settings -->
+      <div class="settings-group">
+        <div class="settings-label" data-t="analogMode">Analog Mode</div>
+        <div class="btn-group">
+          <button class="btn btn-toggle active" id="btn-analog-floating" data-t="analogFloating">Gizli/Yüzen</button>
+          <button class="btn btn-toggle" id="btn-analog-fixed" data-t="analogFixed">Sabit</button>
+        </div>
+      </div>
+
+      <!-- Customize HUD Layout -->
+      <div class="settings-group">
+        <div class="settings-label" data-t="hudCustom">HUD Layout</div>
+        <button class="btn w-full btn-success" id="btn-edit-hud" data-t="btnEditHud">Buton Düzenini Özelleştir</button>
+      </div>
+
       <button class="btn btn-danger btn-back" data-t="back">Back</button>
     </div>
 
@@ -142,10 +157,12 @@
       <div id="fps-crosshair" class="fps-crosshair"></div>
 
       <!-- Sleek Floating HUD Right Pill -->
-      <div id="hud-right-pill" class="hud-pill glass">
+      <div id="hud-right-pill" class="hud-pill glass" style="display: flex; align-items: center; gap: 8px;">
         <span style="font-size: 0.8rem; font-weight: bold; color: var(--gray); display: flex; align-items: center; gap: 4px;">
           🚪 Lvl: <span id="hud-level-val" class="text-cyan font-bold">1</span>
         </span>
+        <span class="hud-separator">|</span>
+        <button id="btn-ingame-settings" style="background: none; border: none; font-size: 0.95rem; cursor: pointer; padding: 0 4px; display: flex; align-items: center; justify-content: center; z-index: 200; outline: none;" title="Ayarlar">⚙️</button>
       </div>
 
       <!-- Quests Panel (Floats below Left Pill) -->
@@ -276,6 +293,28 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- HUD Layout Editor Overlay -->
+  <div id="hud-editor-overlay" class="overlay hidden" style="z-index: 1000; background: rgba(0,0,0,0.65); display: flex; flex-direction: column; justify-content: space-between; padding: 20px; box-sizing: border-box; pointer-events: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;">
+    <!-- Top Control Panel (Interactable) -->
+    <div class="glass" style="width: 100%; max-width: 600px; margin: 0 auto; padding: 12px; border-radius: 12px; display: flex; flex-direction: column; gap: 8px; pointer-events: auto; align-items: center; border: 1px solid var(--border-violet);">
+      <h4 style="margin: 0; color: var(--violet); font-weight: bold; font-size: 0.95rem; text-shadow: 0 0 8px rgba(139, 92, 246, 0.4);" data-t="hudEditorTitle">Buton Düzenleme Modu / HUD Editor</h4>
+      <p style="margin: 0; font-size: 0.72rem; color: var(--gray); text-align: center;" data-t="hudEditorHelp">Taşımak için butonları sürükleyin. Seçili butonu boyutlandırmak için aşağıdaki kaydırıcıyı kullanın.</p>
+      
+      <!-- Size Slider -->
+      <div style="display: flex; align-items: center; gap: 8px; width: 100%; max-width: 300px; margin-top: 4px;">
+        <span style="font-size: 0.7rem; color: var(--gray);" data-t="hudEditorSize">Boyut:</span>
+        <input type="range" id="hud-editor-size-slider" min="50" max="150" value="100" style="flex: 1; accent-color: var(--violet);" disabled>
+        <span id="hud-editor-size-val" style="font-size: 0.7rem; color: var(--cyan); font-weight: bold; width: 35px;">100%</span>
+      </div>
+    </div>
+    
+    <!-- Bottom Action Buttons (Interactable) -->
+    <div style="width: 100%; max-width: 400px; margin: 0 auto; display: flex; gap: 12px; pointer-events: auto; padding-bottom: calc(10px + env(safe-area-inset-bottom));">
+      <button id="btn-hud-editor-reset" class="btn btn-danger" style="flex: 1;" data-t="reset">Sıfırla</button>
+      <button id="btn-hud-editor-save" class="btn btn-success" style="flex: 1;" data-t="save">Kaydet</button>
+    </div>
   </div>
 
   <!-- Jumpscare Overlay -->

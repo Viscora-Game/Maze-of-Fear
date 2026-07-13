@@ -94,6 +94,334 @@ function setupUI(game) {
   translateUI();
 
   // 3. Main Menu Event Listeners
+  let settingsFromGame = false;
+
+  const updateAnalogModeUI = () => {
+    const joystickBase = document.getElementById("joystick-base");
+    if (!joystickBase) return;
+    
+    document.getElementById("btn-analog-floating").classList.toggle("active", game.analogMode === "floating");
+    document.getElementById("btn-analog-fixed").classList.toggle("active", game.analogMode === "fixed");
+    
+    if (game.analogMode === "floating") {
+      joystickBase.style.opacity = "0";
+    } else {
+      joystickBase.style.opacity = "1";
+    }
+  };
+
+  const applySavedHUDLayout = () => {
+    const saved = localStorage.getItem("maze_hud_layout");
+    if (!saved) return;
+    try {
+      const layout = JSON.parse(saved);
+      const btnOpenMap = document.getElementById("btn-open-map");
+      const btnToggleLantern = document.getElementById("btn-toggle-lantern");
+      const btnRun = document.getElementById("btn-run");
+      const btnInteract = document.getElementById("btn-interact");
+      
+      const buttonsToEdit = [
+        { id: "btn-open-inventory", el: hud.btnOpenInventory },
+        { id: "btn-open-map", el: btnOpenMap },
+        { id: "btn-toggle-lantern", el: btnToggleLantern },
+        { id: "btn-run", el: btnRun },
+        { id: "btn-interact", el: btnInteract }
+      ];
+      
+      buttonsToEdit.forEach(b => {
+        const data = layout[b.id];
+        if (data && b.el) {
+          b.el.style.position = "fixed";
+          b.el.style.left = `${data.left}px`;
+          b.el.style.top = `${data.top}px`;
+          b.el.style.margin = "0";
+          b.el.style.transform = `scale(${data.scale})`;
+          b.el.dataset.scale = data.scale.toString();
+        }
+      });
+    } catch (e) {
+      console.error("Error loading saved HUD layout:", e);
+    }
+  };
+
+  const clampButtonsToScreen = () => {
+    const btnOpenMap = document.getElementById("btn-open-map");
+    const btnToggleLantern = document.getElementById("btn-toggle-lantern");
+    const btnRun = document.getElementById("btn-run");
+    const btnInteract = document.getElementById("btn-interact");
+    
+    const buttonsToEdit = [
+      { el: hud.btnOpenInventory },
+      { el: btnOpenMap },
+      { el: btnToggleLantern },
+      { el: btnRun },
+      { el: btnInteract }
+    ];
+    buttonsToEdit.forEach(b => {
+      if (b.el && b.el.style.position === "fixed") {
+        let left = parseFloat(b.el.style.left || "0");
+        let top = parseFloat(b.el.style.top || "0");
+        
+        left = Math.max(0, Math.min(window.innerWidth - b.el.clientWidth, left));
+        top = Math.max(0, Math.min(window.innerHeight - b.el.clientHeight, top));
+        
+        b.el.style.left = `${left}px`;
+        b.el.style.top = `${top}px`;
+      }
+    });
+  };
+  window.addEventListener("resize", clampButtonsToScreen);
+  window.addEventListener("orientationchange", () => {
+    setTimeout(clampButtonsToScreen, 200);
+  });
+
+  // HUD Layout Customizer Mode
+  const customizeHUD = () => {
+    const overlay = document.getElementById("hud-editor-overlay");
+    const slider = document.getElementById("hud-editor-size-slider");
+    const sliderVal = document.getElementById("hud-editor-size-val");
+    const btnSettings = document.getElementById("btn-ingame-settings");
+    
+    const btnOpenMap = document.getElementById("btn-open-map");
+    const btnToggleLantern = document.getElementById("btn-toggle-lantern");
+    const btnRun = document.getElementById("btn-run");
+    const btnInteract = document.getElementById("btn-interact");
+    
+    const buttonsToEdit = [
+      { id: "btn-open-inventory", el: hud.btnOpenInventory },
+      { id: "btn-open-map", el: btnOpenMap },
+      { id: "btn-toggle-lantern", el: btnToggleLantern },
+      { id: "btn-run", el: btnRun },
+      { id: "btn-interact", el: btnInteract }
+    ];
+    
+    let selectedButton = null;
+    let dragActive = false;
+    let dragTouchId = null;
+    let dragStartX = 0, dragStartY = 0;
+    let initialLeft = 0, initialTop = 0;
+    
+    const originalPositions = {};
+    
+    buttonsToEdit.forEach(b => {
+      const rect = b.el.getBoundingClientRect();
+      const currentScale = parseFloat(b.el.dataset.scale || "1.0");
+      
+      b.el.style.position = "fixed";
+      b.el.style.left = `${rect.left}px`;
+      b.el.style.top = `${rect.top}px`;
+      b.el.style.margin = "0";
+      b.el.style.transform = `scale(${currentScale})`;
+      b.el.style.zIndex = "999";
+      b.el.style.border = "2px dashed rgba(255, 255, 255, 0.4)";
+      
+      originalPositions[b.id] = {
+        left: rect.left,
+        top: rect.top,
+        scale: currentScale
+      };
+    });
+    
+    overlay.classList.remove("hidden");
+    
+    const selectButton = (b) => {
+      selectedButton = b;
+      buttonsToEdit.forEach(btn => {
+        if (btn.id === b.id) {
+          btn.el.style.border = "3px solid var(--violet)";
+          btn.el.style.boxShadow = "0 0 15px var(--violet)";
+        } else {
+          btn.el.style.border = "2px dashed rgba(255, 255, 255, 0.4)";
+          btn.el.style.boxShadow = "";
+        }
+      });
+      slider.disabled = false;
+      const currentScale = parseFloat(b.el.dataset.scale || "1.0");
+      slider.value = Math.round(currentScale * 100);
+      sliderVal.textContent = `${slider.value}%`;
+    };
+    
+    const touchStartHandler = (e) => {
+      const touch = e.changedTouches[0];
+      const target = e.target;
+      
+      const matchedBtn = buttonsToEdit.find(b => b.el.contains(target));
+      if (!matchedBtn) return;
+      
+      e.preventDefault();
+      selectButton(matchedBtn);
+      
+      dragActive = true;
+      dragTouchId = touch.identifier;
+      dragStartX = touch.clientX;
+      dragStartY = touch.clientY;
+      initialLeft = parseFloat(matchedBtn.el.style.left);
+      initialTop = parseFloat(matchedBtn.el.style.top);
+    };
+    
+    const touchMoveHandler = (e) => {
+      if (!dragActive) return;
+      for (let i = 0; i < e.touches.length; i++) {
+        const touch = e.touches[i];
+        if (touch.identifier === dragTouchId) {
+          e.preventDefault();
+          const dx = touch.clientX - dragStartX;
+          const dy = touch.clientY - dragStartY;
+          
+          let newLeft = initialLeft + dx;
+          let newTop = initialTop + dy;
+          
+          newLeft = Math.max(0, Math.min(window.innerWidth - selectedButton.el.clientWidth, newLeft));
+          newTop = Math.max(0, Math.min(window.innerHeight - selectedButton.el.clientHeight, newTop));
+          
+          selectedButton.el.style.left = `${newLeft}px`;
+          selectedButton.el.style.top = `${newTop}px`;
+          break;
+        }
+      }
+    };
+    
+    const checkOverlap = (el1, el2) => {
+      const r1 = el1.getBoundingClientRect();
+      const r2 = el2.getBoundingClientRect();
+      return !(r1.right < r2.left + 5 || 
+               r1.left > r2.right - 5 || 
+               r1.bottom < r2.top + 5 || 
+               r1.top > r2.bottom - 5);
+    };
+    
+    const touchEndHandler = (e) => {
+      if (!dragActive) return;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const touch = e.changedTouches[i];
+        if (touch.identifier === dragTouchId) {
+          dragActive = false;
+          dragTouchId = null;
+          
+          let overlap = false;
+          for (let btn of buttonsToEdit) {
+            if (btn.id !== selectedButton.id && checkOverlap(selectedButton.el, btn.el)) {
+              overlap = true;
+              break;
+            }
+          }
+          
+          if (btnSettings && checkOverlap(selectedButton.el, btnSettings)) {
+            overlap = true;
+          }
+          
+          if (overlap) {
+            const orig = originalPositions[selectedButton.id];
+            selectedButton.el.style.left = `${orig.left}px`;
+            selectedButton.el.style.top = `${orig.top}px`;
+            selectedButton.el.style.border = "3px solid var(--red)";
+            setTimeout(() => {
+              selectedButton.el.style.border = "3px solid var(--violet)";
+            }, 300);
+          } else {
+            originalPositions[selectedButton.id].left = parseFloat(selectedButton.el.style.left);
+            originalPositions[selectedButton.id].top = parseFloat(selectedButton.el.style.top);
+          }
+          break;
+        }
+      }
+    };
+    
+    const sliderHandler = (e) => {
+      if (!selectedButton) return;
+      const scale = parseInt(e.target.value) / 100;
+      sliderVal.textContent = `${e.target.value}%`;
+      
+      selectedButton.el.style.transform = `scale(${scale})`;
+      selectedButton.el.dataset.scale = scale.toString();
+      
+      let overlap = false;
+      for (let btn of buttonsToEdit) {
+        if (btn.id !== selectedButton.id && checkOverlap(selectedButton.el, btn.el)) {
+          overlap = true;
+          break;
+        }
+      }
+      if (btnSettings && checkOverlap(selectedButton.el, btnSettings)) {
+        overlap = true;
+      }
+      
+      if (overlap) {
+        const orig = originalPositions[selectedButton.id];
+        slider.value = Math.round(orig.scale * 100);
+        sliderVal.textContent = `${slider.value}%`;
+        selectedButton.el.style.transform = `scale(${orig.scale})`;
+        selectedButton.el.dataset.scale = orig.scale.toString();
+      } else {
+        originalPositions[selectedButton.id].scale = scale;
+      }
+    };
+    
+    window.addEventListener("touchstart", touchStartHandler, { passive: false });
+    window.addEventListener("touchmove", touchMoveHandler, { passive: false });
+    window.addEventListener("touchend", touchEndHandler);
+    window.addEventListener("touchcancel", touchEndHandler);
+    slider.addEventListener("input", sliderHandler);
+    
+    const saveLayout = () => {
+      const layout = {};
+      buttonsToEdit.forEach(b => {
+        const scale = parseFloat(b.el.dataset.scale || "1.0");
+        layout[b.id] = {
+          left: parseFloat(b.el.style.left),
+          top: parseFloat(b.el.style.top),
+          scale: scale
+        };
+        b.el.style.border = "";
+        b.el.style.boxShadow = "";
+        b.el.style.zIndex = "";
+      });
+      localStorage.setItem("maze_hud_layout", JSON.stringify(layout));
+      
+      cleanup();
+      overlay.classList.add("hidden");
+      showScreen("settings");
+    };
+    
+    const resetLayout = () => {
+      buttonsToEdit.forEach(b => {
+        b.el.style.position = "";
+        b.el.style.left = "";
+        b.el.style.top = "";
+        b.el.style.margin = "";
+        b.el.style.transform = "";
+        b.el.style.border = "";
+        b.el.style.boxShadow = "";
+        b.el.style.zIndex = "";
+        delete b.el.dataset.scale;
+      });
+      localStorage.removeItem("maze_hud_layout");
+      
+      cleanup();
+      overlay.classList.add("hidden");
+      showScreen("settings");
+    };
+    
+    const cleanup = () => {
+      window.removeEventListener("touchstart", touchStartHandler);
+      window.removeEventListener("touchmove", touchMoveHandler);
+      window.removeEventListener("touchend", touchEndHandler);
+      window.removeEventListener("touchcancel", touchEndHandler);
+      slider.removeEventListener("input", sliderHandler);
+      slider.disabled = true;
+    };
+    
+    document.getElementById("btn-hud-editor-save").onclick = saveLayout;
+    document.getElementById("btn-hud-editor-reset").onclick = resetLayout;
+  };
+
+  // Set up config on load
+  game.analogMode = localStorage.getItem("maze_analog_mode") || "floating";
+  setTimeout(() => {
+    updateAnalogModeUI();
+    applySavedHUDLayout();
+  }, 100);
+
   document.getElementById("btn-play").addEventListener("click", () => {
     game.initNewGame();
     showScreen("game");
@@ -102,8 +430,19 @@ function setupUI(game) {
   });
 
   document.getElementById("btn-settings").addEventListener("click", () => {
+    settingsFromGame = false;
     showScreen("settings");
   });
+
+  // In-game Settings Gear button
+  const btnIngameSettings = document.getElementById("btn-ingame-settings");
+  if (btnIngameSettings) {
+    btnIngameSettings.addEventListener("click", () => {
+      settingsFromGame = true;
+      game.state.gameState = "paused";
+      showScreen("settings");
+    });
+  }
 
   document.getElementById("btn-howtoplay").addEventListener("click", () => {
     showScreen("howtoplay");
@@ -137,10 +476,35 @@ function setupUI(game) {
     });
   });
 
+  // Analog Mode Toggles
+  document.getElementById("btn-analog-floating").addEventListener("click", () => {
+    game.analogMode = "floating";
+    localStorage.setItem("maze_analog_mode", "floating");
+    updateAnalogModeUI();
+  });
+  
+  document.getElementById("btn-analog-fixed").addEventListener("click", () => {
+    game.analogMode = "fixed";
+    localStorage.setItem("maze_analog_mode", "fixed");
+    updateAnalogModeUI();
+  });
+
+  // Custom HUD Customize trigger button
+  document.getElementById("btn-edit-hud").addEventListener("click", () => {
+    screens.settings.classList.add("hidden");
+    customizeHUD();
+  });
+
   // Back Buttons
   document.querySelectorAll(".btn-back").forEach(btn => {
     btn.addEventListener("click", () => {
-      showScreen("menu");
+      if (settingsFromGame) {
+        settingsFromGame = false;
+        game.state.gameState = "playing";
+        showScreen("game");
+      } else {
+        showScreen("menu");
+      }
     });
   });
 
@@ -320,17 +684,31 @@ function setupUI(game) {
       }
     };
 
-    // Listen to touchstart on window to allow dynamic floating joystick placement
+    // Listen to touchstart on window to allow dynamic floating/fixed joystick placement
     window.addEventListener("touchstart", (e) => {
       if (game.state.gameState !== "playing" || joystickActive) return;
       
-      // Ignore if user touches an interactive button or HUD element
       const target = e.target;
+      const touch = e.changedTouches[0];
+      
+      // If we are in fixed mode, only start if touch is inside the joystick zone/base
+      if (game.analogMode === "fixed") {
+        if (target.closest("#joystick-zone") || target.closest(".joystick-base")) {
+          joystickActive = true;
+          joystickTouchId = touch.identifier;
+          
+          const rect = joystickBase.getBoundingClientRect();
+          startX = rect.left + rect.width / 2;
+          startY = rect.top + rect.height / 2;
+        }
+        return;
+      }
+      
+      // Ignore if user touches an interactive button or HUD element in floating mode
       if (target.closest("button") || target.closest(".circle-btn") || target.closest("#hud-left-pill") || target.closest("#hud-right-pill") || target.closest(".btn-toggle")) {
         return;
       }
       
-      const touch = e.changedTouches[0];
       // Only capture if touch is on the left half of the screen
       if (touch.clientX < window.innerWidth / 2) {
         handleStart(touch.clientX, touch.clientY, touch.identifier);

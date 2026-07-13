@@ -348,22 +348,27 @@ export class CanvasRenderer {
     }
     const loader = new THREE.FBXLoader();
     
-    // Helper to process loaded FBX model (enabling shadows, setting up materials)
+    // Helper to process loaded FBX model (stripping lights/cameras, disabling shadow casting for optimization)
     const processFBX = (fbx, scaleVal) => {
+      const toRemove = [];
       fbx.traverse((child) => {
-        if (child.isMesh) {
-          child.castShadow = true;
+        if (child.isLight || child.isCamera) {
+          toRemove.push(child);
+        } else if (child.isMesh) {
+          child.castShadow = false; // Disable shadow casting for decorations/foliage to eliminate FPS drops!
           child.receiveShadow = true;
           if (child.material) {
             const mats = Array.isArray(child.material) ? child.material : [child.material];
             mats.forEach(m => {
               m.roughness = 0.95;
               m.metalness = 0.05;
-              // Make sure double-sided rendering is active for leafy shapes
-              m.side = THREE.DoubleSide;
+              m.side = THREE.DoubleSide; // Double sided rendering for thin leaf/rock geometries
             });
           }
         }
+      });
+      toRemove.forEach(obj => {
+        if (obj.parent) obj.parent.remove(obj);
       });
       fbx.scale.set(scaleVal, scaleVal, scaleVal);
       return fbx;

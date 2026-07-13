@@ -290,8 +290,10 @@ export class CanvasRenderer {
     this.chestModel = null;
     this.loadChestAsset();
 
-    // Load custom GLTF characters model
-    this.charactersModel = null;
+    // Load custom FBX characters
+    this.travelerModel = null;
+    this.merchantModel = null;
+    this.childModel = null;
     this.loadCharactersAsset();
 
     // Load custom GLTF low-poly black flashlight model
@@ -491,20 +493,55 @@ export class CanvasRenderer {
   }
 
   loadCharactersAsset() {
-    if (typeof THREE.GLTFLoader === "undefined") {
-      console.warn("THREE.GLTFLoader is not available.");
+    if (typeof THREE.FBXLoader === "undefined") {
+      console.warn("THREE.FBXLoader is not available.");
       return;
     }
-    const loader = new THREE.GLTFLoader();
-    loader.load('assets/models/characters.glb', (gltf) => {
-      this.charactersModel = gltf.scene;
-      console.log("Low-poly GLTF characters model loaded successfully!");
-      if (this.lastState) {
-        this.rebuildScene(this.lastState);
-      }
-    }, undefined, (err) => {
-      console.error("Failed to load GLTF characters model:", err);
-    });
+    const loader = new THREE.FBXLoader();
+    const textureLoader = new THREE.TextureLoader();
+
+    const loadChar = (name, scaleVal, modelProp) => {
+      loader.load(`assets/models/characters/${name}.fbx`, (fbx) => {
+        textureLoader.load(`assets/models/characters/${name}.png`, (texture) => {
+          texture.magFilter = THREE.NearestFilter;
+          texture.minFilter = THREE.NearestFilter;
+          if (THREE.sRGBEncoding) texture.encoding = THREE.sRGBEncoding;
+
+          const toRemove = [];
+          fbx.traverse((child) => {
+            if (child.isLight || child.isCamera) {
+              toRemove.push(child);
+            } else if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+              child.material = new THREE.MeshStandardMaterial({
+                map: texture,
+                roughness: 0.85,
+                metalness: 0.08
+              });
+            }
+          });
+          toRemove.forEach(obj => {
+            if (obj.parent) obj.parent.remove(obj);
+          });
+
+          fbx.scale.set(scaleVal, scaleVal, scaleVal);
+          fbx.rotation.x = -Math.PI / 2;
+          
+          this[modelProp] = fbx;
+          console.log(`FBX Character ${name} loaded and skinned successfully!`);
+          if (this.lastState) {
+            this.rebuildScene(this.lastState);
+          }
+        });
+      }, undefined, (err) => {
+        console.error(`Failed to load FBX Character ${name}:`, err);
+      });
+    };
+
+    loadChar('traveler', 0.0075, 'travelerModel');
+    loadChar('merchant', 0.0075, 'merchantModel');
+    loadChar('child', 0.0042, 'childModel');
   }
 
   hasLineOfSight(x1, y1, x2, y2, grid, width, height) {
@@ -809,8 +846,9 @@ export class CanvasRenderer {
                 grassClone.rotation.set(0, Math.random() * Math.PI, 0);
                 vineGroup.add(grassClone);
               } else if (chooseModel < 0.85 && this.flowerModels && this.flowerModels.length > 0) {
-                // Spawn actual FBX flower model (flower1, flower2, or flower3)!
-                const flowerIdx = Math.floor(Math.random() * this.flowerModels.length);
+                // Spawn actual FBX flower model (flower1 or flower2 only for ground, flower3 is ceiling lily)!
+                const numGroundFlowers = Math.max(1, this.flowerModels.length - 1);
+                const flowerIdx = Math.floor(Math.random() * numGroundFlowers);
                 const flowerModel = this.flowerModels[flowerIdx];
                 if (flowerModel) {
                   const flowerClone = flowerModel.clone();
@@ -839,7 +877,52 @@ export class CanvasRenderer {
              cellGroup.add(vineGroup);
           }
 
-          // Removed Ceiling for open-air sky experience
+          // Spawn hanging ceiling lily-flowers near wall edges
+          if (this.flowerModels && this.flowerModels[2]) {
+            const isWall = (tx, ty) => {
+              if (tx < 0 || tx >= width || ty < 0 || ty >= height) return true;
+              return grid[ty][tx].isWall;
+            };
+
+            const wallN = isWall(x, y - 1);
+            const wallS = isWall(x, y + 1);
+            const wallE = isWall(x + 1, y);
+            const wallW = isWall(x - 1, y);
+
+            if (wallN || wallS || wallE || wallW) {
+              // Spawn a hanging ceiling flower with 30% chance if there is an adjacent wall
+              if (Math.random() < 0.30) {
+                const hangingFlower = this.flowerModels[2].clone();
+                // Choose a random wall to mount close to
+                let ox = 0, oz = 0;
+                if (wallN && Math.random() < 0.5) oz = -0.41;
+                else if (wallS && Math.random() < 0.5) oz = 0.41;
+                else if (wallE && Math.random() < 0.5) ox = 0.41;
+                else if (wallW && Math.random() < 0.5) ox = -0.41;
+                else {
+                  // Fallback: choose the first available wall
+                  if (wallN) oz = -0.41;
+                  else if (wallS) oz = 0.41;
+                  else if (wallE) ox = 0.41;
+                  else if (wallW) ox = -0.41;
+                }
+
+                // Random small adjustments to offset
+                ox += (Math.random() - 0.5) * 0.12;
+                oz += (Math.random() - 0.5) * 0.12;
+
+                // Position at ceiling level (Y = 1.23)
+                hangingFlower.position.set(ox, 1.23, oz);
+                // Random Y rotation
+                hangingFlower.rotation.set(0, Math.random() * Math.PI * 2, 0);
+                // Scale down significantly: s * 0.0003 (where s = 0.8 + Math.random() * 0.4)
+                const s = 0.8 + Math.random() * 0.4;
+                hangingFlower.scale.set(s * 0.0003, s * 0.0003, s * 0.0003);
+                
+                cellGroup.add(hangingFlower);
+              }
+            }
+          }
 
           // C. Staircases
           if (cell.staircase) {
@@ -1211,18 +1294,9 @@ export class CanvasRenderer {
                 npcSubGroup.add(whL, whR);
               }
              } else if (cell.npc.id === "traveler") {
-               if (this.charactersModel && typeof THREE.SkeletonUtils !== "undefined") {
-                 const clone = THREE.SkeletonUtils.clone(this.charactersModel);
-                 const femaleMesh = clone.getObjectByName("BaseFemaleMesh");
-                 const femaleRig = clone.getObjectByName("FemaleRig");
-                 if (femaleMesh && femaleMesh.parent) femaleMesh.parent.remove(femaleMesh);
-                 if (femaleRig && femaleRig.parent) femaleRig.parent.remove(femaleRig);
-                 clone.traverse(ch => { if (ch.isMesh) { ch.castShadow = true; ch.receiveShadow = true; if (ch.material) { ch.material = ch.material.clone(); ch.material.roughness = 0.8; } } });
-                 
-                 // Male traveler height is ~1.05 in GLTF. Scale to 0.72m.
-                 const s = 0.72;
-                 clone.scale.set(s, s, s);
-                 clone.position.set(0, 0, 0); // Sits correctly on floor
+               if (this.travelerModel) {
+                 const clone = this.travelerModel.clone();
+                 clone.position.set(0, 0, 0);
                  npcSubGroup.add(clone);
                } else {
                  const coat = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 0.45, 8), new THREE.MeshStandardMaterial({ color: "#1a4731", roughness: 0.85 }));
@@ -1235,20 +1309,9 @@ export class CanvasRenderer {
                  staff.position.set(-0.20, 0.50, 0.18); npcSubGroup.add(staff);
                }
              } else if (cell.npc.id === "merchant") {
-               if (this.charactersModel && typeof THREE.SkeletonUtils !== "undefined") {
-                 const clone = THREE.SkeletonUtils.clone(this.charactersModel);
-                 const maleMesh = clone.getObjectByName("BaseMaleMesh");
-                 const maleRig = clone.getObjectByName("MaleRig");
-                 if (maleMesh && maleMesh.parent) maleMesh.parent.remove(maleMesh);
-                 if (maleRig && maleRig.parent) maleRig.parent.remove(maleRig);
-                 const femaleRig = clone.getObjectByName("FemaleRig");
-                 if (femaleRig) femaleRig.position.set(0, 0, 0);
-                 clone.traverse(ch => { if (ch.isMesh) { ch.castShadow = true; ch.receiveShadow = true; if (ch.material) { ch.material = ch.material.clone(); ch.material.roughness = 0.8; } } });
-                 
-                 // Female merchant height is ~0.95 in GLTF. Scale to 0.78m.
-                 const s = 0.78;
-                 clone.scale.set(s, s, s);
-                 clone.position.set(0, 0, 0); // Position at floor level
+               if (this.merchantModel) {
+                 const clone = this.merchantModel.clone();
+                 clone.position.set(0, 0, 0);
                  npcSubGroup.add(clone);
                } else {
                  const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.20, 0.48, 8), new THREE.MeshStandardMaterial({ color: "#4c1d95", roughness: 0.8 }));
@@ -1292,20 +1355,9 @@ export class CanvasRenderer {
               roof.position.set(0, 0.46, 0);
               npcSubGroup.add(roof);
              } else if (cell.npc.id === "child") {
-               if (this.charactersModel && typeof THREE.SkeletonUtils !== "undefined") {
-                 const clone = THREE.SkeletonUtils.clone(this.charactersModel);
-                 const maleMesh = clone.getObjectByName("BaseMaleMesh");
-                 const maleRig = clone.getObjectByName("MaleRig");
-                 if (maleMesh && maleMesh.parent) maleMesh.parent.remove(maleMesh);
-                 if (maleRig && maleRig.parent) maleRig.parent.remove(maleRig);
-                 const femaleRig = clone.getObjectByName("FemaleRig");
-                 if (femaleRig) femaleRig.position.set(0, 0, 0);
-                 clone.traverse(ch => { if (ch.isMesh) { ch.castShadow = true; ch.receiveShadow = true; if (ch.material) { ch.material = ch.material.clone(); ch.material.roughness = 0.8; } } });
-                 
-                 // Scale child to ~0.45m height.
-                 const s = 0.47;
-                 clone.scale.set(s, s, s);
-                 clone.position.set(0, 0, 0); // Position at floor level
+               if (this.childModel) {
+                 const clone = this.childModel.clone();
+                 clone.position.set(0, 0, 0);
                  npcSubGroup.add(clone);
                } else {
                  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.10, 0.24, 8), new THREE.MeshStandardMaterial({ color: "#ea580c", roughness: 0.8 }));

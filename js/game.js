@@ -508,6 +508,31 @@ export class Game {
     if (p.stamina !== prevStamina && this.onStateChange) {
       this.onStateChange();
     }
+
+    // Update mobile/hud interact button glow and disabled status dynamically based on closest active interactable
+    const interactable = this.findClosestInteractable();
+    const btnInteract = document.getElementById("btn-interact");
+    if (btnInteract) {
+      if (interactable) {
+        if (typeof btnInteract.removeAttribute === "function") btnInteract.removeAttribute("disabled");
+        if (btnInteract.style) {
+          btnInteract.style.opacity = "1.0";
+          btnInteract.style.pointerEvents = "auto";
+          btnInteract.style.background = "rgba(16, 185, 129, 0.45)"; // emerald active glow
+          btnInteract.style.borderColor = "rgba(16, 185, 129, 0.9)";
+          btnInteract.style.boxShadow = "0 0 18px rgba(16, 185, 129, 0.65)";
+        }
+      } else {
+        if (typeof btnInteract.setAttribute === "function") btnInteract.setAttribute("disabled", "true");
+        if (btnInteract.style) {
+          btnInteract.style.opacity = "0.35";
+          btnInteract.style.pointerEvents = "none";
+          btnInteract.style.background = "rgba(15, 23, 42, 0.6)"; // inactive dark slate
+          btnInteract.style.borderColor = "rgba(16, 185, 129, 0.15)";
+          btnInteract.style.boxShadow = "0 0 8px rgba(0, 0, 0, 0.3)";
+        }
+      }
+    }
   }
 
   damagePlayer(amount) {
@@ -674,9 +699,9 @@ export class Game {
           const cell = grid[cy][cx];
           
           let type = null;
-          if (cell.chest) type = "chest";
-          else if (cell.npc) type = "npc";
-          else if (cell.obstacle) type = "obstacle";
+          if (cell.chest && !cell.chest.opened) type = "chest";
+          else if (cell.npc && !cell.npc.disappearing) type = "npc";
+          else if (cell.obstacle && !cell.obstacle.resolved) type = "obstacle";
           else if (cell.puzzleClue) type = "clue";
           
           if (type) {

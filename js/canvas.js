@@ -387,7 +387,7 @@ export class CanvasRenderer {
 
     flowers.forEach((name, idx) => {
       loader.load(`assets/models/decorations/${name}`, (fbx) => {
-        const processed = processFBX(fbx, 0.0035);
+        const processed = processFBX(fbx, 0.0022);
         this.flowerModels[idx] = processed;
         console.log(`FBX Decoration ${name} loaded successfully!`);
         checkAllLoaded();
@@ -401,7 +401,7 @@ export class CanvasRenderer {
     const rocks = ['rock1.fbx', 'rock2.fbx', 'rock3.fbx'];
     rocks.forEach((name, idx) => {
       loader.load(`assets/models/decorations/${name}`, (fbx) => {
-        const processed = processFBX(fbx, 0.0035);
+        const processed = processFBX(fbx, 0.0006);
         this.rockModels[idx] = processed;
         console.log(`FBX Decoration ${name} loaded successfully!`);
         checkAllLoaded();
@@ -413,7 +413,7 @@ export class CanvasRenderer {
 
     // Load Grass
     loader.load('assets/models/decorations/grass.fbx', (fbx) => {
-      this.grassModel = processFBX(fbx, 0.0035);
+      this.grassModel = processFBX(fbx, 0.0022);
       console.log("FBX Decoration grass.fbx loaded successfully!");
       checkAllLoaded();
     }, undefined, (err) => {
@@ -630,8 +630,8 @@ export class CanvasRenderer {
     this.dirLight.shadow.bias = -0.0005;
     this.scene.add(this.dirLight);
 
-    // Flashlight SpotLight - PRIMARY neutral white light source with realistic flashlight properties (decay = 1.2, range = 18.0m)
-    this.lantern = new THREE.SpotLight("#ffffff", 22.0, 18.0, Math.PI / 4.5, 0.5, 1.2);
+    // Flashlight SpotLight - PRIMARY neutral white light source with realistic flashlight properties (decay = 1.0, range = 15.0m)
+    this.lantern = new THREE.SpotLight("#ffffff", 7.0, 15.0, Math.PI / 4.2, 0.6, 1.0);
     this.lantern.castShadow = false; // Disable shadows to prevent hand/self-shadow blocking bugs
     this.scene.add(this.lantern);
 
@@ -1853,7 +1853,7 @@ export class CanvasRenderer {
     // Toggle lantern light and flame core visibility
     if (this.lantern) {
       if (state.lanternOn && player.fuel > 0) {
-        this.lantern.intensity = 22.0; // Strong tactical flashlight beam cutting through dense fog
+        this.lantern.intensity = 7.0; // Balanced flashlight beam to keep texture details and colors rich
         if (this.lanternFlame) this.lanternFlame.visible = true;
       } else {
         this.lantern.intensity = 0.0; // completely off

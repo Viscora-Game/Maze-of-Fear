@@ -437,6 +437,78 @@ function setupUI(game) {
     showScreen("howtoplay");
   });
 
+  // --- Dynamic Main Menu Animations (Flashlight Sway / Mouse Track & Dust Particles) ---
+  const menuScreen = document.getElementById("screen-menu");
+  const menuFlashlight = document.getElementById("menu-flashlight");
+  const menuDust = document.getElementById("menu-dust");
+
+  if (menuScreen && menuFlashlight) {
+    let lastX = window.innerWidth / 2;
+    let lastY = window.innerHeight / 2;
+    let currentX = lastX;
+    let currentY = lastY;
+    let swayTime = 0;
+
+    menuScreen.addEventListener("pointermove", (e) => {
+      if (e.pointerType === "mouse") {
+        currentX = e.clientX;
+        currentY = e.clientY;
+      }
+    });
+
+    const animateMenuFlashlight = () => {
+      if (!menuScreen.classList.contains("hidden")) {
+        swayTime += 0.015;
+        const swayX = Math.sin(swayTime * 0.8) * 45 + Math.cos(swayTime * 1.5) * 15;
+        const swayY = Math.cos(swayTime * 0.6) * 35 + Math.sin(swayTime * 1.2) * 10;
+
+        let targetX = currentX;
+        let targetY = currentY;
+
+        if (targetX === window.innerWidth / 2 && targetY === window.innerHeight / 2) {
+          targetX += swayX;
+          targetY += swayY;
+        } else {
+          targetX += swayX * 0.35;
+          targetY += swayY * 0.35;
+        }
+
+        lastX += (targetX - lastX) * 0.08;
+        lastY += (targetY - lastY) * 0.08;
+
+        menuFlashlight.style.background = `radial-gradient(circle 220px at ${lastX}px ${lastY}px, rgba(254, 243, 199, 0.22) 0%, rgba(251, 191, 36, 0.06) 45%, rgba(0, 0, 0, 0) 100%)`;
+      }
+      requestAnimationFrame(animateMenuFlashlight);
+    };
+    requestAnimationFrame(animateMenuFlashlight);
+
+    menuScreen.addEventListener("pointerleave", () => {
+      currentX = window.innerWidth / 2;
+      currentY = window.innerHeight / 2;
+    });
+  }
+
+  if (menuDust) {
+    const particleCount = 18;
+    for (let i = 0; i < particleCount; i++) {
+      const p = document.createElement("div");
+      p.className = "dust-particle";
+      
+      const size = Math.random() * 3 + 1.5;
+      p.style.width = `${size}px`;
+      p.style.height = `${size}px`;
+      p.style.left = `${Math.random() * 100}%`;
+      
+      const duration = Math.random() * 8 + 8;
+      const delay = Math.random() * -15;
+      p.style.animationDuration = `${duration}s`;
+      p.style.animationDelay = `${delay}s`;
+      p.style.opacity = (Math.random() * 0.35 + 0.15).toString();
+      
+      menuDust.appendChild(p);
+    }
+  }
+
   // Settings Menu Listeners
   document.getElementById("btn-lang-tr").addEventListener("click", () => {
     game.lang = "tr";

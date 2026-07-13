@@ -79,7 +79,7 @@ export class Game {
 
   showJumpscare(type = "normal") {
     const overlay = document.getElementById("modal-jumpscare");
-    if (!overlay) return;
+    if (!overlay || typeof overlay.querySelector !== "function") return;
     const img = overlay.querySelector("img");
     if (img) {
       let config;

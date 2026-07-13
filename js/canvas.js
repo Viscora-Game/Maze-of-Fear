@@ -755,7 +755,7 @@ export class CanvasRenderer {
     const pebbleMat = new THREE.MeshStandardMaterial({ color: "#4e4c4a", roughness: 0.9 }); // medium-dark wet stone grey
     
     const stemMGeo = new THREE.CylinderGeometry(0.01, 0.01, 0.08, 4);
-    const stemMMat = new THREE.MeshStandardMaterial({ color: "#f8fafc" });
+    const stemMMat = new THREE.MeshStandardMaterial({ color: "#4a3525", roughness: 0.95 });
     const capMGeo = new THREE.ConeGeometry(0.034, 0.044, 6);
     const capMMat = new THREE.MeshStandardMaterial({ color: "#f43f5e", roughness: 0.6 }); // red mushroom caps
 
@@ -807,10 +807,10 @@ export class CanvasRenderer {
             stem.position.y = 0.04;
             
             const glowMushroomMat = new THREE.MeshStandardMaterial({
-              color: "#60a5fa", // bioluminescent cyan-blue
-              emissive: "#2563eb", // glowing blue
-              emissiveIntensity: 3.0, // strong emissive glow without dynamic light cost
-              roughness: 0.4
+              color: "#1d4ed8", // deep rich blue
+              emissive: "#1d4ed8", // glowing blue
+              emissiveIntensity: 0.8, // soft glowing blue, avoids overexposure
+              roughness: 0.95 // high roughness eliminates white specular washouts
             });
             const cap = new THREE.Mesh(capMGeo, glowMushroomMat);
             cap.position.y = 0.08;

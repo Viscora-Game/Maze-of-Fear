@@ -108,7 +108,7 @@ export class AudioEngine {
     droneOsc1.start();
     droneOsc2.start();
 
-    // 3. Ghostly Horror/Mystery Melody Pluck Scheduler (Every 8 seconds)
+    // 3. Ghostly Horror/Mystery Melody Pluck Scheduler (Every 5 seconds with echo delay line)
     const creepyInterval = setInterval(() => {
       if (this.muted || !this.ctx) return;
       const now = this.ctx.currentTime;
@@ -125,43 +125,86 @@ export class AudioEngine {
       const selectedChord = chords[Math.floor(Math.random() * chords.length)];
 
       selectedChord.forEach((freq) => {
-        const osc = this.ctx.createOscillator();
-        const oscGain = this.ctx.createGain();
+        const playPluck = (delay, volScale) => {
+          const osc = this.ctx.createOscillator();
+          const oscGain = this.ctx.createGain();
 
-        osc.type = "sine"; // pure soft spectral sine wave
-        osc.frequency.setValueAtTime(freq, now);
+          osc.type = "sine"; // pure soft spectral sine wave
+          osc.frequency.setValueAtTime(freq, now + delay);
 
-        // Slow ghostly pitch bend/glide
-        const bendAmount = (Math.random() - 0.5) * 3.5;
-        osc.frequency.exponentialRampToValueAtTime(freq + bendAmount, now + 5.0);
+          // Slow ghostly pitch bend/glide
+          const bendAmount = (Math.random() - 0.5) * 3.5;
+          osc.frequency.exponentialRampToValueAtTime(freq + bendAmount, now + delay + 5.0);
 
-        // Very slow spectral fade-in and long mysterious decay
-        oscGain.gain.setValueAtTime(0, now);
-        oscGain.gain.linearRampToValueAtTime(0.020, now + 1.8); // increased by 30% (from 0.015)
-        oscGain.gain.exponentialRampToValueAtTime(0.0001, now + 5.8);
+          // Very slow spectral fade-in and long mysterious decay
+          oscGain.gain.setValueAtTime(0, now + delay);
+          oscGain.gain.linearRampToValueAtTime(0.020 * volScale, now + delay + 1.8);
+          oscGain.gain.exponentialRampToValueAtTime(0.0001, now + delay + 5.8);
 
-        osc.connect(oscGain);
-        oscGain.connect(this.masterGain);
+          osc.connect(oscGain);
+          oscGain.connect(this.masterGain);
 
-        osc.start(now);
-        osc.stop(now + 6.0);
+          osc.start(now + delay);
+          osc.stop(now + delay + 6.0);
+        };
+
+        // Play main pluck, echo 1 (0.4s delay), and echo 2 (0.8s delay)
+        playPluck(0, 1.0);
+        playPluck(0.4, 0.45);
+        playPluck(0.8, 0.18);
       });
     }, 5000);
 
-    // 4. Random Environmental Horror Sound Effects (Crows, Owls, Bush Rustles)
+    // 4. Random Environmental Horror Sound Effects (Crows, Owls, Rustles, Abyssal Chasm Groans, and Ghostly Whispers)
     const environmentalSoundInterval = setInterval(() => {
       if (this.muted || !this.ctx) return;
       const r = Math.random();
-      if (r < 0.33) {
+      if (r < 0.20) {
         this.playCrow();
-      } else if (r < 0.66) {
+      } else if (r < 0.40) {
         this.playOwl();
-      } else {
+      } else if (r < 0.60) {
         this.playRustle();
+      } else if (r < 0.80) {
+        this.playChasmGroan();
+      } else {
+        this.playWhisper();
       }
-    }, 9000); // Check and play every 9 seconds (increased frequency by ~30%)
+    }, 8000); // Check and play every 8 seconds
 
-    this.windNode = { lfo, noise, windGain, droneOsc1, droneOsc2, droneGain, creepyInterval, environmentalSoundInterval };
+    // 5. Periodic Heartbeat Dread loop (Steady low double thuds to induce panic)
+    const heartbeatInterval = setInterval(() => {
+      if (this.muted || !this.ctx) return;
+      const now = this.ctx.currentTime;
+      
+      // Double thump timing: first thump at 0.0s, second thump at 0.28s
+      const thumps = [0.0, 0.28];
+      thumps.forEach((delay) => {
+        const osc = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
+        const gain = this.ctx.createGain();
+        
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(55, now + delay); // very deep sub-bass thump
+        osc.frequency.exponentialRampToValueAtTime(30, now + delay + 0.12);
+        
+        filter.type = "lowpass";
+        filter.frequency.value = 70; // muffle all harmonics for raw chest impact
+        
+        gain.gain.setValueAtTime(0, now + delay);
+        gain.gain.linearRampToValueAtTime(0.24, now + delay + 0.02); // quick punchy attack
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + delay + 0.12);
+        
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.masterGain);
+        
+        osc.start(now + delay);
+        osc.stop(now + delay + 0.15);
+      });
+    }, 1500); // Beats every 1.5 seconds (40 BPM slow tension heartbeat)
+
+    this.windNode = { lfo, noise, windGain, droneOsc1, droneOsc2, droneGain, creepyInterval, environmentalSoundInterval, heartbeatInterval };
   }
 
   stopWind() {
@@ -173,6 +216,7 @@ export class AudioEngine {
         if (this.windNode.droneOsc2) this.windNode.droneOsc2.stop();
         if (this.windNode.creepyInterval) clearInterval(this.windNode.creepyInterval);
         if (this.windNode.environmentalSoundInterval) clearInterval(this.windNode.environmentalSoundInterval);
+        if (this.windNode.heartbeatInterval) clearInterval(this.windNode.heartbeatInterval);
       } catch(e){}
       this.windNode = null;
     }
@@ -539,5 +583,98 @@ export class AudioEngine {
       noise.start(startTime);
       noise.stop(startTime + duration + 0.01);
     }
+  }
+
+  // Synthesize deep structural chasm groan (sweeping lowpass saw/triangle detuned nodes + sweeping bandpass noise)
+  playChasmGroan() {
+    if (this.muted || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    
+    const osc1 = this.ctx.createOscillator();
+    const osc2 = this.ctx.createOscillator();
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = this.noiseBuffer;
+    
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(140, now);
+    filter.frequency.exponentialRampToValueAtTime(45, now + 3.0);
+    filter.Q.value = 4.0;
+    
+    const noiseFilter = this.ctx.createBiquadFilter();
+    noiseFilter.type = "bandpass";
+    noiseFilter.frequency.setValueAtTime(350, now);
+    noiseFilter.frequency.exponentialRampToValueAtTime(120, now + 3.0);
+    noiseFilter.Q.value = 1.0;
+    
+    osc1.type = "sawtooth";
+    osc1.frequency.setValueAtTime(40, now);
+    osc1.frequency.linearRampToValueAtTime(32, now + 3.0);
+    
+    osc2.type = "triangle";
+    osc2.frequency.setValueAtTime(41, now); // detune
+    osc2.frequency.linearRampToValueAtTime(33, now + 3.0);
+    
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.22, now + 0.8); // slow build
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 3.0);
+    
+    osc1.connect(filter);
+    osc2.connect(filter);
+    noise.connect(noiseFilter);
+    
+    filter.connect(gain);
+    noiseFilter.connect(gain);
+    
+    gain.connect(this.masterGain);
+    
+    osc1.start(now);
+    osc2.start(now);
+    noise.start(now);
+    osc1.stop(now + 3.1);
+    osc2.stop(now + 3.1);
+    noise.stop(now + 3.1);
+  }
+
+  // Synthesize trembling voice whisper (tremolo modulated high-resonance bandpass white noise sweep)
+  playWhisper() {
+    if (this.muted || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = this.noiseBuffer;
+    
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = "bandpass";
+    filter.frequency.setValueAtTime(600, now);
+    filter.frequency.linearRampToValueAtTime(1400, now + 0.4);
+    filter.frequency.exponentialRampToValueAtTime(500, now + 1.2);
+    filter.Q.setValueAtTime(5.0, now); // sharp whistle/breath resonance
+    
+    // Add LFO to make it shudder/tremble like a shivering voice
+    const lfo = this.ctx.createOscillator();
+    lfo.type = "sine";
+    lfo.frequency.value = 12.0; // 12 Hz vibration
+    
+    const lfoGain = this.ctx.createGain();
+    lfoGain.gain.value = 180;
+    
+    lfo.connect(lfoGain);
+    lfoGain.connect(filter.frequency);
+    
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.08, now + 0.2); // sudden breath gasp
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
+    
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.masterGain);
+    
+    lfo.start(now);
+    noise.start(now);
+    lfo.stop(now + 1.3);
+    noise.stop(now + 1.3);
   }
 }

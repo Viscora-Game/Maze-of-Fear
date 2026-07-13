@@ -2364,7 +2364,7 @@ export class CanvasRenderer {
           this.shadowMonsterMesh = new THREE.Group();
           
           // 1. Billboard Jumpscare Face Plane
-          const faceGeom = new THREE.PlaneGeometry(1.6, 1.6);
+          const faceGeom = new THREE.PlaneGeometry(1.2, 1.2);
           const ShaderMatClass = THREE.ShaderMaterial || THREE.MeshBasicMaterial;
           const faceMat = new ShaderMatClass({
             uniforms: {
@@ -2413,7 +2413,7 @@ export class CanvasRenderer {
           });
           const faceMesh = new THREE.Mesh(faceGeom, faceMat);
           faceMesh.name = "face";
-          faceMesh.position.set(0, 0.75, 0.35); // Lowered to player eye level (y=0.75) and shifted forward
+          faceMesh.position.set(0, 0.75, 0.25); // Lowered to player eye level (y=0.75) and shifted slightly forward (z=0.25)
           this.shadowMonsterMesh.add(faceMesh);
           
           // 3. Volumetric Smoke Body (15 overlapping black/dark spheres)
@@ -2422,7 +2422,7 @@ export class CanvasRenderer {
           this.shadowMonsterMesh.add(smokeGroup);
           
           for (let i = 0; i < 15; i++) {
-            const size = 0.35 + Math.random() * 0.35;
+            const size = 0.25 + Math.random() * 0.25; // Smaller, more compact smoke body spheres (0.25m to 0.50m)
             const geom = new THREE.SphereGeometry(size, 8, 8);
             const mat = new THREE.MeshBasicMaterial({
               color: 0x080808,
@@ -2432,9 +2432,9 @@ export class CanvasRenderer {
             });
             const mesh = new THREE.Mesh(geom, mat);
             mesh.position.set(
-              (Math.random() - 0.5) * 0.6,
-              0.75 + (Math.random() - 0.5) * 0.6, // Lowered center height to y=0.75
-              -0.15 + (Math.random() - 0.5) * 0.4 // offset backward so it acts as background/body
+              (Math.random() - 0.5) * 0.45,
+              0.75 + (Math.random() - 0.5) * 0.45, // Lowered center height to y=0.75
+              -0.10 + (Math.random() - 0.5) * 0.3 // offset backward so it acts as background/body
             );
             mesh.userData = {
               initialPos: new THREE.Vector3(mesh.position.x, mesh.position.y, mesh.position.z),
@@ -2533,23 +2533,24 @@ export class CanvasRenderer {
         
         const now = Date.now();
         if (!this.lastTrailSpawnTime) this.lastTrailSpawnTime = 0;
-        if (now - this.lastTrailSpawnTime > 100) {
+        if (now - this.lastTrailSpawnTime > 60) { // Spawns every 60ms (faster rate)
           this.lastTrailSpawnTime = now;
           
-          const count = 1 + Math.floor(Math.random() * 2);
+          const count = 2 + Math.floor(Math.random() * 2); // 2-3 particles per tick
           for (let tIdx = 0; tIdx < count; tIdx++) {
-            const trailGeom = new THREE.SphereGeometry(0.3 + Math.random() * 0.3, 8, 8);
+            const trailGeom = new THREE.SphereGeometry(0.35 + Math.random() * 0.35, 8, 8); // Slightly larger
             const trailMat = new THREE.MeshBasicMaterial({
               color: 0x050505,
               transparent: true,
-              opacity: 0.18,
+              opacity: 0.22, // Higher initial opacity
               depthWrite: false
             });
             const trailMesh = new THREE.Mesh(trailGeom, trailMat);
             
+            // Align spawn position with the monster's actual eye level height (y=0.75)
             trailMesh.position.set(
               sm.x + (Math.random() - 0.5) * 0.4,
-              this.shadowMonsterMesh.position.y + (Math.random() - 0.5) * 0.4,
+              this.shadowMonsterMesh.position.y + 0.75 + (Math.random() - 0.5) * 0.4,
               sm.y + (Math.random() - 0.5) * 0.4
             );
             this.scene.add(trailMesh);
@@ -2557,9 +2558,9 @@ export class CanvasRenderer {
             this.smokeTrailParticles.push({
               mesh: trailMesh,
               spawnTime: now,
-              lifeTime: 1200 + Math.random() * 400,
+              lifeTime: 1500 + Math.random() * 500, // Longer lifetime for longer trailing tail
               initialScale: 1.0,
-              initialOpacity: 0.18
+              initialOpacity: 0.22
             });
           }
         }

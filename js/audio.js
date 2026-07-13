@@ -7,6 +7,7 @@ export class AudioEngine {
     this.muted = false;
     this.soundBuffers = {}; // Cache for loaded audio file buffers
     this._loadingPromises = {}; // Prevent duplicate loading
+    this.rapidHeartbeatInterval = null;
   }
 
   init() {
@@ -338,6 +339,60 @@ export class AudioEngine {
       this.activeStepSource = null;
       this.activeStepGain = null;
     }
+  }
+
+  // Fast, intense heartbeat that fades and slows down over a given duration (default 6 seconds)
+  playHeartbeatRapid(durationMs = 6000) {
+    this.init();
+    if (this.muted || !this.ctx) return;
+    
+    // Clear any existing rapid heartbeat interval to avoid overlap
+    if (this.rapidHeartbeatInterval) {
+      clearInterval(this.rapidHeartbeatInterval);
+      this.rapidHeartbeatInterval = null;
+    }
+    
+    const startTime = Date.now();
+    this.rapidHeartbeatInterval = setInterval(() => {
+      if (this.muted || !this.ctx) return;
+      
+      const elapsed = Date.now() - startTime;
+      if (elapsed >= durationMs) {
+        clearInterval(this.rapidHeartbeatInterval);
+        this.rapidHeartbeatInterval = null;
+        return;
+      }
+      
+      // Calculate decay factor over time (so the heart rate volume fades out)
+      const factor = 1.0 - (elapsed / durationMs);
+      const now = this.ctx.currentTime;
+      
+      // Closer double thumps (at 0.0s and 0.18s) to represent high heart rate
+      const thumps = [0.0, 0.18];
+      thumps.forEach((delay) => {
+        const osc = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
+        const gain = this.ctx.createGain();
+        
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(60, now + delay); // slightly higher pitch under adrenaline
+        osc.frequency.exponentialRampToValueAtTime(32, now + delay + 0.10);
+        
+        filter.type = "lowpass";
+        filter.frequency.value = 85; // muffled deep thuds
+        
+        gain.gain.setValueAtTime(0, now + delay);
+        gain.gain.linearRampToValueAtTime(0.38 * factor, now + delay + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + delay + 0.10);
+        
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.masterGain);
+        
+        osc.start(now + delay);
+        osc.stop(now + delay + 0.12);
+      });
+    }, 480); // 125 BPM rapid heartbeat interval
   }
 
   // Heavy panting / breathing - uses real audio asset

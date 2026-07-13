@@ -191,6 +191,9 @@ export class Game {
       }
     };
 
+    this.lastCellX = undefined;
+    this.lastCellY = undefined;
+
     // Reveal start coordinates
     this.revealArea(1, 1);
     this.audio.init();
@@ -433,6 +436,37 @@ export class Game {
     const cellX = Math.floor(p.x);
     const cellY = Math.floor(p.y);
     const cell = grid[cellY][cellX];
+
+    // Proximity cell transition random jumpscare chance (0.4% chance on entering a new cell)
+    if (this.lastCellX === undefined) {
+      this.lastCellX = cellX;
+      this.lastCellY = cellY;
+    }
+    if (cellX !== this.lastCellX || cellY !== this.lastCellY) {
+      this.lastCellX = cellX;
+      this.lastCellY = cellY;
+      
+      if (this.state.gameState === "playing" && (!this.state.shadowMonster || !this.state.shadowMonster.active)) {
+        if (Math.random() < 0.004) {
+          this.state.gameState = "modal";
+          this.audio.playJumpscare();
+          this.audio.playHeartbeatRapid(6000); // 6 seconds of rapid heartbeat panic
+          this.audio.playPanting(); // heavy breathing panic
+          
+          const overlay = document.getElementById("modal-jumpscare");
+          if (overlay) {
+            overlay.classList.remove("hidden");
+            setTimeout(() => {
+              overlay.classList.add("hidden");
+              this.state.gameState = "playing";
+              if (this.onStateChange) this.onStateChange();
+            }, 1200);
+          } else {
+            this.state.gameState = "playing";
+          }
+        }
+      }
+    }
 
     // Decrement staircase timer
     if (this.state.staircaseCooldown > 0) {
@@ -798,16 +832,29 @@ export class Game {
         this.state.player.inventory[content.item]++;
         if (content.gold) this.state.player.gold += content.gold;
         this.audio.playPickup();
-      } else if (content.type === "trap") {
-        title = this.t("chest.trapTitle");
-        text = this.t("chest.trapText", { damage: content.damage });
-        detail = { type: "trap", value: content.damage };
-        this.audio.playHazard();
-      } else if (content.type === "mimic") {
-        title = this.t("chest.mimicTitle");
-        text = this.t("chest.mimicText", { damage: content.damage });
-        detail = { type: "mimic", value: content.damage };
-        this.audio.playHazard();
+      } else if (content.type === "trap" || content.type === "mimic") {
+        // Trigger terrifying jumpscare overlay and rapid heartbeat sounds!
+        this.audio.playJumpscare();
+        this.audio.playHeartbeatRapid(6000); // 6 seconds of rapid heartbeat panic
+        this.audio.playPanting(); // heavy breathing panic
+        
+        const overlay = document.getElementById("modal-jumpscare");
+        if (overlay) {
+          overlay.classList.remove("hidden");
+          setTimeout(() => {
+            overlay.classList.add("hidden");
+          }, 1500);
+        }
+        
+        if (content.type === "trap") {
+          title = this.t("chest.trapTitle");
+          text = this.t("chest.trapText", { damage: content.damage });
+          detail = { type: "trap", value: content.damage };
+        } else {
+          title = this.t("chest.mimicTitle");
+          text = this.t("chest.mimicText", { damage: content.damage });
+          detail = { type: "mimic", value: content.damage };
+        }
       }
 
       if (this.onChest) {

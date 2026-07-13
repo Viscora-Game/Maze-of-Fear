@@ -185,7 +185,7 @@ export class Game {
         y: 0,
         floor: 0,
         burnTime: 0,
-        spawnTimer: 15.0 + Math.random() * 10.0, // spawn check every 15-25 seconds
+        spawnTimer: 5.0 + Math.random() * 5.0, // first spawn within 5-10 seconds
         speed: 1.35, // balanced speed
         soundTimer: 0.5
       }
@@ -1041,13 +1041,20 @@ export class Game {
       text: this.t("close"),
       action: () => {
         this.state.gameState = "playing";
-        const stock = this.state.merchantStock;
-        const isSoldOut = npc.id === "merchant" && stock && Object.values(stock).every(info => info.count === 0);
-        if (isSoldOut) {
-          npc.disappearing = true;
-          npc.disappearStartTime = Date.now();
-          this.audio.playGhostFade();
-        }
+        try {
+          if (npc && npc.id === "merchant" && this.state.merchantStock) {
+            const stock = this.state.merchantStock;
+            const allSold = Object.keys(stock).length > 0 && Object.keys(stock).every(k => {
+              const item = stock[k];
+              return item && typeof item.count === "number" && item.count <= 0;
+            });
+            if (allSold) {
+              npc.disappearing = true;
+              npc.disappearStartTime = Date.now();
+              this.audio.playGhostFade();
+            }
+          }
+        } catch(e) { /* safe close */ }
         if (this.onStateChange) this.onStateChange();
       }
     });
@@ -1288,34 +1295,42 @@ export class Game {
     if (!sm.active) {
       sm.spawnTimer -= dt;
       if (sm.spawnTimer <= 0) {
-        sm.spawnTimer = 15.0 + Math.random() * 10.0; // Reset spawn timer (15-25 seconds)
+        sm.spawnTimer = 8.0 + Math.random() * 7.0; // Reset spawn timer (8-15 seconds)
         
-        // Spawn shadow monster in a path cell 3 to 6 units away from the player
+        // Spawn shadow monster on a walkable path cell 2 to 8 units away from the player
         const pCellX = Math.floor(p.x);
         const pCellY = Math.floor(p.y);
         const grid = s.floors[s.currentFloor];
         
-        let spawned = false;
-        for (let attempt = 0; attempt < 50; attempt++) {
-          const rx = pCellX + Math.floor((Math.random() - 0.5) * 12);
-          const ry = pCellY + Math.floor((Math.random() - 0.5) * 12);
-          if (rx >= 0 && rx < s.width && ry >= 0 && ry < s.height) {
-            const dx = rx - pCellX;
-            const dy = ry - pCellY;
-            const dist = Math.hypot(dx, dy);
-            if (dist >= 3.0 && dist <= 6.0 && grid[ry][rx].type === "path" && !grid[ry][rx].isExit) {
-              sm.active = true;
-              sm.x = rx + 0.5;
-              sm.y = ry + 0.5;
-              sm.floor = s.currentFloor;
-              sm.burnTime = 0;
-              sm.speed = 1.25 + Math.random() * 0.15;
-              sm.soundTimer = 0.5; // Play sound immediately after spawn
-              this.audio.playShadowSpawn();
-              spawned = true;
-              break;
+        // Collect all candidate path cells within range
+        const candidates = [];
+        for (let dy = -10; dy <= 10; dy++) {
+          for (let dx = -10; dx <= 10; dx++) {
+            const cx = pCellX + dx;
+            const cy = pCellY + dy;
+            if (cx >= 0 && cx < s.width && cy >= 0 && cy < s.height) {
+              const dist = Math.hypot(dx, dy);
+              if (dist >= 2.0 && dist <= 8.0) {
+                const cell = grid[cy][cx];
+                if (cell && cell.type !== "wall" && !cell.isExit && !cell.npc) {
+                  candidates.push({ x: cx, y: cy, dist });
+                }
+              }
             }
           }
+        }
+        
+        if (candidates.length > 0) {
+          // Pick a random candidate cell
+          const pick = candidates[Math.floor(Math.random() * candidates.length)];
+          sm.active = true;
+          sm.x = pick.x + 0.5;
+          sm.y = pick.y + 0.5;
+          sm.floor = s.currentFloor;
+          sm.burnTime = 0;
+          sm.speed = 1.25 + Math.random() * 0.15;
+          sm.soundTimer = 0.5; // Play sound immediately after spawn
+          this.audio.playShadowSpawn();
         }
       }
       return;
@@ -1363,7 +1378,7 @@ export class Game {
           // If burned for 2 seconds, it dissolves
           if (sm.burnTime >= 2.0) {
             sm.active = false;
-            sm.spawnTimer = 25.0 + Math.random() * 15.0; // next spawn
+            sm.spawnTimer = 12.0 + Math.random() * 8.0; // respawn after 12-20 seconds
             this.audio.playShadowBurn();
             if (this.onStateChange) this.onStateChange();
             return;
@@ -1439,7 +1454,7 @@ export class Game {
     
     s.gameState = "modal";
     s.shadowMonster.active = false;
-    s.shadowMonster.spawnTimer = 25.0 + Math.random() * 15.0;
+    s.shadowMonster.spawnTimer = 15.0 + Math.random() * 10.0;
     
     this.audio.playJumpscare();
     

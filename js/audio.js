@@ -218,7 +218,7 @@ export class AudioEngine {
         clearTimeout(this.ambientTimeout);
       }
       
-      const randomDelay = 15000 + Math.random() * 20000; // 15 to 35 seconds
+      const randomDelay = 40000 + Math.random() * 50000; // 40 to 90 seconds (longer silences build better tension)
       this.ambientTimeout = setTimeout(() => {
         if (this.muted || !this.ctx) {
           scheduleNextAmbient();

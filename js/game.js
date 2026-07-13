@@ -1498,14 +1498,9 @@ export class Game {
         overlay.classList.add("hidden");
         
         const p = s.player;
-        p.health = Math.max(0, p.health - 40);
+        p.health = 0; // Instant death when caught by the shadow monster
         
-        if (p.health <= 0) {
-          this.triggerDeathChoice();
-        } else {
-          s.gameState = "playing";
-          this.audio.playPanting();
-        }
+        this.triggerDeathChoice();
         
         if (this.onStateChange) this.onStateChange();
       }, 1500);

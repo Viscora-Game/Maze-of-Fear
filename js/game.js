@@ -1,8 +1,8 @@
-import { generateMaze } from "./maze.js";
-import { AudioEngine } from "./audio.js";
-import { CanvasRenderer } from "./canvas.js";
-import { translations } from "./translations.js";
-import { randomEvents, deathEvents } from "./events.js";
+import { generateMaze } from "./maze.js?v=13";
+import { AudioEngine } from "./audio.js?v=13";
+import { CanvasRenderer } from "./canvas.js?v=13";
+import { translations } from "./translations.js?v=13";
+import { randomEvents, deathEvents } from "./events.js?v=13";
 
 export class Game {
   constructor() {

@@ -640,6 +640,14 @@ export class Game {
     }
   }
 
+  pauseMonsterDuringInteraction() {
+    if (this.state && this.state.shadowMonster && this.state.shadowMonster.active) {
+      this.state.shadowMonster.active = false;
+      this.state.shadowMonster.spawnTimer = 15.0 + Math.random() * 10.0;
+      if (this.onStateChange) this.onStateChange();
+    }
+  }
+
   toggleLantern() {
     if (this.state && this.state.gameState === "playing") {
       this.state.lanternOn = !this.state.lanternOn;
@@ -654,6 +662,7 @@ export class Game {
 
   // Interacting with Obstacles
   triggerObstacleInteraction(cell) {
+    this.pauseMonsterDuringInteraction();
     const type = cell.obstacle.type;
     const inv = this.state.player.inventory;
     
@@ -842,6 +851,7 @@ export class Game {
 
   // Interacting with Chests
   triggerChestInteraction(cell) {
+    this.pauseMonsterDuringInteraction();
     const chest = cell.chest;
     if (chest.opened) {
       this.state.gameState = "modal";
@@ -968,6 +978,7 @@ export class Game {
 
   // Interacting with Puzzle Clues (Scrolls)
   triggerClueInteraction(cell) {
+    this.pauseMonsterDuringInteraction();
     this.state.gameState = "modal";
     const code = cell.puzzleClue;
     const title = this.lang === "tr" ? "Eski Bir Parşömen" : "An Ancient Parchment";
@@ -990,6 +1001,7 @@ export class Game {
 
   // Interacting with NPCs
   triggerNPCInteraction(cell) {
+    this.pauseMonsterDuringInteraction();
     this.state.gameState = "modal";
     const npc = cell.npc;
     const p = this.state.player;

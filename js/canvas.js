@@ -2365,36 +2365,43 @@ export class CanvasRenderer {
           
           // 1. Billboard Jumpscare Face Plane
           const faceGeom = new THREE.PlaneGeometry(1.6, 1.6);
-          const faceMat = new THREE.MeshBasicMaterial({
+          const ShaderMatClass = THREE.ShaderMaterial || THREE.MeshBasicMaterial;
+          const faceMat = new ShaderMatClass({
+            uniforms: {
+              map: { value: this.jumpscareTexture },
+              opacity: { value: 1.0 }
+            },
+            vertexShader: `
+              varying vec2 vUv;
+              void main() {
+                vUv = uv;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+              }
+            `,
+            fragmentShader: `
+              uniform sampler2D map;
+              uniform float opacity;
+              varying vec2 vUv;
+              void main() {
+                vec4 texColor = texture2D(map, vUv);
+                // Discard pixels where all channels are dark (background)
+                if (texColor.r < 0.14 && texColor.g < 0.14 && texColor.b < 0.14) {
+                  discard;
+                }
+                gl_FragColor = vec4(texColor.rgb, texColor.a * opacity);
+              }
+            `,
+            // Fallback parameters for MeshBasicMaterial
             map: this.jumpscareTexture,
             transparent: true,
             opacity: 1.0,
             side: THREE.DoubleSide,
-            blending: THREE.AdditiveBlending,
             depthWrite: false
           });
           const faceMesh = new THREE.Mesh(faceGeom, faceMat);
           faceMesh.name = "face";
           faceMesh.position.set(0, 1.1, 0.35); // shifted forward to avoid smoke occlusion
           this.shadowMonsterMesh.add(faceMesh);
-          
-          // 2. Glowing Red Eyes
-          const eyeGeom = new THREE.SphereGeometry(0.06, 8, 8);
-          const eyeMat = new THREE.MeshBasicMaterial({
-            color: 0xff0000,
-            transparent: true,
-            opacity: 1.0
-          });
-          
-          const eyeL = new THREE.Mesh(eyeGeom, eyeMat);
-          eyeL.name = "eyeL";
-          eyeL.position.set(-0.22, 1.25, 0.38); // shifted forward
-          
-          const eyeR = new THREE.Mesh(eyeGeom, eyeMat);
-          eyeR.name = "eyeR";
-          eyeR.position.set(0.22, 1.25, 0.38); // shifted forward
-          
-          this.shadowMonsterMesh.add(eyeL, eyeR);
           
           // 3. Volumetric Smoke Body (15 overlapping black/dark spheres)
           const smokeGroup = new THREE.Group();
@@ -2460,10 +2467,14 @@ export class CanvasRenderer {
           if (eyeR.material) eyeR.material.opacity = burnRatio;
         }
         
-        // Update face opacity
+        // Update face opacity (supporting both ShaderMaterial uniforms and MeshBasicMaterial fallback)
         const face = this.shadowMonsterMesh.getObjectByName("face");
         if (face && face.material) {
-          face.material.opacity = burnRatio;
+          if (face.material.uniforms && face.material.uniforms.opacity) {
+            face.material.uniforms.opacity.value = burnRatio;
+          } else {
+            face.material.opacity = burnRatio;
+          }
         }
         
         // Update point light intensity

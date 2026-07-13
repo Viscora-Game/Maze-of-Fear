@@ -798,41 +798,9 @@ export class CanvasRenderer {
           floorMesh.position.set(0, 0, 0);
           cellGroup.add(floorMesh);
 
-          // Random Floor Details (Rubble clusters, Glowing bioluminescent mushrooms, Creeping vines)
+          // Random Floor Details (ONLY small grass-like pieces and mushrooms)
           const randVal = Math.random();
-          if (randVal < 0.18) {
-            // Rubble clusters (2-4 small stones clustered together)
-            const rubbleGroup = new THREE.Group();
-            if (this.rockModels && this.rockModels.length > 0) {
-              // Spawn actual FBX low-poly rock models!
-              const numStones = 1 + Math.floor(Math.random() * 2);
-              for (let i = 0; i < numStones; i++) {
-                const rockIdx = Math.floor(Math.random() * this.rockModels.length);
-                const rockModel = this.rockModels[rockIdx];
-                if (rockModel) {
-                  const rockClone = rockModel.clone();
-                  const s = 0.5 + Math.random() * 0.5; // Scale relative to default 0.0006
-                  rockClone.scale.set(s * 0.0006, s * 0.0006, s * 0.0006);
-                  rockClone.position.set((Math.random() - 0.5) * 0.18, 0, (Math.random() - 0.5) * 0.18);
-                  rockClone.rotation.set(Math.random() * 0.1, Math.random() * Math.PI, Math.random() * 0.1);
-                  rubbleGroup.add(rockClone);
-                }
-              }
-            } else {
-              // Fallback: Procedural stone meshes (spheres)
-              const numStones = 2 + Math.floor(Math.random() * 3);
-              for (let i = 0; i < numStones; i++) {
-                const stone = new THREE.Mesh(pebbleGeo, pebbleMat);
-                const s = 0.5 + Math.random() * 0.8;
-                stone.scale.set(s * 1.5, s * 0.4, s * 1.0);
-                stone.position.set((Math.random() - 0.5) * 0.18, 0.005, (Math.random() - 0.5) * 0.18);
-                stone.rotation.set(0, Math.random() * Math.PI, 0);
-                rubbleGroup.add(stone);
-              }
-            }
-            rubbleGroup.position.set((Math.random() - 0.5) * 0.35, 0, (Math.random() - 0.5) * 0.35);
-            cellGroup.add(rubbleGroup);
-          } else if (randVal < 0.32) {
+          if (randVal < 0.15) {
             // Spooky Glowing Bioluminescent Mushrooms (Blue-cyan cap - performance optimized emissive material, no dynamic light)
             const mush = new THREE.Group();
             const stem = new THREE.Mesh(stemMGeo, stemMMat);
@@ -850,13 +818,13 @@ export class CanvasRenderer {
             mush.add(stem, cap);
             mush.position.set((Math.random() - 0.5) * 0.35, 0, (Math.random() - 0.5) * 0.35);
             cellGroup.add(mush);
-          } else if (randVal < 0.46) {
-             // Creeping Dark Green Vines / Ivy Sprouts or Beautiful Flowers on the stone path
+          } else if (randVal < 0.35) {
+             // Creeping Dark Green Vines / Ivy Sprouts on the stone path
              const vineGroup = new THREE.Group();
              
-             // Randomly choose between grass model, flower models, or procedural leaves
+             // Randomly choose between grass model or procedural leaves
              const chooseModel = Math.random();
-              if (chooseModel < 0.4 && this.grassModel) {
+              if (chooseModel < 0.60 && this.grassModel) {
                 // Spawn actual FBX grass model!
                 const grassClone = this.grassModel.clone();
                 const s = 0.7 + Math.random() * 0.6;
@@ -864,36 +832,23 @@ export class CanvasRenderer {
                 grassClone.position.set(0, 0, 0);
                 grassClone.rotation.set(0, Math.random() * Math.PI, 0);
                 vineGroup.add(grassClone);
-              } else if (chooseModel < 0.85 && this.flowerModels && this.flowerModels.length > 0) {
-                // Spawn actual FBX flower model (flower1 or flower2 only for ground, flower3 is ceiling lily)!
-                const numGroundFlowers = Math.max(1, this.flowerModels.length - 1);
-                const flowerIdx = Math.floor(Math.random() * numGroundFlowers);
-                const flowerModel = this.flowerModels[flowerIdx];
-                if (flowerModel) {
-                  const flowerClone = flowerModel.clone();
-                  const s = 0.6 + Math.random() * 0.5;
-                  flowerClone.scale.set(s * 0.0004, s * 0.0004, s * 0.0004);
-                  flowerClone.position.set(0, 0, 0);
-                  flowerClone.rotation.set(0, Math.random() * Math.PI, 0);
-                  vineGroup.add(flowerClone);
+              } else {
+                // Fallback: Procedural green leaves (spheres)
+                const leafMat = new THREE.MeshStandardMaterial({ 
+                  map: this.hedgeTexture, 
+                  color: "#0d120d", // deep rich muted charcoal green matching the walls
+                  roughness: 0.95 
+                });
+                for (let i = 0; i < 3; i++) {
+                  const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.04 + Math.random() * 0.02, 6, 6), leafMat);
+                  leaf.scale.set(1.5, 0.2, 1.0);
+                  leaf.position.set((Math.random() - 0.5) * 0.22, 0.005, (Math.random() - 0.5) * 0.22);
+                  leaf.rotation.set(0, Math.random() * Math.PI, 0);
+                  vineGroup.add(leaf);
                 }
-             } else {
-               // Fallback: Procedural green leaves (spheres)
-               const leafMat = new THREE.MeshStandardMaterial({ 
-                 map: this.hedgeTexture, 
-                 color: "#0d120d", // deep rich muted charcoal green matching the walls
-                 roughness: 0.95 
-               });
-               for (let i = 0; i < 3; i++) {
-                 const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.04 + Math.random() * 0.02, 6, 6), leafMat);
-                 leaf.scale.set(1.5, 0.2, 1.0);
-                 leaf.position.set((Math.random() - 0.5) * 0.22, 0.005, (Math.random() - 0.5) * 0.22);
-                 leaf.rotation.set(0, Math.random() * Math.PI, 0);
-                 vineGroup.add(leaf);
-               }
-             }
-             vineGroup.position.set((Math.random() - 0.5) * 0.35, 0, (Math.random() - 0.5) * 0.35);
-             cellGroup.add(vineGroup);
+              }
+              vineGroup.position.set((Math.random() - 0.5) * 0.35, 0, (Math.random() - 0.5) * 0.35);
+              cellGroup.add(vineGroup);
           }
 
           // Spawn hanging ceiling lily-flowers near wall edges

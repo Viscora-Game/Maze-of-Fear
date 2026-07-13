@@ -1263,3 +1263,116 @@ h1, h2, h3, h4 {
 .btn-parchment:active {
   transform: translateY(1px);
 }
+
+/* --- Mobile Device Sizing & Layout Fixes --- */
+@media (max-width: 768px) {
+  /* 1. Main Menu Typography scale-down */
+  .game-logo {
+    font-size: 2.1rem !important;
+  }
+  .game-subtitle {
+    font-size: 0.85rem !important;
+  }
+
+  /* 2. General screens padding */
+  .screen {
+    padding: 16px !important;
+  }
+
+  /* 3. Sleek Floating top HUD Pill scale-down */
+  .hud-pill {
+    padding: 4px 10px !important;
+    gap: 6px !important;
+    font-size: 0.72rem !important;
+    top: 10px !important;
+  }
+  #hud-left-pill {
+    left: 8px !important;
+  }
+  #hud-right-pill {
+    right: 8px !important;
+  }
+  /* Shorten progress bars inside top HUD pill to fit on small mobile screens */
+  .hud-pill .progress-bar {
+    width: 45px !important; /* from 80px to 45px */
+    height: 5px !important;
+  }
+  .hud-separator {
+    margin: 0 2px !important;
+  }
+
+  /* 4. Position Bottom controls closer to screen edges to prevent overlaps */
+  .floating-left-controls {
+    left: 12px !important;
+    bottom: 15px !important;
+    gap: 10px !important;
+  }
+  .left-btn-row {
+    width: 90px !important;
+    gap: 6px !important;
+  }
+  .floating-right-controls {
+    right: 12px !important;
+    bottom: 15px !important;
+    gap: 6px !important;
+  }
+  /* Scale down joystick base and handles slightly */
+  .joystick-base {
+    width: 100px !important; /* from 120px to 100px */
+    height: 100px !important;
+  }
+  .joystick-handle {
+    width: 40px !important; /* from 50px to 40px */
+    height: 40px !important;
+  }
+  .circle-btn {
+    width: 44px !important; /* from 52px to 44px */
+    height: 44px !important;
+    font-size: 1.15rem !important;
+  }
+  .action-btn-interact {
+    width: 60px !important; /* from 75px to 60px */
+    height: 60px !important;
+    font-size: 1.5rem !important;
+  }
+  .right-action-cluster {
+    width: 120px !important;
+    height: 120px !important;
+  }
+
+  /* 5. Compass scale-down */
+  .floating-compass {
+    width: 60px !important; /* from 75px to 60px */
+    height: 60px !important;
+    bottom: 15px !important;
+  }
+
+  /* 6. Parchment Modal scroll and borders padding */
+  .parchment-container {
+    padding: 16px 12px !important;
+    border-width: 6px !important;
+  }
+  .parchment-title {
+    font-size: 1.1rem !important;
+    margin-bottom: 10px !important;
+  }
+  .parchment-text {
+    font-size: 0.95rem !important;
+    line-height: 1.4 !important;
+    margin-bottom: 16px !important;
+  }
+  .btn-parchment {
+    font-size: 0.9rem !important;
+    padding: 8px 18px !important;
+  }
+
+  /* 7. Dialog choices layout wrapping */
+  .modal-buttons {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  .btn-modal {
+    padding: 10px !important;
+    font-size: 0.82rem !important;
+  }
+}

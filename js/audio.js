@@ -27,6 +27,7 @@ export class AudioEngine {
       this._preloadSounds(); // Preload all horror SFX assets
     } catch (e) {
       console.warn("Web Audio API not supported", e);
+      this.ctx = null;
     }
   }
 

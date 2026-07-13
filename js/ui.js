@@ -902,6 +902,49 @@ function setupUI(game) {
     }
   };
 
+  // Toast Notification System
+  game.showToast = (message, isWarning = false) => {
+    const container = document.getElementById("toast-container");
+    if (!container) return;
+
+    const toast = document.createElement("div");
+    toast.className = `game-toast${isWarning ? " warning-toast" : ""}`;
+
+    let icon = "🎒";
+    if (isWarning) {
+      icon = "⚠️";
+    } else if (message.toLowerCase().includes("altın") || message.toLowerCase().includes("gold")) {
+      icon = "🪙";
+    } else if (message.toLowerCase().includes("anahtar") || message.toLowerCase().includes("key")) {
+      icon = "🔑";
+    } else if (message.toLowerCase().includes("makas") || message.toLowerCase().includes("shears")) {
+      icon = "✂️";
+    } else if (message.toLowerCase().includes("balta") || message.toLowerCase().includes("axe")) {
+      icon = "🪓";
+    } else if (message.toLowerCase().includes("halat") || message.toLowerCase().includes("rope")) {
+      icon = "🪢";
+    } else if (message.toLowerCase().includes("pusula") || message.toLowerCase().includes("compass")) {
+      icon = "🧭";
+    } else if (message.toLowerCase().includes("harita") || message.toLowerCase().includes("map")) {
+      icon = "🗺️";
+    } else if (message.toLowerCase().includes("yağ") || message.toLowerCase().includes("fuel")) {
+      icon = "🪔";
+    } else if (message.toLowerCase().includes("peynir") || message.toLowerCase().includes("cheese")) {
+      icon = "🧀";
+    }
+
+    toast.innerHTML = `
+      <span class="toast-icon">${icon}</span>
+      <span class="toast-text">${message}</span>
+    `;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+      toast.remove();
+    }, 3000);
+  };
+
   // Combination Keypad Overlay
   game.onKeypad = (correctCode, onSubmit) => {
     modals.keypad.innerHTML = "";

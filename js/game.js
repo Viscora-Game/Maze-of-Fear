@@ -866,18 +866,33 @@ export class Game {
       let text = "";
       let detail = null;
 
-      if (content.type === "gold") {
-        title = this.t("chest.rewardTitle");
-        text = this.t("chest.goldReward", { amount: content.amount });
-        this.state.player.gold += content.amount;
+      if (content.type === "gold" || content.type === "item") {
+        if (content.type === "gold") {
+          title = this.t("chest.rewardTitle");
+          text = this.t("chest.goldReward", { amount: content.amount });
+          this.state.player.gold += content.amount;
+        } else {
+          title = this.t("chest.rewardTitle");
+          const itemTrans = this.t(`items.${content.item}.name`);
+          text = this.t("chest.itemReward", { item: itemTrans });
+          this.state.player.inventory[content.item]++;
+          if (content.gold) this.state.player.gold += content.gold;
+        }
         this.audio.playPickup();
-      } else if (content.type === "item") {
-        title = this.t("chest.rewardTitle");
-        const itemTrans = this.t(`items.${content.item}.name`);
-        text = this.t("chest.itemReward", { item: itemTrans });
-        this.state.player.inventory[content.item]++;
-        if (content.gold) this.state.player.gold += content.gold;
-        this.audio.playPickup();
+        
+        // Close chest prompt modal
+        const chestModal = document.getElementById("modal-chest");
+        if (chestModal) chestModal.classList.add("hidden");
+        
+        // Display premium toast notification
+        if (this.showToast) {
+          this.showToast(text);
+        }
+        
+        // Resume active gameplay
+        this.state.gameState = "playing";
+        if (this.onStateChange) this.onStateChange();
+        return;
       } else if (content.type === "trap" || content.type === "mimic") {
         // Trigger terrifying jumpscare overlay and rapid heartbeat sounds!
         this.audio.playJumpscare();

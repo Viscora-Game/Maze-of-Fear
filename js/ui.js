@@ -476,7 +476,7 @@ function setupUI(game) {
         lastX += (targetX - lastX) * 0.08;
         lastY += (targetY - lastY) * 0.08;
 
-        menuFlashlight.style.background = `radial-gradient(circle 220px at ${lastX}px ${lastY}px, rgba(254, 243, 199, 0.22) 0%, rgba(251, 191, 36, 0.06) 45%, rgba(0, 0, 0, 0) 100%)`;
+        menuFlashlight.style.transform = `translate3d(${lastX}px, ${lastY}px, 0)`;
       }
       requestAnimationFrame(animateMenuFlashlight);
     };

@@ -24,7 +24,7 @@ export const translations = {
     back: "Back",
     health: "Health",
     gold: "Gold",
-    fuel: "Fuel",
+    fuel: "Battery",
     quests: "Active Quests",
     inventory: "Inventory",
     mapTitle: "Maze Map",
@@ -52,7 +52,7 @@ export const translations = {
       rope: { name: "Rope", desc: "Used to cross bottomless chasms safely." },
       compass: { name: "Compass", desc: "Indicates the general direction of the exit." },
       map_piece: { name: "Map Fragment", desc: "Reveals a section of the maze when consumed." },
-      fuel: { name: "Lantern Oil", desc: "Replenishes 30% of lantern fuel." },
+      fuel: { name: "Battery", desc: "Replenishes 30% of flashlight power." },
       cheese: { name: "Old Cheese", desc: "Slightly smelly. Might interest a rodent." }
     },
 
@@ -75,7 +75,7 @@ export const translations = {
       mimicTitle: "A Mimic!",
       mimicText: "The chest turns out to be a mimic! It bites you for {damage} damage.",
       trapText: "A poison dart shoots out! You lose {damage} health.",
-      fuelLeakText: "A gas leak tarnishes your light. Lantern fuel drained by 25%.",
+      fuelLeakText: "A battery leak drains your power. Flashlight power drained by 25%.",
       goldReward: "You found {amount} gold pieces!",
       itemReward: "You found a {item}!",
       adUndo: "Watch Ad to Undo Trap",
@@ -137,7 +137,7 @@ export const translations = {
         choice2: "Avoid (Go opposite direction)",
         choice3: "Ignore and continue",
         resInvestigate: "You find a skeleton clutching a pouch! You gain 15 gold, but breathe in toxic spores (lose 10 health).",
-        resAvoid: "You safely avoid any potential danger, but your lantern burns extra fuel (-10% fuel) as you rush.",
+        resAvoid: "You safely avoid any potential danger, but your flashlight burns extra power (-10% power) as you rush.",
         resIgnore: "You walk past. The sound fades, leaving you with an eerie silence."
       },
       shrine: {
@@ -146,14 +146,14 @@ export const translations = {
         choice2: "Destroy shrine for loot",
         choice3: "Leave it alone",
         resOffer: "The altar glows warmly. Your health is fully restored!",
-        resDestroy: "You smash the altar! You find a Map Fragment, but a curse dims your lantern (-30% fuel).",
+        resDestroy: "You smash the altar! You find a Map Fragment, but a curse dims your flashlight (-30% power).",
         resIgnore: "You walk past the altar. Nothing happens."
       },
       fog: {
         desc: "A sudden, dense wave of cold fog rolls into the corridor, blinding you.",
         choice1: "Stand still and wait it out",
         choice2: "Run forward blindly",
-        resWait: "You wait. The fog clears, but the cold dampness drains your lantern fuel (-15% fuel).",
+        resWait: "You wait. The fog clears, but the cold dampness drains your flashlight power (-15% power).",
         resRun: "You run and trip over a loose stone! You take 15 damage, but end up in a different corridor."
       }
     },
@@ -212,7 +212,7 @@ export const translations = {
     back: "Geri",
     health: "Sağlık",
     gold: "Altın",
-    fuel: "Gaz Yağı",
+    fuel: "Pil",
     quests: "Aktif Görevler",
     inventory: "Envanter",
     mapTitle: "Labirent Haritası",
@@ -240,7 +240,7 @@ export const translations = {
       rope: { name: "Halat", desc: "Dipsiz uçurumlardan güvenle geçmek için kullanılır." },
       compass: { name: "Pusula", desc: "Çıkışın genel yönünü gösterir." },
       map_piece: { name: "Harita Parçası", desc: "Kullanıldığında labirentin bir kısmını açar." },
-      fuel: { name: "Fener Yağı", desc: "Fener yakıtını %30 doldurur." },
+      fuel: { name: "Pil", desc: "El feneri gücünü %30 doldurur." },
       cheese: { name: "Eski Peynir", desc: "Biraz kokulu. Bir kemirgenin ilgisini çekebilir." }
     },
 
@@ -263,7 +263,7 @@ export const translations = {
       mimicTitle: "Taklitçi (Mimic)!",
       mimicText: "Sandık bir canavara dönüştü! Seni ısırarak {damage} hasar verdi.",
       trapText: "Zehirli bir iğne fırladı! {damage} sağlık kaybettiniz.",
-      fuelLeakText: "Gaz sızıntısı ışığınızı körletti. Fener yakıtı %25 azaldı.",
+      fuelLeakText: "Pil sızıntısı ışığınızı körletti. El feneri gücü %25 azaldı.",
       goldReward: "Sandıktan {amount} altın çıktı!",
       itemReward: "Bir {item} buldunuz!",
       adUndo: "Tuzaktan Kaçmak İçin Reklam İzle",

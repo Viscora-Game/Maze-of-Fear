@@ -542,11 +542,13 @@ function setupUI(game) {
     if (lanternBtn) {
       if (s.lanternOn && p.fuel > 0) {
         lanternBtn.innerHTML = "🔦✨";
+        lanternBtn.style.filter = "none";
         lanternBtn.style.background = "rgba(251, 191, 38, 0.35)"; // Amber active background
         lanternBtn.style.borderColor = "rgba(251, 191, 38, 0.75)";  // Glowing amber border
         lanternBtn.style.boxShadow = "0 0 15px rgba(251, 191, 38, 0.4)";
       } else {
         lanternBtn.innerHTML = "🔦";
+        lanternBtn.style.filter = "grayscale(1) brightness(0.6)";
         lanternBtn.style.background = "rgba(15, 23, 42, 0.45)";    // Dark inactive background
         lanternBtn.style.borderColor = "rgba(251, 191, 38, 0.25)";  // Inactive border
         lanternBtn.style.boxShadow = "0 0 10px rgba(0, 0, 0, 0.3)";
@@ -927,8 +929,8 @@ function setupUI(game) {
       icon = "🧭";
     } else if (message.toLowerCase().includes("harita") || message.toLowerCase().includes("map")) {
       icon = "🗺️";
-    } else if (message.toLowerCase().includes("yağ") || message.toLowerCase().includes("fuel")) {
-      icon = "🪔";
+    } else if (message.toLowerCase().includes("pil") || message.toLowerCase().includes("battery")) {
+      icon = "🔋";
     } else if (message.toLowerCase().includes("peynir") || message.toLowerCase().includes("cheese")) {
       icon = "🧀";
     }

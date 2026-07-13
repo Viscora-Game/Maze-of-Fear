@@ -523,7 +523,7 @@ export class CanvasRenderer {
               child.receiveShadow = true;
               child.material = new THREE.MeshStandardMaterial({
                 map: texture,
-                color: new THREE.Color("#bcbcbc"), // Dim base color slightly to prevent overexposure/glowing under flashlight
+                color: new THREE.Color("#444444"), // Dim base color to prevent overexposure/glowing under bright close flashlight
                 roughness: 0.95, // matte retro diffuse look
                 metalness: 0.05
               });
@@ -696,8 +696,8 @@ export class CanvasRenderer {
     this.dirLight.shadow.bias = -0.0005;
     this.scene.add(this.dirLight);
 
-    // Flashlight SpotLight - PRIMARY neutral white light source with realistic flashlight properties (decay = 1.8, range = 11.0m)
-    this.lantern = new THREE.SpotLight("#ffffff", 12.0, 11.0, Math.PI / 6.0, 0.85, 1.8);
+    // Flashlight SpotLight - PRIMARY neutral white light source with realistic flashlight properties (decay = 1.1, range = 11.0m)
+    this.lantern = new THREE.SpotLight("#ffffff", 4.5, 11.0, Math.PI / 6.0, 0.85, 1.1);
     this.lantern.castShadow = false; // Disable shadows to prevent hand/self-shadow blocking bugs
     this.scene.add(this.lantern);
 
@@ -1889,7 +1889,7 @@ export class CanvasRenderer {
     // Toggle lantern light and flame core visibility
     if (this.lantern) {
       if (state.lanternOn && player.fuel > 0) {
-        this.lantern.intensity = 12.0; // Distance-decay flashlight beam to keep texture details and colors rich
+        this.lantern.intensity = 4.5; // Distance-decay flashlight beam to keep texture details and colors rich
         if (this.lanternFlame) this.lanternFlame.visible = true;
       } else {
         this.lantern.intensity = 0.0; // completely off

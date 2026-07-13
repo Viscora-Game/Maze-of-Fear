@@ -4,6 +4,9 @@ import { CanvasRenderer } from "./canvas.js?v=13";
 import { translations } from "./translations.js?v=13";
 import { randomEvents, deathEvents } from "./events.js?v=13";
 
+const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
+const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
+
 export class Game {
   constructor() {
     this.lang = localStorage.getItem("maze_lang") || "tr";
@@ -50,6 +53,15 @@ export class Game {
     this.onKeypad = null;
     this.onAd = null;
     this.onGameEnd = null;
+  }
+
+  showJumpscare(type = "normal") {
+    const overlay = document.getElementById("modal-jumpscare");
+    if (!overlay) return;
+    const img = overlay.querySelector("img");
+    if (img) {
+      img.src = type === "chest" ? jumpscareChestUrl : jumpscareNormalUrl;
+    }
   }
 
   setCanvas(canvasElement) {
@@ -453,6 +465,7 @@ export class Game {
           this.audio.playHeartbeatRapid(6000); // 6 seconds of rapid heartbeat panic
           this.audio.playPanting(); // heavy breathing panic
           
+          this.showJumpscare("normal");
           const overlay = document.getElementById("modal-jumpscare");
           if (overlay) {
             overlay.classList.remove("hidden");
@@ -838,6 +851,7 @@ export class Game {
         this.audio.playHeartbeatRapid(6000); // 6 seconds of rapid heartbeat panic
         this.audio.playPanting(); // heavy breathing panic
         
+        this.showJumpscare("chest");
         const overlay = document.getElementById("modal-jumpscare");
         if (overlay) {
           overlay.classList.remove("hidden");
@@ -1537,6 +1551,7 @@ export class Game {
     
     this.audio.playJumpscare();
     
+    this.showJumpscare("normal");
     const overlay = document.getElementById("modal-jumpscare");
     if (overlay) {
       overlay.classList.remove("hidden");

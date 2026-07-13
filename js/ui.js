@@ -241,10 +241,10 @@ function setupUI(game) {
       sliderVal.textContent = `${slider.value}%`;
     };
     
-    const touchStartHandler = (e) => {
-      const touch = e.changedTouches[0];
-      const target = e.target;
+    const pointerDownHandler = (e) => {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
       
+      const target = e.target;
       const matchedBtn = buttonsToEdit.find(b => b.el.contains(target));
       if (!matchedBtn) return;
       
@@ -252,33 +252,28 @@ function setupUI(game) {
       selectButton(matchedBtn);
       
       dragActive = true;
-      dragTouchId = touch.identifier;
-      dragStartX = touch.clientX;
-      dragStartY = touch.clientY;
+      dragTouchId = e.pointerId;
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
       initialLeft = parseFloat(matchedBtn.el.style.left);
       initialTop = parseFloat(matchedBtn.el.style.top);
     };
     
-    const touchMoveHandler = (e) => {
-      if (!dragActive) return;
-      for (let i = 0; i < e.touches.length; i++) {
-        const touch = e.touches[i];
-        if (touch.identifier === dragTouchId) {
-          e.preventDefault();
-          const dx = touch.clientX - dragStartX;
-          const dy = touch.clientY - dragStartY;
-          
-          let newLeft = initialLeft + dx;
-          let newTop = initialTop + dy;
-          
-          newLeft = Math.max(0, Math.min(window.innerWidth - selectedButton.el.clientWidth, newLeft));
-          newTop = Math.max(0, Math.min(window.innerHeight - selectedButton.el.clientHeight, newTop));
-          
-          selectedButton.el.style.left = `${newLeft}px`;
-          selectedButton.el.style.top = `${newTop}px`;
-          break;
-        }
-      }
+    const pointerMoveHandler = (e) => {
+      if (!dragActive || e.pointerId !== dragTouchId) return;
+      e.preventDefault();
+      
+      const dx = e.clientX - dragStartX;
+      const dy = e.clientY - dragStartY;
+      
+      let newLeft = initialLeft + dx;
+      let newTop = initialTop + dy;
+      
+      newLeft = Math.max(0, Math.min(window.innerWidth - selectedButton.el.clientWidth, newLeft));
+      newTop = Math.max(0, Math.min(window.innerHeight - selectedButton.el.clientHeight, newTop));
+      
+      selectedButton.el.style.left = `${newLeft}px`;
+      selectedButton.el.style.top = `${newTop}px`;
     };
     
     const checkOverlap = (el1, el2) => {
@@ -290,40 +285,34 @@ function setupUI(game) {
                r1.top > r2.bottom - 5);
     };
     
-    const touchEndHandler = (e) => {
-      if (!dragActive) return;
-      for (let i = 0; i < e.changedTouches.length; i++) {
-        const touch = e.changedTouches[i];
-        if (touch.identifier === dragTouchId) {
-          dragActive = false;
-          dragTouchId = null;
-          
-          let overlap = false;
-          for (let btn of buttonsToEdit) {
-            if (btn.id !== selectedButton.id && checkOverlap(selectedButton.el, btn.el)) {
-              overlap = true;
-              break;
-            }
-          }
-          
-          if (btnSettings && checkOverlap(selectedButton.el, btnSettings)) {
-            overlap = true;
-          }
-          
-          if (overlap) {
-            const orig = originalPositions[selectedButton.id];
-            selectedButton.el.style.left = `${orig.left}px`;
-            selectedButton.el.style.top = `${orig.top}px`;
-            selectedButton.el.style.border = "3px solid var(--red)";
-            setTimeout(() => {
-              selectedButton.el.style.border = "3px solid var(--violet)";
-            }, 300);
-          } else {
-            originalPositions[selectedButton.id].left = parseFloat(selectedButton.el.style.left);
-            originalPositions[selectedButton.id].top = parseFloat(selectedButton.el.style.top);
-          }
+    const pointerUpHandler = (e) => {
+      if (!dragActive || e.pointerId !== dragTouchId) return;
+      dragActive = false;
+      dragTouchId = null;
+      
+      let overlap = false;
+      for (let btn of buttonsToEdit) {
+        if (btn.id !== selectedButton.id && checkOverlap(selectedButton.el, btn.el)) {
+          overlap = true;
           break;
         }
+      }
+      
+      if (btnSettings && checkOverlap(selectedButton.el, btnSettings)) {
+        overlap = true;
+      }
+      
+      if (overlap) {
+        const orig = originalPositions[selectedButton.id];
+        selectedButton.el.style.left = `${orig.left}px`;
+        selectedButton.el.style.top = `${orig.top}px`;
+        selectedButton.el.style.border = "3px solid var(--red)";
+        setTimeout(() => {
+          selectedButton.el.style.border = "3px solid var(--violet)";
+        }, 300);
+      } else {
+        originalPositions[selectedButton.id].left = parseFloat(selectedButton.el.style.left);
+        originalPositions[selectedButton.id].top = parseFloat(selectedButton.el.style.top);
       }
     };
     
@@ -357,10 +346,10 @@ function setupUI(game) {
       }
     };
     
-    window.addEventListener("touchstart", touchStartHandler, { passive: false });
-    window.addEventListener("touchmove", touchMoveHandler, { passive: false });
-    window.addEventListener("touchend", touchEndHandler);
-    window.addEventListener("touchcancel", touchEndHandler);
+    window.addEventListener("pointerdown", pointerDownHandler, { passive: false });
+    window.addEventListener("pointermove", pointerMoveHandler, { passive: false });
+    window.addEventListener("pointerup", pointerUpHandler);
+    window.addEventListener("pointercancel", pointerUpHandler);
     slider.addEventListener("input", sliderHandler);
     
     const saveLayout = () => {
@@ -403,10 +392,10 @@ function setupUI(game) {
     };
     
     const cleanup = () => {
-      window.removeEventListener("touchstart", touchStartHandler);
-      window.removeEventListener("touchmove", touchMoveHandler);
-      window.removeEventListener("touchend", touchEndHandler);
-      window.removeEventListener("touchcancel", touchEndHandler);
+      window.removeEventListener("pointerdown", pointerDownHandler);
+      window.removeEventListener("pointermove", pointerMoveHandler);
+      window.removeEventListener("pointerup", pointerUpHandler);
+      window.removeEventListener("pointercancel", pointerUpHandler);
       slider.removeEventListener("input", sliderHandler);
       slider.disabled = true;
     };

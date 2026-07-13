@@ -706,6 +706,7 @@ export class CanvasRenderer {
     this.obstacleMeshes = {};
     this.npcGroups = {}; // reset NPC groups
     this.exitPortals = [];
+    this.torches = []; // reset torches array
     this.shadowMonsterMesh = null;
     if (this.smokeTrailParticles) {
       this.smokeTrailParticles.forEach(p => {
@@ -995,6 +996,81 @@ export class CanvasRenderer {
                 hangingFlower.scale.set(s * 0.0003, s * 0.0003, s * 0.0003);
                 
                 cellGroup.add(hangingFlower);
+              }
+            }
+          }
+
+          // D. Wall Torches (Spawns a glowing warm torch on adjacent walls with a very low 5.5% probability)
+          {
+            const isWall = (tx, ty) => {
+              if (tx < 0 || tx >= width || ty < 0 || ty >= height) return true;
+              return grid[ty][tx].isWall;
+            };
+
+            const wallN = isWall(x, y - 1);
+            const wallS = isWall(x, y + 1);
+            const wallE = isWall(x + 1, y);
+            const wallW = isWall(x - 1, y);
+
+            if (wallN || wallS || wallE || wallW) {
+              if (Math.random() < 0.055) { // 5.5% probability per path cell adjacent to a wall
+                const walls = [];
+                if (wallN) walls.push({ x: 0, z: -0.49, rotationY: 0 }); // mounts on North wall, faces South
+                if (wallS) walls.push({ x: 0, z: 0.49, rotationY: Math.PI }); // mounts on South wall, faces North
+                if (wallE) walls.push({ x: 0.49, z: 0, rotationY: -Math.PI / 2 }); // mounts on East wall, faces West
+                if (wallW) walls.push({ x: -0.49, z: 0, rotationY: Math.PI / 2 }); // mounts on West wall, faces East
+
+                if (walls.length > 0) {
+                  const mount = walls[Math.floor(Math.random() * walls.length)];
+
+                  const torchGroup = new THREE.Group();
+                  torchGroup.name = "torch";
+
+                  // 1. Wooden handle/holder (angled cylinder)
+                  const handleGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.18, 6);
+                  const handleMat = new THREE.MeshStandardMaterial({ color: "#451a03", roughness: 0.9 });
+                  const handle = new THREE.Mesh(handleGeo, handleMat);
+                  handle.position.set(0, 0, 0.04);
+                  handle.rotation.x = Math.PI / 5.5; // tilt forward
+                  torchGroup.add(handle);
+
+                  // 2. Metal clamp (cylinder ring)
+                  const clampGeo = new THREE.CylinderGeometry(0.018, 0.018, 0.025, 6);
+                  const clampMat = new THREE.MeshStandardMaterial({ color: "#374151", metalness: 0.8, roughness: 0.4 });
+                  const clamp = new THREE.Mesh(clampGeo, clampMat);
+                  clamp.position.set(0, -0.04, 0.018);
+                  clamp.rotation.x = Math.PI / 5.5;
+                  torchGroup.add(clamp);
+
+                  // 3. Glowing flame cone
+                  const flameGeo = new THREE.ConeGeometry(0.028, 0.075, 5);
+                  const flameMat = new THREE.MeshBasicMaterial({ color: "#ea580c" });
+                  const flame = new THREE.Mesh(flameGeo, flameMat);
+                  flame.position.set(0, 0.08, 0.075);
+                  flame.rotation.x = Math.PI / 5.5;
+                  torchGroup.add(flame);
+
+                  // 4. PointLight (warm flickering point light)
+                  const torchLight = new THREE.PointLight("#ea580c", 2.2, 4.0);
+                  torchLight.position.set(0, 0.11, 0.09);
+                  torchLight.castShadow = false;
+                  torchGroup.add(torchLight);
+
+                  // Set position at eye level (y = 0.46)
+                  torchGroup.position.set(mount.x, 0.46, mount.z);
+                  torchGroup.rotation.y = mount.rotationY;
+
+                  cellGroup.add(torchGroup);
+
+                  // Register torch light for flickering animation
+                  if (this.torches) {
+                    this.torches.push({
+                      light: torchLight,
+                      flame: flame,
+                      baseIntensity: 2.2
+                    });
+                  }
+                }
               }
             }
           }
@@ -1979,6 +2055,19 @@ export class CanvasRenderer {
         const relativeAngle = (worldAngle - player.angle) * (180 / Math.PI);
         compassNeedle.style.transform = `rotate(${relativeAngle}deg)`;
       }
+    }
+
+    // Update warm wall torches flickering effect (pulsing flame scales and PointLight intensities)
+    if (this.torches && this.torches.length > 0) {
+      const time = performance.now() * 0.005;
+      this.torches.forEach((t, i) => {
+        const flicker = Math.sin(time * 3.3 + i) * 0.18 + Math.cos(time * 6.7 + i * 2.1) * 0.12 + Math.sin(time * 19.3 + i * 3.4) * 0.06;
+        t.light.intensity = t.baseIntensity + flicker;
+        if (t.flame) {
+          const s = 1.0 + flicker * 0.45;
+          t.flame.scale.set(s, s * 1.25, s);
+        }
+      });
     }
 
     // Rebuild Scene Graph when loading new floor

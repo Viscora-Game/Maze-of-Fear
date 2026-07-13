@@ -1226,6 +1226,28 @@ export class Game {
     }
   }
 
+  hasLineOfSight(x1, y1, x2, y2, grid, width, height) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const dist = Math.hypot(dx, dy);
+    if (dist <= 0.1) return true;
+    
+    const steps = Math.ceil(dist * 4); // check 4 points per block unit
+    for (let i = 1; i < steps; i++) {
+      const t = i / steps;
+      const tx = x1 + dx * t;
+      const ty = y1 + dy * t;
+      const gx = Math.floor(tx);
+      const gy = Math.floor(ty);
+      if (gx >= 0 && gx < width && gy >= 0 && gy < height) {
+        if (grid[gy][gx].type === "wall") {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
   findPathToPlayer(smX, smY, pX, pY, grid, width, height) {
     const startX = Math.floor(smX);
     const startY = Math.floor(smY);
@@ -1373,22 +1395,25 @@ export class Game {
         
         const dot = lookX * dirX + lookY * dirY;
         if (dot > 0.866) { // ~30 degrees cone
-          isBurned = true;
-          sm.burnTime += dt;
-          
-          // Play burn sound effect
-          if (!this.lastBurnSoundTime || Date.now() - this.lastBurnSoundTime > 300) {
-            this.audio.playShadowBurn();
-            this.lastBurnSoundTime = Date.now();
-          }
-          
-          // If burned for 2 seconds, it dissolves
-          if (sm.burnTime >= 2.0) {
-            sm.active = false;
-            sm.spawnTimer = 12.0 + Math.random() * 8.0; // respawn after 12-20 seconds
-            this.audio.playShadowBurn();
-            if (this.onStateChange) this.onStateChange();
-            return;
+          const grid = s.floors[s.currentFloor];
+          if (this.hasLineOfSight(p.x, p.y, sm.x, sm.y, grid, s.width, s.height)) {
+            isBurned = true;
+            sm.burnTime += dt;
+            
+            // Play burn sound effect
+            if (!this.lastBurnSoundTime || Date.now() - this.lastBurnSoundTime > 300) {
+              this.audio.playShadowBurn();
+              this.lastBurnSoundTime = Date.now();
+            }
+            
+            // If burned for 2 seconds, it dissolves
+            if (sm.burnTime >= 2.0) {
+              sm.active = false;
+              sm.spawnTimer = 12.0 + Math.random() * 8.0; // respawn after 12-20 seconds
+              this.audio.playShadowBurn();
+              if (this.onStateChange) this.onStateChange();
+              return;
+            }
           }
         }
       }

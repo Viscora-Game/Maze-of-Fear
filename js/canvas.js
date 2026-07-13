@@ -625,8 +625,8 @@ export class CanvasRenderer {
     this.dirLight.shadow.bias = -0.0005;
     this.scene.add(this.dirLight);
 
-    // Flashlight SpotLight - PRIMARY neutral white light source with realistic flashlight properties (decay = 2.0, range = 5.2m)
-    this.lantern = new THREE.SpotLight("#ffffff", 3.5, 5.2, Math.PI / 4.5, 0.5, 2.0);
+    // Flashlight SpotLight - PRIMARY neutral white light source with realistic flashlight properties (decay = 1.2, range = 18.0m)
+    this.lantern = new THREE.SpotLight("#ffffff", 22.0, 18.0, Math.PI / 4.5, 0.5, 1.2);
     this.lantern.castShadow = false; // Disable shadows to prevent hand/self-shadow blocking bugs
     this.scene.add(this.lantern);
 
@@ -1848,7 +1848,7 @@ export class CanvasRenderer {
     // Toggle lantern light and flame core visibility
     if (this.lantern) {
       if (state.lanternOn && player.fuel > 0) {
-        this.lantern.intensity = 3.5; // Soft realistic white flashlight beam with quadratic decay
+        this.lantern.intensity = 22.0; // Strong tactical flashlight beam cutting through dense fog
         if (this.lanternFlame) this.lanternFlame.visible = true;
       } else {
         this.lantern.intensity = 0.0; // completely off

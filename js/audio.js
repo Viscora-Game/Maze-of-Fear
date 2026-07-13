@@ -9,6 +9,8 @@ export class AudioEngine {
     this._loadingPromises = {}; // Prevent duplicate loading
     this.rapidHeartbeatInterval = null;
     this.activePantingNode = null;
+    this.activeScreamNode = null;
+    this.ambientTimeout = null;
   }
 
   init() {
@@ -209,22 +211,38 @@ export class AudioEngine {
       });
     }, 5000);
 
-    // 4. Random Environmental Horror Sound Effects (Crows, Owls, Rustles, Abyssal Chasm Groans, and Ghostly Whispers)
-    const environmentalSoundInterval = setInterval(() => {
-      if (this.muted || !this.ctx) return;
-      const r = Math.random();
-      if (r < 0.20) {
-        this.playCrow();
-      } else if (r < 0.40) {
-        this.playOwl();
-      } else if (r < 0.60) {
-        this.playRustle();
-      } else if (r < 0.80) {
-        this.playChasmGroan();
-      } else {
-        this.playWhisper();
+    // 4. Random Environmental Horror Sound Effects (Crows/Screams, Owls, Rustles, Chasm Groans, and Ghostly Whispers)
+    // Scheduled at completely random times (15 to 35 seconds) to feel unpredictable and prevent overlapping
+    const scheduleNextAmbient = () => {
+      if (this.ambientTimeout) {
+        clearTimeout(this.ambientTimeout);
       }
-    }, 8000); // Check and play every 8 seconds
+      
+      const randomDelay = 15000 + Math.random() * 20000; // 15 to 35 seconds
+      this.ambientTimeout = setTimeout(() => {
+        if (this.muted || !this.ctx) {
+          scheduleNextAmbient();
+          return;
+        }
+        
+        const r = Math.random();
+        if (r < 0.20) {
+          this.playCrow(); // Distant scream
+        } else if (r < 0.40) {
+          this.playOwl(); // Slow stinger
+        } else if (r < 0.60) {
+          this.playRustle();
+        } else if (r < 0.80) {
+          this.playChasmGroan();
+        } else {
+          this.playWhisper();
+        }
+        
+        scheduleNextAmbient();
+      }, randomDelay);
+    };
+    scheduleNextAmbient();
+    const environmentalSoundInterval = null; // dummy placeholder for windNode destructuring compatibility
 
     // 5. Periodic Heartbeat Dread loop (Steady low double thuds to induce panic)
     const heartbeatInterval = setInterval(() => {
@@ -262,6 +280,13 @@ export class AudioEngine {
   }
 
   stopWind() {
+    if (this.ambientTimeout) {
+      clearTimeout(this.ambientTimeout);
+      this.ambientTimeout = null;
+    }
+    this.activeScreamNode = null;
+    this.activePantingNode = null;
+    
     if (this.windNode) {
       try {
         this.windNode.lfo.stop();
@@ -752,8 +777,21 @@ export class AudioEngine {
   playCrow() {
     if (this.muted || !this.ctx) return;
 
+    // Prevent overlapping distant screams/stingers
+    if (this.activeScreamNode) return;
+
     // Try real distant scream or stinger first
-    if (this._playBuffer("distant_scream", 0.35)) return;
+    const screamNode = this._playBuffer("distant_scream", 0.35);
+    if (screamNode) {
+      this.activeScreamNode = screamNode;
+      // Clear reference when the scream finishes
+      screamNode.source.onended = () => {
+        if (this.activeScreamNode === screamNode) {
+          this.activeScreamNode = null;
+        }
+      };
+      return;
+    }
 
     // Synthesized fallback
     const now = this.ctx.currentTime;

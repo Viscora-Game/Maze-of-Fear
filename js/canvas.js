@@ -285,6 +285,8 @@ export class CanvasRenderer {
     this.triggeredChests = new Set();
     this.npcGroups = {};
     this.exitPortals = [];
+    this.mixers = [];
+    this.clock = new THREE.Clock();
 
     // Load custom GLTF low-poly chest model
     this.chestModel = null;
@@ -696,6 +698,13 @@ export class CanvasRenderer {
     this.npcGroups = {}; // reset NPC groups
     this.exitPortals = [];
     this.shadowMonsterMesh = null;
+    if (this.mixers) {
+      this.mixers.forEach(m => {
+        try { m.stopAllAction(); } catch(e){}
+      });
+      this.mixers = [];
+    }
+    this.shadowMonsterMixer = null;
 
     // 1. Lighting Setup (Creepy night fog - flashlight is the absolute primary light source)
     this.ambientLight = new THREE.AmbientLight("#0f172a", 0.04); // Extremely dark blue-grey ambient (barely visible outlines)
@@ -1875,6 +1884,12 @@ export class CanvasRenderer {
 
   draw(state, interpolationFactor = 0.22) {
     this.lastState = state;
+    if (this.clock && this.mixers) {
+      const dt = this.clock.getDelta();
+      this.mixers.forEach(mixer => {
+        try { mixer.update(dt); } catch(e){}
+      });
+    }
     const { floors, width, height, player, currentFloor, visitedMap } = state;
     const grid = floors[currentFloor];
 
@@ -2338,12 +2353,34 @@ export class CanvasRenderer {
           this.shadowMonsterMesh = new THREE.Group();
           
           if (this.monsterModel) {
-            // Instantiate the 3D low-poly monster FBX model!
-            const monsterInstance = this.monsterModel.clone();
+            // Instantiate the 3D low-poly monster FBX model correctly with skeleton binding!
+            let monsterInstance;
+            if (THREE.SkeletonUtils && typeof THREE.SkeletonUtils.clone === "function") {
+              monsterInstance = THREE.SkeletonUtils.clone(this.monsterModel);
+            } else if (typeof SkeletonUtils !== "undefined" && typeof SkeletonUtils.clone === "function") {
+              monsterInstance = SkeletonUtils.clone(this.monsterModel);
+            } else {
+              monsterInstance = this.monsterModel.clone();
+            }
             monsterInstance.name = "body";
-            
-            // Adjust position slightly to center it on the ground
             monsterInstance.position.set(0, 0, 0);
+            
+            // Glowing red eyes anchored to the head bone so they move naturally with animations
+            const headBone = monsterInstance.getObjectByName("mixamorig:Head");
+            if (headBone) {
+              const eyeGeom = new THREE.SphereGeometry(6.0, 8, 8); // Scaled inside bone space
+              const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+              
+              const eyeL = new THREE.Mesh(eyeGeom, eyeMat);
+              eyeL.name = "eyeL";
+              eyeL.position.set(-6, 8, 12);
+              
+              const eyeR = new THREE.Mesh(eyeGeom, eyeMat);
+              eyeR.name = "eyeR";
+              eyeR.position.set(6, 8, 12);
+              
+              headBone.add(eyeL, eyeR);
+            }
             
             this.shadowMonsterMesh.add(monsterInstance);
           } else {
@@ -2360,63 +2397,119 @@ export class CanvasRenderer {
             bodyMesh.name = "body";
             bodyMesh.position.y = 0.5;
             this.shadowMonsterMesh.add(bodyMesh);
+            
+            // Fallback flat eyes
+            const eyeGeom = new THREE.SphereGeometry(0.04, 8, 8);
+            const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+            const eyeL = new THREE.Mesh(eyeGeom, eyeMat);
+            eyeL.name = "eyeL";
+            eyeL.position.set(-0.09, 0.72, 0.16);
+            const eyeR = new THREE.Mesh(eyeGeom, eyeMat);
+            eyeR.name = "eyeR";
+            eyeR.position.set(0.09, 0.72, 0.16);
+            this.shadowMonsterMesh.add(eyeL, eyeR);
           }
           
-          // Glowing red eyes
-          const eyeGeom = new THREE.SphereGeometry(0.04, 8, 8);
-          const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-          
-          const eyeL = new THREE.Mesh(eyeGeom, eyeMat);
-          eyeL.name = "eyeL";
-          eyeL.position.set(-0.09, 0.72, 0.16);
-          
-          const eyeR = new THREE.Mesh(eyeGeom, eyeMat);
-          eyeR.name = "eyeR";
-          eyeR.position.set(0.09, 0.72, 0.16);
-          
-          this.shadowMonsterMesh.add(eyeL, eyeR);
+          // Shifting shadow mist aura (3 overlapping dark spheres)
+          for (let i = 0; i < 3; i++) {
+            const auraGeom = new THREE.SphereGeometry(0.32 + i * 0.08, 8, 8);
+            const auraMat = new THREE.MeshBasicMaterial({
+              color: 0x000000,
+              transparent: true,
+              opacity: 0.15 - i * 0.04,
+              side: THREE.DoubleSide
+            });
+            const auraMesh = new THREE.Mesh(auraGeom, auraMat);
+            auraMesh.name = `aura_${i}`;
+            auraMesh.position.set(0, 0.45, 0); // Position at chest/torso height
+            this.shadowMonsterMesh.add(auraMesh);
+          }
           
           // Red point light casting eerie red glow
-          const shadowLight = new THREE.PointLight(0xff0000, 0.7, 3.0);
+          const shadowLight = new THREE.PointLight(0xff0000, 0.8, 3.5);
           shadowLight.position.set(0, 0.72, 0.2);
           this.shadowMonsterMesh.add(shadowLight);
           
           this.scene.add(this.shadowMonsterMesh);
         }
         
-        // Floating/bobbing motion
         const time = Date.now() * 0.005;
-        this.shadowMonsterMesh.position.set(sm.x, 0.15 + Math.sin(time) * 0.08, sm.y);
+        
+        // If 3D model is loaded, apply procedural walk cycle and stand on ground
+        const body = this.shadowMonsterMesh.getObjectByName("body");
+        if (body && this.monsterModel) {
+          this.shadowMonsterMesh.position.set(sm.x, 0.0, sm.y);
+          
+          // Procedural leg and arm swinging walk cycle
+          const walkTime = Date.now() * 0.008;
+          const swingAngle = Math.sin(walkTime) * 0.45;
+          
+          const leftThigh = body.getObjectByName("mixamorig:LeftUpLeg");
+          const rightThigh = body.getObjectByName("mixamorig:RightUpLeg");
+          const leftShin = body.getObjectByName("mixamorig:LeftLeg");
+          const rightShin = body.getObjectByName("mixamorig:RightLeg");
+          const leftArm = body.getObjectByName("mixamorig:LeftArm");
+          const rightArm = body.getObjectByName("mixamorig:RightArm");
+          
+          if (leftThigh) {
+            leftThigh.rotation.x = swingAngle;
+            if (leftShin) leftShin.rotation.x = (swingAngle > 0 ? swingAngle * 0.6 : 0.0);
+          }
+          if (rightThigh) {
+            rightThigh.rotation.x = -swingAngle;
+            if (rightShin) rightShin.rotation.x = (swingAngle < 0 ? -swingAngle * 0.6 : 0.0);
+          }
+          if (leftArm) leftArm.rotation.x = -swingAngle * 0.4;
+          if (rightArm) rightArm.rotation.x = swingAngle * 0.4;
+          
+          const head = body.getObjectByName("mixamorig:Head");
+          if (head) {
+            head.rotation.y = Math.sin(walkTime * 0.5) * 0.1;
+            head.rotation.z = Math.cos(walkTime * 0.5) * 0.05;
+          }
+        } else {
+          // Fallback floating bobbing motion for the sphere
+          this.shadowMonsterMesh.position.set(sm.x, 0.15 + Math.sin(time) * 0.08, sm.y);
+        }
         
         // Face player camera
         const dx = this.camera.position.x - sm.x;
         const dz = this.camera.position.z - sm.y;
         this.shadowMonsterMesh.rotation.y = Math.atan2(dx, dz);
         
+        // Pulsate shadow mist aura
+        this.shadowMonsterMesh.traverse((child) => {
+          if (child.name && child.name.startsWith("aura_")) {
+            const index = parseInt(child.name.split("_")[1]);
+            const pulse = 1.0 + Math.sin(time * (1.5 + index * 0.5)) * 0.08;
+            child.scale.set(pulse, pulse, pulse);
+          }
+        });
+        
         // Handle burning opacity fading
         const burnRatio = Math.max(0.15, 1.0 - (sm.burnTime / 2.0));
         this.shadowMonsterMesh.traverse((child) => {
-          if (child.isMesh && child.name !== "eyeL" && child.name !== "eyeR") {
+          if (child.isMesh && child.name !== "eyeL" && child.name !== "eyeR" && !child.name.startsWith("aura_")) {
             if (child.material) {
               child.material.transparent = true;
-              child.material.opacity = 0.85 * burnRatio;
+              child.material.opacity = 0.80 * burnRatio;
             }
           }
         });
         
         // Pulsate eyes to look alive and creepy
-        const eyeL = this.shadowMonsterMesh.getObjectByName("eyeL");
-        const eyeR = this.shadowMonsterMesh.getObjectByName("eyeR");
-        if (eyeL && eyeR) {
-          const eyePulse = 1.0 + Math.sin(Date.now() * 0.02) * 0.15;
-          eyeL.scale.setScalar(eyePulse);
-          eyeR.scale.setScalar(eyePulse);
-        }
+        this.shadowMonsterMesh.traverse((child) => {
+          if (child.name === "eyeL" || child.name === "eyeR") {
+            const eyePulse = 1.0 + Math.sin(Date.now() * 0.025) * 0.15;
+            child.scale.set(eyePulse, eyePulse, eyePulse);
+          }
+        });
         
         this.shadowMonsterMesh.visible = true;
       } else {
         if (this.shadowMonsterMesh) {
-          this.shadowMonsterMesh.visible = false;
+          this.scene.remove(this.shadowMonsterMesh);
+          this.shadowMonsterMesh = null;
         }
       }
     }

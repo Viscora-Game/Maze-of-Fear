@@ -363,6 +363,15 @@ export class CanvasRenderer {
               m.roughness = 0.95;
               m.metalness = 0.05;
               m.side = THREE.DoubleSide; // Double sided rendering for thin leaf/rock geometries
+              
+              // Force rock models to have a beautiful slate-grey stone color instead of default flat white
+              const nameLower = child.name.toLowerCase();
+              const parentNameLower = (child.parent && child.parent.name) ? child.parent.name.toLowerCase() : "";
+              if (nameLower.includes("rock") || nameLower.includes("rocher") || 
+                  parentNameLower.includes("rock") || parentNameLower.includes("rocher") ||
+                  nameLower.includes("simple") || parentNameLower.includes("simple")) {
+                m.color.set("#52525b"); // Slate stone grey
+              }
             });
           }
         }
@@ -630,8 +639,8 @@ export class CanvasRenderer {
     this.dirLight.shadow.bias = -0.0005;
     this.scene.add(this.dirLight);
 
-    // Flashlight SpotLight - PRIMARY neutral white light source with realistic flashlight properties (decay = 1.0, range = 15.0m)
-    this.lantern = new THREE.SpotLight("#ffffff", 7.0, 15.0, Math.PI / 4.2, 0.6, 1.0);
+    // Flashlight SpotLight - PRIMARY neutral white light source with realistic flashlight properties (decay = 1.2, range = 14.0m)
+    this.lantern = new THREE.SpotLight("#ffffff", 9.0, 14.0, Math.PI / 9.5, 0.9, 1.2);
     this.lantern.castShadow = false; // Disable shadows to prevent hand/self-shadow blocking bugs
     this.scene.add(this.lantern);
 
@@ -705,8 +714,8 @@ export class CanvasRenderer {
 
     const hedgeMat = new THREE.MeshStandardMaterial({ 
       map: this.hedgeTexture, 
-      color: "#385e38", // muted organic forest green tint
-      roughness: 1.0 
+      color: "#162816", // Extremely dark, muted moss/forest green for horror atmosphere
+      roughness: 0.98 
     });
 
     const capMat = new THREE.MeshStandardMaterial({
@@ -746,8 +755,8 @@ export class CanvasRenderer {
                 const rockModel = this.rockModels[rockIdx];
                 if (rockModel) {
                   const rockClone = rockModel.clone();
-                  const s = 0.5 + Math.random() * 0.5; // Scale relative to default 0.0035
-                  rockClone.scale.set(s * 0.0035, s * 0.0035, s * 0.0035);
+                  const s = 0.5 + Math.random() * 0.5; // Scale relative to default 0.0006
+                  rockClone.scale.set(s * 0.0006, s * 0.0006, s * 0.0006);
                   rockClone.position.set((Math.random() - 0.5) * 0.18, 0, (Math.random() - 0.5) * 0.18);
                   rockClone.rotation.set(Math.random() * 0.1, Math.random() * Math.PI, Math.random() * 0.1);
                   rubbleGroup.add(rockClone);
@@ -1853,7 +1862,7 @@ export class CanvasRenderer {
     // Toggle lantern light and flame core visibility
     if (this.lantern) {
       if (state.lanternOn && player.fuel > 0) {
-        this.lantern.intensity = 7.0; // Balanced flashlight beam to keep texture details and colors rich
+        this.lantern.intensity = 9.0; // Balanced narrow flashlight beam to keep texture details and colors rich
         if (this.lanternFlame) this.lanternFlame.visible = true;
       } else {
         this.lantern.intensity = 0.0; // completely off

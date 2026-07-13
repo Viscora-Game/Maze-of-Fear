@@ -198,20 +198,25 @@ export class CanvasRenderer {
       isDragging = false;
     });
 
-    // Multi-touch look controls for mobile - bound directly to canvas
+    // Multi-touch look controls for mobile - listen on window for seamless right-half swiping
     let lookTouchId = null;
     let lastLookX = 0;
     let lastLookY = 0;
 
-    this.canvas.addEventListener("touchstart", (e) => {
+    window.addEventListener("touchstart", (e) => {
       if (!this.lastState || this.lastState.gameState !== "playing") return;
       
-      // Look for a touch that starts on the canvas
+      // Ignore if user touches an interactive button or HUD element
+      const target = e.target;
+      if (target.closest("button") || target.closest(".circle-btn") || target.closest("#hud-left-pill") || target.closest("#hud-right-pill") || target.closest(".btn-toggle")) {
+        return;
+      }
+      
+      // Look for a touch that starts on the right half of the screen
       for (let i = 0; i < e.changedTouches.length; i++) {
         const touch = e.changedTouches[i];
         
-        // Capture look touch if none is active
-        if (lookTouchId === null) {
+        if (touch.clientX >= window.innerWidth / 2 && lookTouchId === null) {
           lookTouchId = touch.identifier;
           lastLookX = touch.clientX;
           lastLookY = touch.clientY;

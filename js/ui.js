@@ -267,9 +267,14 @@ function setupUI(game) {
       joystickActive = true;
       joystickTouchId = touchId;
       
-      const rect = joystickBase.getBoundingClientRect();
-      startX = rect.left + rect.width / 2;
-      startY = rect.top + rect.height / 2;
+      // Center the joystick base dynamically at the touch coordinate (base size is 120px, so 60px offset)
+      joystickBase.style.position = "fixed";
+      joystickBase.style.left = `${clientX - 60}px`;
+      joystickBase.style.top = `${clientY - 60}px`;
+      joystickBase.style.margin = "0";
+      
+      startX = clientX;
+      startY = clientY;
     };
 
     const handleMove = (clientX, clientY) => {
@@ -301,6 +306,12 @@ function setupUI(game) {
       joystickActive = false;
       joystickTouchId = null;
       
+      // Snap the joystick base back to its default layout position
+      joystickBase.style.position = "";
+      joystickBase.style.left = "";
+      joystickBase.style.top = "";
+      joystickBase.style.margin = "";
+      
       // Reset position
       joystickHandle.style.transform = "translate(0px, 0px)";
       if (game.joystick) {
@@ -309,12 +320,22 @@ function setupUI(game) {
       }
     };
 
-    // Touch listeners
-    joystickZone.addEventListener("touchstart", (e) => {
-      e.preventDefault();
+    // Listen to touchstart on window to allow dynamic floating joystick placement
+    window.addEventListener("touchstart", (e) => {
+      if (game.state.gameState !== "playing" || joystickActive) return;
+      
+      // Ignore if user touches an interactive button or HUD element
+      const target = e.target;
+      if (target.closest("button") || target.closest(".circle-btn") || target.closest("#hud-left-pill") || target.closest("#hud-right-pill") || target.closest(".btn-toggle")) {
+        return;
+      }
+      
       const touch = e.changedTouches[0];
-      handleStart(touch.clientX, touch.clientY, touch.identifier);
-    }, { passive: false });
+      // Only capture if touch is on the left half of the screen
+      if (touch.clientX < window.innerWidth / 2) {
+        handleStart(touch.clientX, touch.clientY, touch.identifier);
+      }
+    }, { passive: true });
 
     window.addEventListener("touchmove", (e) => {
       if (!joystickActive) return;

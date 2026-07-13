@@ -779,6 +779,61 @@ export class CanvasRenderer {
     this.rainParticles = new THREE.Points(rainGeo, rainMat);
     this.scene.add(this.rainParticles);
 
+    // 1c. Low-Lying Ground Fog Particles System (Infinite player-locked drifting mist)
+    const fogCount = 65;
+    const fogGeo = new THREE.BufferGeometry();
+    const fogPositions = new Float32Array(fogCount * 3);
+    this.fogDriftVelocities = [];
+
+    for (let i = 0; i < fogCount; i++) {
+      fogPositions[i * 3] = (Math.random() - 0.5) * 14.0;
+      fogPositions[i * 3 + 1] = 0.02 + Math.random() * 0.28;
+      fogPositions[i * 3 + 2] = (Math.random() - 0.5) * 14.0;
+
+      this.fogDriftVelocities.push({
+        x: (Math.random() - 0.5) * 0.18,
+        z: (Math.random() - 0.5) * 0.18
+      });
+    }
+
+    fogGeo.setAttribute('position', new THREE.BufferAttribute(fogPositions, 3));
+
+    // Canvas-based soft radial gradient for dust/fog particle texture
+    const fogCanvas = document.createElement('canvas');
+    fogCanvas.width = 64;
+    fogCanvas.height = 64;
+    const fogCtx = fogCanvas.getContext('2d');
+    const grad = (fogCtx && typeof fogCtx.createRadialGradient === "function")
+      ? fogCtx.createRadialGradient(32, 32, 0, 32, 32, 32)
+      : null;
+    
+    if (grad) {
+      grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+      grad.addColorStop(0.3, 'rgba(255, 255, 255, 0.7)');
+      grad.addColorStop(0.7, 'rgba(255, 255, 255, 0.15)');
+      grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      fogCtx.fillStyle = grad;
+    } else if (fogCtx) {
+      fogCtx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+    }
+    if (fogCtx) {
+      fogCtx.fillRect(0, 0, 64, 64);
+    }
+    const fogTexture = new THREE.CanvasTexture(fogCanvas);
+
+    const fogMat = new THREE.PointsMaterial({
+      color: "#9ca3af",
+      size: 2.8,
+      map: fogTexture,
+      transparent: true,
+      opacity: 0.10,
+      depthWrite: false,
+      blending: THREE.NormalBlending
+    });
+
+    this.groundFogParticles = new THREE.Points(fogGeo, fogMat);
+    this.scene.add(this.groundFogParticles);
+
     // 2. Pre-allocate and reuse common geometries and materials to avoid GC stutters and GPU upload lag
     const floorGeo = new THREE.PlaneGeometry(1, 1);
     const floorMat = new THREE.MeshStandardMaterial({ 
@@ -2639,6 +2694,38 @@ export class CanvasRenderer {
           z = camZ + (Math.random() - 0.5) * 16.0;
         }
         
+        array[idx] = x;
+        array[idx + 1] = y;
+        array[idx + 2] = z;
+      }
+      posAttr.needsUpdate = true;
+    }
+
+    // Update low-lying ground fog particles (localized around player with GPU hardware acceleration)
+    if (this.groundFogParticles && this.fogDriftVelocities) {
+      const posAttr = this.groundFogParticles.geometry.attributes.position;
+      const len = this.fogDriftVelocities.length;
+      const array = posAttr.array || new Float32Array(len * 3);
+      const camX = this.camera.position.x;
+      const camZ = this.camera.position.z;
+
+      for (let i = 0; i < len; i++) {
+        const idx = i * 3;
+        
+        let x = array[idx] + this.fogDriftVelocities[i].x * 0.05;
+        let z = array[idx + 2] + this.fogDriftVelocities[i].z * 0.05;
+        let y = array[idx + 1];
+
+        let dx = x - camX;
+        let dz = z - camZ;
+
+        // Wrap around camera bounds (infinite player-locked coverage)
+        if (dx > 7.0) { x = camX - 7.0; }
+        else if (dx < -7.0) { x = camX + 7.0; }
+
+        if (dz > 7.0) { z = camZ - 7.0; }
+        else if (dz < -7.0) { z = camZ + 7.0; }
+
         array[idx] = x;
         array[idx + 1] = y;
         array[idx + 2] = z;

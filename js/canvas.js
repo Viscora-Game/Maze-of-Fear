@@ -523,8 +523,9 @@ export class CanvasRenderer {
               child.receiveShadow = true;
               child.material = new THREE.MeshStandardMaterial({
                 map: texture,
-                roughness: 0.85,
-                metalness: 0.08
+                color: new THREE.Color("#bcbcbc"), // Dim base color slightly to prevent overexposure/glowing under flashlight
+                roughness: 0.95, // matte retro diffuse look
+                metalness: 0.05
               });
             }
           });
@@ -2184,9 +2185,10 @@ export class CanvasRenderer {
             const dz = player.visualY - (y + 0.5);
             const dist = Math.hypot(dx, dz);
             
-            if (dist < 6.0) {
+            if (dist < 20.0) {
               const targetAngle = Math.atan2(dx, dz);
-              const baseAngle = cell.npc.id === "mouse" ? targetAngle - Math.PI / 2 : targetAngle;
+              // Both mouse and FBX human models face +X locally, so offset by -Math.PI / 2 to face player directly
+              const baseAngle = targetAngle - Math.PI / 2;
               
               let diff = baseAngle - npcGroup.rotation.y;
               // Shortest path angle wrap-around interpolation

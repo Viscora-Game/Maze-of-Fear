@@ -681,6 +681,7 @@ export class CanvasRenderer {
     this.obstacleMeshes = {};
     this.npcGroups = {}; // reset NPC groups
     this.exitPortals = [];
+    this.shadowMonsterMesh = null;
 
     // 1. Lighting Setup (Creepy night fog - flashlight is the absolute primary light source)
     this.ambientLight = new THREE.AmbientLight("#0f172a", 0.04); // Extremely dark blue-grey ambient (barely visible outlines)
@@ -2313,6 +2314,82 @@ export class CanvasRenderer {
       // Force immediate matrix updates to make sure the renderer compiles positions correctly
       this.lantern.updateMatrixWorld(true);
       this.lantern.target.updateMatrixWorld(true);
+    }
+
+    // Update Shadow Monster visual mesh
+    if (state.shadowMonster) {
+      const sm = state.shadowMonster;
+      if (sm.active) {
+        if (!this.shadowMonsterMesh) {
+          this.shadowMonsterMesh = new THREE.Group();
+          
+          // Torso mesh (creepy dark floating sphere)
+          const bodyGeom = new THREE.SphereGeometry(0.32, 16, 16);
+          const bodyMat = new THREE.MeshStandardMaterial({
+            color: 0x050505,
+            roughness: 0.9,
+            metalness: 0.1,
+            transparent: true,
+            opacity: 0.85
+          });
+          const bodyMesh = new THREE.Mesh(bodyGeom, bodyMat);
+          bodyMesh.name = "body";
+          bodyMesh.position.y = 0.5;
+          this.shadowMonsterMesh.add(bodyMesh);
+          
+          // Glowing red eyes
+          const eyeGeom = new THREE.SphereGeometry(0.04, 8, 8);
+          const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+          
+          const eyeL = new THREE.Mesh(eyeGeom, eyeMat);
+          eyeL.name = "eyeL";
+          eyeL.position.set(-0.1, 0.6, 0.28);
+          
+          const eyeR = new THREE.Mesh(eyeGeom, eyeMat);
+          eyeR.name = "eyeR";
+          eyeR.position.set(0.1, 0.6, 0.28);
+          
+          this.shadowMonsterMesh.add(eyeL, eyeR);
+          
+          // Red point light casting eerie red glow
+          const shadowLight = new THREE.PointLight(0xff0000, 0.6, 3.0);
+          shadowLight.position.set(0, 0.6, 0.3);
+          this.shadowMonsterMesh.add(shadowLight);
+          
+          this.scene.add(this.shadowMonsterMesh);
+        }
+        
+        // Floating/bobbing motion
+        const time = Date.now() * 0.005;
+        this.shadowMonsterMesh.position.set(sm.x, 0.15 + Math.sin(time) * 0.08, sm.y);
+        
+        // Face player camera
+        const dx = this.camera.position.x - sm.x;
+        const dz = this.camera.position.z - sm.y;
+        this.shadowMonsterMesh.rotation.y = Math.atan2(dx, dz);
+        
+        // Handle burning opacity fading
+        const bodyMesh = this.shadowMonsterMesh.getObjectByName("body");
+        if (bodyMesh && bodyMesh.material) {
+          const burnRatio = Math.max(0.15, 1.0 - (sm.burnTime / 2.0));
+          bodyMesh.material.opacity = 0.85 * burnRatio;
+        }
+        
+        // Pulsate eyes to look alive and creepy
+        const eyeL = this.shadowMonsterMesh.getObjectByName("eyeL");
+        const eyeR = this.shadowMonsterMesh.getObjectByName("eyeR");
+        if (eyeL && eyeR) {
+          const eyePulse = 1.0 + Math.sin(Date.now() * 0.02) * 0.15;
+          eyeL.scale.setScalar(eyePulse);
+          eyeR.scale.setScalar(eyePulse);
+        }
+        
+        this.shadowMonsterMesh.visible = true;
+      } else {
+        if (this.shadowMonsterMesh) {
+          this.shadowMonsterMesh.visible = false;
+        }
+      }
     }
 
     // Update rain particles (highly optimized direct typed array manipulation to prevent FPS drops)

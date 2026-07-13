@@ -823,4 +823,110 @@ export class AudioEngine {
     lfo.stop(now + 1.3);
     noise.stop(now + 1.3);
   }
+
+  playShadowSpawn() {
+    if (this.muted || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    const filter = this.ctx.createBiquadFilter();
+    
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(80, now);
+    osc.frequency.linearRampToValueAtTime(30, now + 1.5);
+    
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(300, now);
+    filter.frequency.linearRampToValueAtTime(100, now + 1.5);
+    
+    gain.gain.setValueAtTime(0.3, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.5);
+    
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.masterGain);
+    osc.start(now);
+    osc.stop(now + 1.6);
+
+    const osc2 = this.ctx.createOscillator();
+    const gain2 = this.ctx.createGain();
+    
+    osc2.type = "triangle";
+    osc2.frequency.setValueAtTime(800, now);
+    osc2.frequency.linearRampToValueAtTime(400, now + 1.2);
+    
+    gain2.gain.setValueAtTime(0.08, now);
+    gain2.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
+    
+    osc2.connect(gain2);
+    gain2.connect(this.masterGain);
+    osc2.start(now);
+    osc2.stop(now + 1.3);
+  }
+
+  playShadowBurn() {
+    if (this.muted || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = this.noiseBuffer;
+    
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = "highpass";
+    filter.frequency.setValueAtTime(6000, now);
+    
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
+    
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.masterGain);
+    
+    noise.start(now);
+    noise.stop(now + 0.25);
+  }
+
+  playJumpscare() {
+    if (this.muted || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    
+    const osc1 = this.ctx.createOscillator();
+    const osc2 = this.ctx.createOscillator();
+    const noise = this.ctx.createBufferSource();
+    
+    const filterNoise = this.ctx.createBiquadFilter();
+    const gain = this.ctx.createGain();
+    
+    osc1.type = "sawtooth";
+    osc1.frequency.setValueAtTime(2000, now);
+    osc1.frequency.linearRampToValueAtTime(400, now + 1.5);
+    
+    osc2.type = "sawtooth";
+    osc2.frequency.setValueAtTime(120, now);
+    osc2.frequency.linearRampToValueAtTime(40, now + 1.5);
+    
+    noise.buffer = this.noiseBuffer;
+    filterNoise.type = "bandpass";
+    filterNoise.frequency.setValueAtTime(1000, now);
+    
+    gain.gain.setValueAtTime(0.7, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.5);
+    
+    osc1.connect(gain);
+    osc2.connect(gain);
+    noise.connect(filterNoise);
+    filterNoise.connect(gain);
+    
+    gain.connect(this.masterGain);
+    
+    osc1.start(now);
+    osc2.start(now);
+    noise.start(now);
+    
+    osc1.stop(now + 1.6);
+    osc2.stop(now + 1.6);
+    noise.stop(now + 1.6);
+  }
 }

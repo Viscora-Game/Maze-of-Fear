@@ -178,7 +178,16 @@ export class Game {
         axe: { cost: 20, count: 1 } // Added axe so player can clear roadblocks
       },
 
-      lastCheckPoint: { x: 1.5, y: 1.5, floor: 0 }
+      lastCheckPoint: { x: 1.5, y: 1.5, floor: 0 },
+      shadowMonster: {
+        active: false,
+        x: 0,
+        y: 0,
+        floor: 0,
+        burnTime: 0,
+        spawnTimer: 30.0 + Math.random() * 20.0, // spawn check every 30-50 seconds
+        speed: 1.4 // slightly slower than player walk (1.8)
+      }
     };
 
     // Reveal start coordinates
@@ -478,6 +487,7 @@ export class Game {
     }
 
     this.revealArea(cellX, cellY);
+    this.updateShadowMonster(dt);
 
     // Update Checkpoint region level
     const lastCP = this.state.lastCheckPoint;
@@ -1195,6 +1205,180 @@ export class Game {
       if (instructions) instructions.style.display = "none";
       
       if (this.onStateChange) this.onStateChange();
+    }
+  }
+
+  updateShadowMonster(dt) {
+    const s = this.state;
+    if (!s || !s.shadowMonster) return;
+    
+    const sm = s.shadowMonster;
+    const p = s.player;
+    if (!p) return;
+    
+    // Spawner logic
+    if (!sm.active) {
+      sm.spawnTimer -= dt;
+      if (sm.spawnTimer <= 0) {
+        sm.spawnTimer = 35.0 + Math.random() * 25.0; // Reset spawn timer
+        
+        // Spawn shadow monster in a path cell 6 to 10 units away from the player
+        const pCellX = Math.floor(p.x);
+        const pCellY = Math.floor(p.y);
+        const grid = s.floors[s.currentFloor];
+        
+        let spawned = false;
+        for (let attempt = 0; attempt < 50; attempt++) {
+          const rx = pCellX + Math.floor((Math.random() - 0.5) * 18);
+          const ry = pCellY + Math.floor((Math.random() - 0.5) * 18);
+          if (rx >= 0 && rx < s.width && ry >= 0 && ry < s.height) {
+            const dx = rx - pCellX;
+            const dy = ry - pCellY;
+            const dist = Math.hypot(dx, dy);
+            if (dist >= 6 && dist <= 10 && grid[ry][rx].type === "path" && !grid[ry][rx].isExit) {
+              sm.active = true;
+              sm.x = rx + 0.5;
+              sm.y = ry + 0.5;
+              sm.floor = s.currentFloor;
+              sm.burnTime = 0;
+              sm.speed = 1.3 + Math.random() * 0.2; // slightly slower than player walking speed (1.8)
+              this.audio.playShadowSpawn();
+              spawned = true;
+              break;
+            }
+          }
+        }
+      }
+      return;
+    }
+    
+    // If active but player changed floors, auto-despawn
+    if (sm.floor !== s.currentFloor) {
+      sm.active = false;
+      sm.spawnTimer = 15.0;
+      return;
+    }
+    
+    // Check if player's flashlight is shining on the shadow monster
+    let isBurned = false;
+    if (s.lanternOn) {
+      const dx = sm.x - p.x;
+      const dy = sm.y - p.y;
+      const dist = Math.hypot(dx, dy);
+      
+      if (dist < 8.0) { // flashlight beam range limit
+        // Calculate angle between player look direction and monster direction
+        const lookX = Math.cos(p.angle);
+        const lookY = Math.sin(p.angle);
+        const dirX = dx / dist;
+        const dirY = dy / dist;
+        
+        const dot = lookX * dirX + lookY * dirY;
+        if (dot > 0.866) { // ~30 degrees cone
+          isBurned = true;
+          sm.burnTime += dt;
+          
+          // Play burn sound effect
+          if (!this.lastBurnSoundTime || Date.now() - this.lastBurnSoundTime > 300) {
+            this.audio.playShadowBurn();
+            this.lastBurnSoundTime = Date.now();
+          }
+          
+          // If burned for 2 seconds, it dissolves
+          if (sm.burnTime >= 2.0) {
+            sm.active = false;
+            sm.spawnTimer = 45.0 + Math.random() * 30.0;
+            this.audio.playShadowBurn();
+            if (this.onStateChange) this.onStateChange();
+            return;
+          }
+        }
+      }
+    }
+    
+    if (!isBurned) {
+      // Slowly cool down the burn timer if not in the beam
+      sm.burnTime = Math.max(0, sm.burnTime - dt * 0.5);
+    }
+    
+    // Movement logic
+    const grid = s.floors[s.currentFloor];
+    let runX = 0;
+    let runY = 0;
+    
+    if (sm.burnTime > 0) {
+      // Flee away from player
+      runX = sm.x - p.x;
+      runY = sm.y - p.y;
+      const len = Math.hypot(runX, runY);
+      if (len > 0.001) {
+        runX = (runX / len) * sm.speed * 1.4 * dt; // flee faster
+        runY = (runY / len) * sm.speed * 1.4 * dt;
+      }
+    } else {
+      // Chase player
+      runX = p.x - sm.x;
+      runY = p.y - sm.y;
+      const len = Math.hypot(runX, runY);
+      if (len > 0.001) {
+        runX = (runX / len) * sm.speed * dt;
+        runY = (runY / len) * sm.speed * dt;
+      }
+    }
+    
+    let nextX = sm.x + runX;
+    let nextY = sm.y + runY;
+    
+    const canMoveTo = (tx, ty) => {
+      const gx = Math.floor(tx);
+      const gy = Math.floor(ty);
+      if (gx < 0 || gx >= s.width || gy < 0 || gy >= s.height) return false;
+      const cell = grid[gy][gx];
+      return cell.type !== "wall";
+    };
+    
+    // Sliding collision check
+    if (canMoveTo(nextX, sm.y)) sm.x = nextX;
+    if (canMoveTo(sm.x, nextY)) sm.y = nextY;
+    
+    // Check Jumpscare range
+    const pDist = Math.hypot(sm.x - p.x, sm.y - p.y);
+    if (pDist < 0.65) {
+      this.triggerJumpscare();
+    }
+  }
+
+  triggerJumpscare() {
+    const s = this.state;
+    if (!s || s.gameState !== "playing") return;
+    
+    s.gameState = "modal";
+    s.shadowMonster.active = false;
+    s.shadowMonster.spawnTimer = 50.0 + Math.random() * 30.0;
+    
+    this.audio.playJumpscare();
+    
+    const overlay = document.getElementById("modal-jumpscare");
+    if (overlay) {
+      overlay.classList.remove("hidden");
+      
+      setTimeout(() => {
+        overlay.classList.add("hidden");
+        
+        const p = s.player;
+        p.health = Math.max(0, p.health - 40);
+        
+        if (p.health <= 0) {
+          this.triggerDeathChoice();
+        } else {
+          s.gameState = "playing";
+          this.audio.playPanting();
+        }
+        
+        if (this.onStateChange) this.onStateChange();
+      }, 1500);
+    } else {
+      s.gameState = "playing";
     }
   }
 

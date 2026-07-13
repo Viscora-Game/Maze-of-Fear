@@ -957,7 +957,7 @@ export class CanvasRenderer {
           if (this.flowerModels && this.flowerModels[2]) {
             const isWall = (tx, ty) => {
               if (tx < 0 || tx >= width || ty < 0 || ty >= height) return true;
-              return grid[ty][tx].isWall;
+              return grid[ty][tx].type === "wall";
             };
 
             const wallN = isWall(x, y - 1);
@@ -1004,7 +1004,7 @@ export class CanvasRenderer {
           {
             const isWall = (tx, ty) => {
               if (tx < 0 || tx >= width || ty < 0 || ty >= height) return true;
-              return grid[ty][tx].isWall;
+              return grid[ty][tx].type === "wall";
             };
 
             const wallN = isWall(x, y - 1);
@@ -1320,7 +1320,7 @@ export class CanvasRenderer {
             // In dead-ends (3 walls, 1 open), face the single open direction
             const chestIsWall = (tx, ty) => {
               if (tx < 0 || tx >= width || ty < 0 || ty >= height) return true;
-              return grid[ty][tx].isWall;
+              return grid[ty][tx].type === "wall";
             };
             const wallN = chestIsWall(x, y - 1);
             const wallS = chestIsWall(x, y + 1);
@@ -1554,7 +1554,7 @@ export class CanvasRenderer {
             // Auto-rotate NPC to face toward the player's approach direction (open corridor)
             const npcIsWall = (tx, ty) => {
               if (tx < 0 || tx >= width || ty < 0 || ty >= height) return true;
-              return grid[ty][tx].isWall;
+              return grid[ty][tx].type === "wall";
             };
             const nWallN = npcIsWall(x, y - 1);
             const nWallS = npcIsWall(x, y + 1);

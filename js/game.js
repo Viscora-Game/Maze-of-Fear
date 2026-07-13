@@ -472,6 +472,9 @@ export class Game {
         this.audio.playStep(isRunning);
         this.stepSoundTimer = 0;
       }
+    } else {
+      this.stepSoundTimer = 999; // Prime step timer for instant sound on next move start
+      this.audio.stopStep();
     }
 
     // Out of breath heavy panting audio when stamina is low (20% and below)

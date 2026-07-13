@@ -279,10 +279,17 @@ export class AudioEngine {
     if (this.muted || !this.ctx) return;
     this.init(); // Ensure initialized
 
+    this.stopStep();
+
     const sfxName = isRunning ? "footstep_run" : "footstep_walk";
     const vol = isRunning ? 0.30 : 0.18;
     const rate = 0.9 + Math.random() * 0.2; // slight pitch variation
-    if (this._playBuffer(sfxName, vol, rate)) return;
+    const res = this._playBuffer(sfxName, vol, rate);
+    if (res) {
+      this.activeStepSource = res.source;
+      this.activeStepGain = res.gain;
+      return;
+    }
 
     // Synthesized fallback
     const now = this.ctx.currentTime;
@@ -310,6 +317,27 @@ export class AudioEngine {
 
     noise.start(now);
     noise.stop(now + duration + 0.01);
+
+    this.activeStepSource = noise;
+    this.activeStepGain = gain;
+  }
+
+  stopStep() {
+    if (this.activeStepSource && this.ctx) {
+      try {
+        const now = this.ctx.currentTime;
+        if (this.activeStepGain) {
+          this.activeStepGain.gain.setValueAtTime(this.activeStepGain.gain.value, now);
+          this.activeStepGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.04);
+        }
+        const src = this.activeStepSource;
+        setTimeout(() => {
+          try { src.stop(); } catch(e){}
+        }, 50);
+      } catch (e) {}
+      this.activeStepSource = null;
+      this.activeStepGain = null;
+    }
   }
 
   // Heavy panting / breathing - uses real audio asset

@@ -525,7 +525,7 @@ export function generateMaze(width, height, numFloors = 1) {
         if (rewardRoll < 0.3) {
           chestContent = { type: "gold", amount: 15 + Math.floor(Math.random() * 20) };
         } else if (rewardRoll < 0.6) {
-          const items = ["fuel", "map_piece"];
+          const items = ["map_piece"];
           chestContent = { type: "item", item: items[Math.floor(Math.random() * items.length)], gold: 10 };
         } else {
           chestContent = { type: "gold", amount: 10 };
@@ -551,7 +551,7 @@ export function generateMaze(width, height, numFloors = 1) {
         const obType = Math.random() < 0.5 ? "barricade" : "chasm";
         targetDeadEnd.obstacle = { type: obType, resolved: false };
         targetDeadEnd.chest.content = { type: "gold", amount: 45 + Math.floor(Math.random() * 35) };
-        const items = ["fuel", "map_piece"];
+        const items = ["map_piece"];
         targetDeadEnd.chest.content.item = items[Math.floor(Math.random() * items.length)];
       }
     }

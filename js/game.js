@@ -27,7 +27,6 @@ export class Game {
       const k = e.key.toLowerCase();
       this.keys[k] = true;
       if (k === "f") this.toggleLantern(); // F to Toggle Lantern
-      if (k === "r") this.useInventoryItem("fuel"); // R to Refill Lantern fuel
       if (k === "m") this.useInventoryItem("map_piece");
       if (k === "c") this.useInventoryItem("compass");
       if (k === "e" || e.key === " ") {
@@ -163,7 +162,7 @@ export class Game {
           rope: 0,
           compass: 0,
           map_piece: 0,
-          fuel: 1,
+          fuel: 0,
           cheese: 0
         }
       },
@@ -176,8 +175,7 @@ export class Game {
 
       merchantStock: {
         rope: { cost: 15, count: 2 },
-        axe: { cost: 20, count: 1 }, // Added axe so player can clear roadblocks
-        fuel: { cost: 5, count: 4 }
+        axe: { cost: 20, count: 1 } // Added axe so player can clear roadblocks
       },
 
       lastCheckPoint: { x: 1.5, y: 1.5, floor: 0 }
@@ -623,6 +621,7 @@ export class Game {
                 this.state.gameState = "playing";
               } else {
                 this.damagePlayer(10);
+                this.state.gameState = "playing";
               }
             });
           }
@@ -684,7 +683,7 @@ export class Game {
     const grid = this.state.floors[this.state.currentFloor];
     let closestCell = null;
     let closestType = null;
-    let minDistance = 1.6; // max interaction range
+    let minDistance = 1.15; // max interaction range (forces player to get closer)
 
     // Scan a 5x5 region around the player's grid cell
     const px = Math.floor(p.x);
@@ -1013,6 +1012,7 @@ export class Game {
                 inv[itemId]++;
                 info.count--;
                 this.audio.playPickup();
+                if (this.onStateChange) this.onStateChange();
                 this.triggerNPCInteraction(cell);
               } else {
                 alert(this.t("npc.merchant.noGold"));

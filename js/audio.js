@@ -376,25 +376,171 @@ export class AudioEngine {
     if (this.muted || !this.ctx) return;
     const now = this.ctx.currentTime;
     
-    // Shhhhk cutting sound (filtered noise sweep)
+    // Snip-snip double metal shear cut (high-pass filtered noise bursts + quick high plucks)
+    const snips = [0.0, 0.14];
+    snips.forEach((delay) => {
+      const startTime = now + delay;
+      const duration = 0.08;
+      
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = this.noiseBuffer;
+      
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = "highpass";
+      filter.frequency.setValueAtTime(2000, startTime);
+      filter.frequency.exponentialRampToValueAtTime(800, startTime + duration);
+      
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(0.24, startTime + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+      
+      // Metallic blade ring
+      const osc = this.ctx.createOscillator();
+      const oscGain = this.ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(1200, startTime);
+      osc.frequency.exponentialRampToValueAtTime(600, startTime + duration);
+      
+      oscGain.gain.setValueAtTime(0, startTime);
+      oscGain.gain.linearRampToValueAtTime(0.06, startTime + 0.01);
+      oscGain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+      
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.masterGain);
+      
+      osc.connect(oscGain);
+      oscGain.connect(this.masterGain);
+      
+      noise.start(startTime);
+      osc.start(startTime);
+      noise.stop(startTime + duration + 0.01);
+      osc.stop(startTime + duration + 0.01);
+    });
+  }
+
+  // Synthesize unlocking of heavy iron chain gate (rattling chain impact clicks + squealing rusty hinge open)
+  playChainGate() {
+    if (this.muted || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    
+    // 1. Clattering heavy chains (5 quick metallic click-clanks)
+    for (let i = 0; i < 5; i++) {
+      const clickTime = now + i * 0.08 + Math.random() * 0.03;
+      const duration = 0.08 + Math.random() * 0.06;
+      
+      const osc = this.ctx.createOscillator();
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = this.noiseBuffer;
+      
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = "bandpass";
+      filter.frequency.setValueAtTime(450 + Math.random() * 400, clickTime);
+      filter.Q.value = 4.0;
+      
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0.12, clickTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, clickTime + duration);
+      
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(180 + Math.random() * 50, clickTime);
+      
+      const oscGain = this.ctx.createGain();
+      oscGain.gain.setValueAtTime(0.04, clickTime);
+      oscGain.gain.exponentialRampToValueAtTime(0.0001, clickTime + duration);
+      
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.masterGain);
+      
+      osc.connect(oscGain);
+      oscGain.connect(this.masterGain);
+      
+      noise.start(clickTime);
+      osc.start(clickTime);
+      noise.stop(clickTime + duration + 0.01);
+      osc.stop(clickTime + duration + 0.01);
+    }
+    
+    // 2. Heavy gate hinge squeal starting after chain clatter
+    const squealTime = now + 0.35;
+    const squealDur = 1.2;
+    
+    const squealOsc = this.ctx.createOscillator();
+    const squealFilter = this.ctx.createBiquadFilter();
+    const squealGain = this.ctx.createGain();
+    
+    squealOsc.type = "sawtooth";
+    squealOsc.frequency.setValueAtTime(290, squealTime);
+    squealOsc.frequency.linearRampToValueAtTime(220, squealTime + squealDur); // rusty creak pitch drops
+    
+    squealFilter.type = "bandpass";
+    squealFilter.frequency.setValueAtTime(800, squealTime);
+    squealFilter.Q.value = 3.0; // resonant metallic creak
+    
+    squealGain.gain.setValueAtTime(0, squealTime);
+    squealGain.gain.linearRampToValueAtTime(0.06, squealTime + 0.2); // swell in
+    squealGain.gain.exponentialRampToValueAtTime(0.0001, squealTime + squealDur);
+    
+    squealOsc.connect(squealFilter);
+    squealFilter.connect(squealGain);
+    squealGain.connect(this.masterGain);
+    
+    squealOsc.start(squealTime);
+    squealOsc.stop(squealTime + squealDur + 0.05);
+  }
+
+  // Synthesize ghostly spirit ascension fade sound (rising pitch sine wave + sweeping resonant bandpass whoosh)
+  playGhostFade() {
+    if (this.muted || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    
+    const duration = 2.2;
+    
+    const osc = this.ctx.createOscillator();
+    const filter = this.ctx.createBiquadFilter();
+    const gain = this.ctx.createGain();
+    
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(300, now);
+    osc.frequency.exponentialRampToValueAtTime(1400, now + duration); // rising pitch
+    
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(800, now);
+    filter.frequency.exponentialRampToValueAtTime(1600, now + duration);
+    
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.09, now + 0.4); // swell in
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    
+    // Ghostly wind whoosh
     const noise = this.ctx.createBufferSource();
     noise.buffer = this.noiseBuffer;
     
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = "bandpass";
-    filter.frequency.setValueAtTime(1000, now);
-    filter.frequency.exponentialRampToValueAtTime(400, now + 0.2);
+    const noiseFilter = this.ctx.createBiquadFilter();
+    noiseFilter.type = "bandpass";
+    noiseFilter.frequency.setValueAtTime(250, now);
+    noiseFilter.frequency.exponentialRampToValueAtTime(900, now + duration);
+    noiseFilter.Q.value = 2.0;
     
-    const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(0.25, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+    const noiseGain = this.ctx.createGain();
+    noiseGain.gain.setValueAtTime(0, now);
+    noiseGain.gain.linearRampToValueAtTime(0.06, now + 0.6);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
     
-    noise.connect(filter);
+    osc.connect(filter);
     filter.connect(gain);
     gain.connect(this.masterGain);
     
+    noise.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(this.masterGain);
+    
+    osc.start(now);
     noise.start(now);
-    noise.stop(now + 0.3);
+    osc.stop(now + duration + 0.05);
+    noise.stop(now + duration + 0.05);
   }
 
   playHazard() {

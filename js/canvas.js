@@ -908,14 +908,26 @@ export class CanvasRenderer {
           if (cell.staircase) {
             const stairSubGroup = new THREE.Group();
             const steps = 5;
+            const stepMat = new THREE.MeshStandardMaterial({ 
+              color: cell.staircase === "down" ? "#4c0519" : "#022c22", 
+              emissive: cell.staircase === "down" ? "#f43f5e" : "#10b981",
+              emissiveIntensity: 0.7,
+              roughness: 0.5 
+            });
             for (let i = 0; i < steps; i++) {
               const stepGeo = new THREE.BoxGeometry(1, 1.25 / steps, 1 / steps);
-              const stepMat = new THREE.MeshStandardMaterial({ color: cell.staircase === "down" ? "#3f1a1a" : "#1a3f2c", roughness: 0.8 });
               const stepMesh = new THREE.Mesh(stepGeo, stepMat);
               stepMesh.position.set(0, (i + 0.5) * (1.25 / steps) - 0.625, (i + 0.5) / steps - 0.5);
               stairSubGroup.add(stepMesh);
             }
             stairSubGroup.position.set(0, 0.625, 0);
+
+            // Add a glowing vertical point light above the stairs to serve as a beacon in the fog
+            const lightColor = cell.staircase === "down" ? "#f43f5e" : "#10b981";
+            const stairLight = new THREE.PointLight(lightColor, 2.5, 3.5);
+            stairLight.position.set(0, 0.40, 0); // positioned above the steps center
+            stairSubGroup.add(stairLight);
+
             cellGroup.add(stairSubGroup);
           }
 
@@ -972,9 +984,22 @@ export class CanvasRenderer {
               energySpheres.push(sphere);
             }
             
-            // Soft cyan-purple point light for illumination
-            const portalLight = new THREE.PointLight("#a855f7", 1.8, 3.0);
+            // Soft cyan-purple point light for illumination - INCREASED RANGE/INTENSITY FOR GREATER VISIBILITY
+            const portalLight = new THREE.PointLight("#a855f7", 4.0, 6.0);
             portalGroup.add(portalLight);
+
+            // Glowing vertical beacon cylinder shooting up to the sky to make the exit highly visible from down the hall
+            const beaconGeo = new THREE.CylinderGeometry(0.18, 0.18, 4.0, 16, 1, true);
+            const beaconMat = new THREE.MeshBasicMaterial({
+              color: "#c084fc",
+              transparent: true,
+              opacity: 0.25,
+              side: THREE.DoubleSide,
+              depthWrite: false
+            });
+            const beacon = new THREE.Mesh(beaconGeo, beaconMat);
+            beacon.position.y = 1.5; // stand vertically centered
+            portalGroup.add(beacon);
             
             // Set portal orientation based on corridor direction (faces the hallway path, blocks width)
             const isWall = (tx, ty) => {

@@ -622,8 +622,8 @@ h1, h2, h3, h4 {
 /* Left HUD Cluster */
 .floating-left-controls {
   position: absolute;
-  bottom: 45px;
-  left: 55px;
+  bottom: calc(45px + env(safe-area-inset-bottom));
+  left: calc(55px + env(safe-area-inset-left));
   z-index: 20;
   display: flex;
   flex-direction: column;
@@ -642,8 +642,8 @@ h1, h2, h3, h4 {
 /* Right HUD Cluster */
 .floating-right-controls {
   position: absolute;
-  bottom: 45px;
-  right: 55px;
+  bottom: calc(45px + env(safe-area-inset-bottom));
+  right: calc(55px + env(safe-area-inset-right));
   z-index: 20;
   display: flex;
   flex-direction: column;
@@ -1265,7 +1265,7 @@ h1, h2, h3, h4 {
 }
 
 /* --- Mobile Device Sizing & Layout Fixes --- */
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-height: 560px) {
   /* 1. Main Menu Typography scale-down */
   .game-logo {
     font-size: 2.1rem !important;
@@ -1301,10 +1301,10 @@ h1, h2, h3, h4 {
     margin: 0 2px !important;
   }
 
-  /* 4. Position Bottom controls closer to screen edges to prevent overlaps */
+  /* 4. Position Bottom controls closer to screen edges to prevent overlaps & safe areas */
   .floating-left-controls {
-    left: 12px !important;
-    bottom: 15px !important;
+    left: calc(12px + env(safe-area-inset-left)) !important;
+    bottom: calc(12px + env(safe-area-inset-bottom)) !important;
     gap: 10px !important;
   }
   .left-btn-row {
@@ -1312,8 +1312,8 @@ h1, h2, h3, h4 {
     gap: 6px !important;
   }
   .floating-right-controls {
-    right: 12px !important;
-    bottom: 15px !important;
+    right: calc(12px + env(safe-area-inset-right)) !important;
+    bottom: calc(12px + env(safe-area-inset-bottom)) !important;
     gap: 6px !important;
   }
   /* Scale down joystick base and handles slightly */

@@ -8,6 +8,7 @@ export class AudioEngine {
     this.soundBuffers = {}; // Cache for loaded audio file buffers
     this._loadingPromises = {}; // Prevent duplicate loading
     this.rapidHeartbeatInterval = null;
+    this.activePantingNode = null;
   }
 
   init() {
@@ -401,8 +402,26 @@ export class AudioEngine {
     this.init();
     if (!this.ctx) return;
 
+    // Stop any currently playing panting sound to prevent overlap
+    if (this.activePantingNode) {
+      try {
+        this.activePantingNode.source.stop();
+      } catch (e) {}
+      this.activePantingNode = null;
+    }
+
     // Try real breathing audio first
-    if (this._playBuffer("breathing_fast", 0.5, 0.95 + Math.random() * 0.1)) return;
+    const pantNode = this._playBuffer("breathing_fast", 0.5, 0.95 + Math.random() * 0.1);
+    if (pantNode) {
+      this.activePantingNode = pantNode;
+      // Clear reference when the sound finishes playing
+      pantNode.source.onended = () => {
+        if (this.activePantingNode === pantNode) {
+          this.activePantingNode = null;
+        }
+      };
+      return;
+    }
 
     // Synthesized fallback
     const now = this.ctx.currentTime;

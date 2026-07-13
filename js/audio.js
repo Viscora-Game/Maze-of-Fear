@@ -5,6 +5,8 @@ export class AudioEngine {
     this.windNode = null;
     this.noiseBuffer = null;
     this.muted = false;
+    this.soundBuffers = {}; // Cache for loaded audio file buffers
+    this._loadingPromises = {}; // Prevent duplicate loading
   }
 
   init() {
@@ -22,9 +24,58 @@ export class AudioEngine {
       this.ctx.resume(); // Force immediate resume on user click gesture
       this.createNoiseBuffer();
       this.startWind();
+      this._preloadSounds(); // Preload all horror SFX assets
     } catch (e) {
       console.warn("Web Audio API not supported", e);
     }
+  }
+
+  // Preload all audio assets in the background
+  _preloadSounds() {
+    const files = [
+      "jumpscare_scream", "monster_growl", "monster_breath", "ghost_moan",
+      "monster_roar", "monster_hiss", "monster_grunt", "deep_moan", "monster_bite",
+      "footstep_walk", "footstep_run", "flashlight_on", "flashlight_off",
+      "breathing_fast", "gasp", "key_pickup", "coin_drop",
+      "creepy_ambience", "drone_doom", "distant_scream", "metal_screech",
+      "piano_stinger", "stinger", "suspense_rise", "slow_stinger",
+      "door_squeak", "door_locked", "door_knock"
+    ];
+    files.forEach(name => this._loadSound(name));
+  }
+
+  // Load a single sound file into buffer cache
+  _loadSound(name) {
+    if (this.soundBuffers[name] || this._loadingPromises[name]) return;
+    const url = `assets/audio/${name}.wav`;
+    this._loadingPromises[name] = fetch(url)
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.arrayBuffer();
+      })
+      .then(buf => this.ctx.decodeAudioData(buf))
+      .then(decoded => { this.soundBuffers[name] = decoded; })
+      .catch(() => { /* Asset not found, will fall back to synthesized */ });
+  }
+
+  // Play a cached audio buffer with optional volume, playbackRate, and offset
+  _playBuffer(name, volume = 1.0, playbackRate = 1.0, loop = false) {
+    if (this.muted || !this.ctx) return null;
+    const buffer = this.soundBuffers[name];
+    if (!buffer) return null;
+
+    const source = this.ctx.createBufferSource();
+    source.buffer = buffer;
+    source.playbackRate.value = playbackRate;
+    source.loop = loop;
+
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(volume, this.ctx.currentTime);
+
+    source.connect(gain);
+    gain.connect(this.masterGain);
+    source.start(this.ctx.currentTime);
+    return { source, gain };
   }
 
   toggleMute() {
@@ -222,11 +273,17 @@ export class AudioEngine {
     }
   }
 
-  // Footstep sounds (Walk vs Run variations)
+  // Footstep sounds (Walk vs Run variations) - uses real audio assets
   playStep(isRunning = false) {
     if (this.muted || !this.ctx) return;
     this.init(); // Ensure initialized
 
+    const sfxName = isRunning ? "footstep_run" : "footstep_walk";
+    const vol = isRunning ? 0.30 : 0.18;
+    const rate = 0.9 + Math.random() * 0.2; // slight pitch variation
+    if (this._playBuffer(sfxName, vol, rate)) return;
+
+    // Synthesized fallback
     const now = this.ctx.currentTime;
     const noise = this.ctx.createBufferSource();
     noise.buffer = this.noiseBuffer;
@@ -234,7 +291,6 @@ export class AudioEngine {
     const filter = this.ctx.createBiquadFilter();
     filter.type = "lowpass";
 
-    // Heavier, louder thuds for running steps
     const gainVal = isRunning ? 0.35 : 0.2;
     const startFreq = isRunning ? 260 : 200;
     const endFreq = isRunning ? 100 : 80;
@@ -255,93 +311,82 @@ export class AudioEngine {
     noise.stop(now + duration + 0.01);
   }
 
-  // Synthesize heavy, out-of-breath panting gasp cycle (Double lowpass-filtered deep warm breathing - ZERO cızırtı)
+  // Heavy panting / breathing - uses real audio asset
   playPanting() {
     if (this.muted) return;
-    this.init(); // Ensure initialized and resumed
+    this.init();
     if (!this.ctx) return;
+
+    // Try real breathing audio first
+    if (this._playBuffer("breathing_fast", 0.5, 0.95 + Math.random() * 0.1)) return;
+
+    // Synthesized fallback
     const now = this.ctx.currentTime;
-    
-    // Inhale phase (0.0s to 0.28s) - deep muffled gasp in
     const inhaleNoise = this.ctx.createBufferSource();
     inhaleNoise.buffer = this.noiseBuffer;
-    
-    // First lowpass filter (sweeps 320Hz to 480Hz)
     const inhaleFilter = this.ctx.createBiquadFilter();
     inhaleFilter.type = "lowpass";
     inhaleFilter.frequency.setValueAtTime(320, now);
     inhaleFilter.frequency.linearRampToValueAtTime(480, now + 0.25);
-    inhaleFilter.Q.setValueAtTime(1.8, now); // resonant throat peak
-    
-    // Second lowpass filter to completely eliminate any high-frequency crackle/static hiss (cızırtı)
+    inhaleFilter.Q.setValueAtTime(1.8, now);
     const inhaleMuffle = this.ctx.createBiquadFilter();
     inhaleMuffle.type = "lowpass";
     inhaleMuffle.frequency.setValueAtTime(320, now);
     inhaleMuffle.frequency.linearRampToValueAtTime(480, now + 0.25);
-    
     const inhaleGain = this.ctx.createGain();
     inhaleGain.gain.setValueAtTime(0, now);
-    inhaleGain.gain.linearRampToValueAtTime(0.32, now + 0.15); // Clear, warm and audible over footsteps
+    inhaleGain.gain.linearRampToValueAtTime(0.32, now + 0.15);
     inhaleGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.28);
-    
     inhaleNoise.connect(inhaleFilter);
     inhaleFilter.connect(inhaleMuffle);
     inhaleMuffle.connect(inhaleGain);
     inhaleGain.connect(this.masterGain);
-    
     inhaleNoise.start(now);
     inhaleNoise.stop(now + 0.3);
-    
-    // Exhale phase (0.3s to 0.7s) - deep muffled sigh out
+
     const exhaleTime = now + 0.3;
     const exhaleNoise = this.ctx.createBufferSource();
     exhaleNoise.buffer = this.noiseBuffer;
-    
-    // First lowpass filter (sweeps 420Hz to 280Hz)
     const exhaleFilter = this.ctx.createBiquadFilter();
     exhaleFilter.type = "lowpass";
     exhaleFilter.frequency.setValueAtTime(420, exhaleTime);
     exhaleFilter.frequency.linearRampToValueAtTime(280, exhaleTime + 0.35);
     exhaleFilter.Q.setValueAtTime(1.5, exhaleTime);
-    
-    // Second lowpass filter to completely eliminate high-frequency static hiss
     const exhaleMuffle = this.ctx.createBiquadFilter();
     exhaleMuffle.type = "lowpass";
     exhaleMuffle.frequency.setValueAtTime(420, exhaleTime);
     exhaleMuffle.frequency.linearRampToValueAtTime(280, exhaleTime + 0.35);
-    
     const exhaleGain = this.ctx.createGain();
     exhaleGain.gain.setValueAtTime(0, exhaleTime);
-    exhaleGain.gain.linearRampToValueAtTime(0.42, exhaleTime + 0.12); // Clear, warm and audible over footsteps
+    exhaleGain.gain.linearRampToValueAtTime(0.42, exhaleTime + 0.12);
     exhaleGain.gain.exponentialRampToValueAtTime(0.0001, exhaleTime + 0.4);
-    
     exhaleNoise.connect(exhaleFilter);
     exhaleFilter.connect(exhaleMuffle);
     exhaleMuffle.connect(exhaleGain);
     exhaleGain.connect(this.masterGain);
-    
     exhaleNoise.start(exhaleTime);
     exhaleNoise.stop(exhaleTime + 0.45);
   }
 
   playPickup() {
     if (this.muted || !this.ctx) return;
+
+    // Try real key/coin pickup sound
+    if (this._playBuffer("key_pickup", 0.45)) return;
+    if (this._playBuffer("coin_drop", 0.40)) return;
+
+    // Synthesized fallback
     const now = this.ctx.currentTime;
-    
-    // Play a shiny 3-note arpeggio (sine waves)
-    const notes = [440, 554, 659]; // A4, C#5, E5
+    const notes = [440, 554, 659];
     notes.forEach((freq, idx) => {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
-      
       osc.type = "sine";
       osc.frequency.value = freq;
-      
       const noteTime = now + idx * 0.08;
       gain.gain.setValueAtTime(0, now);
       gain.gain.setValueAtTime(0.15, noteTime);
       gain.gain.exponentialRampToValueAtTime(0.001, noteTime + 0.25);
-      
       osc.connect(gain);
       gain.connect(this.masterGain);
       osc.start(noteTime);
@@ -351,20 +396,20 @@ export class AudioEngine {
 
   playUnlock() {
     if (this.muted || !this.ctx) return;
-    const now = this.ctx.currentTime;
 
-    // Metallic latch clicks
+    // Try real door unlock sound
+    if (this._playBuffer("door_locked", 0.35)) return;
+
+    // Synthesized fallback
+    const now = this.ctx.currentTime;
     for (let i = 0; i < 3; i++) {
       const clickTime = now + i * 0.07;
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
-      
       osc.type = "triangle";
       osc.frequency.setValueAtTime(1000 - i * 300, clickTime);
-      
       gain.gain.setValueAtTime(0.12, clickTime);
       gain.gain.exponentialRampToValueAtTime(0.001, clickTime + 0.05);
-      
       osc.connect(gain);
       gain.connect(this.masterGain);
       osc.start(clickTime);
@@ -423,70 +468,61 @@ export class AudioEngine {
   // Synthesize unlocking of heavy iron chain gate (rattling chain impact clicks + squealing rusty hinge open)
   playChainGate() {
     if (this.muted || !this.ctx) return;
+
+    // Try real door squeak for chain gate
+    if (this._playBuffer("door_squeak", 0.45)) {
+      // Also play metal screech for dramatic effect
+      setTimeout(() => this._playBuffer("metal_screech", 0.25), 200);
+      return;
+    }
+
+    // Synthesized fallback
     const now = this.ctx.currentTime;
-    
-    // 1. Clattering heavy chains (5 quick metallic click-clanks)
     for (let i = 0; i < 5; i++) {
       const clickTime = now + i * 0.08 + Math.random() * 0.03;
       const duration = 0.08 + Math.random() * 0.06;
-      
       const osc = this.ctx.createOscillator();
       const noise = this.ctx.createBufferSource();
       noise.buffer = this.noiseBuffer;
-      
       const filter = this.ctx.createBiquadFilter();
       filter.type = "bandpass";
       filter.frequency.setValueAtTime(450 + Math.random() * 400, clickTime);
       filter.Q.value = 4.0;
-      
       const gain = this.ctx.createGain();
       gain.gain.setValueAtTime(0.12, clickTime);
       gain.gain.exponentialRampToValueAtTime(0.0001, clickTime + duration);
-      
       osc.type = "sawtooth";
       osc.frequency.setValueAtTime(180 + Math.random() * 50, clickTime);
-      
       const oscGain = this.ctx.createGain();
       oscGain.gain.setValueAtTime(0.04, clickTime);
       oscGain.gain.exponentialRampToValueAtTime(0.0001, clickTime + duration);
-      
       noise.connect(filter);
       filter.connect(gain);
       gain.connect(this.masterGain);
-      
       osc.connect(oscGain);
       oscGain.connect(this.masterGain);
-      
       noise.start(clickTime);
       osc.start(clickTime);
       noise.stop(clickTime + duration + 0.01);
       osc.stop(clickTime + duration + 0.01);
     }
-    
-    // 2. Heavy gate hinge squeal starting after chain clatter
     const squealTime = now + 0.35;
     const squealDur = 1.2;
-    
     const squealOsc = this.ctx.createOscillator();
     const squealFilter = this.ctx.createBiquadFilter();
     const squealGain = this.ctx.createGain();
-    
     squealOsc.type = "sawtooth";
     squealOsc.frequency.setValueAtTime(290, squealTime);
-    squealOsc.frequency.linearRampToValueAtTime(220, squealTime + squealDur); // rusty creak pitch drops
-    
+    squealOsc.frequency.linearRampToValueAtTime(220, squealTime + squealDur);
     squealFilter.type = "bandpass";
     squealFilter.frequency.setValueAtTime(800, squealTime);
-    squealFilter.Q.value = 3.0; // resonant metallic creak
-    
+    squealFilter.Q.value = 3.0;
     squealGain.gain.setValueAtTime(0, squealTime);
-    squealGain.gain.linearRampToValueAtTime(0.06, squealTime + 0.2); // swell in
+    squealGain.gain.linearRampToValueAtTime(0.06, squealTime + 0.2);
     squealGain.gain.exponentialRampToValueAtTime(0.0001, squealTime + squealDur);
-    
     squealOsc.connect(squealFilter);
     squealFilter.connect(squealGain);
     squealGain.connect(this.masterGain);
-    
     squealOsc.start(squealTime);
     squealOsc.stop(squealTime + squealDur + 0.05);
   }
@@ -494,49 +530,42 @@ export class AudioEngine {
   // Synthesize ghostly spirit ascension fade sound (rising pitch sine wave + sweeping resonant bandpass whoosh)
   playGhostFade() {
     if (this.muted || !this.ctx) return;
+
+    // Try real ghost moan sound
+    if (this._playBuffer("ghost_moan", 0.40)) return;
+
+    // Synthesized fallback
     const now = this.ctx.currentTime;
-    
     const duration = 2.2;
-    
     const osc = this.ctx.createOscillator();
     const filter = this.ctx.createBiquadFilter();
     const gain = this.ctx.createGain();
-    
     osc.type = "sine";
     osc.frequency.setValueAtTime(300, now);
-    osc.frequency.exponentialRampToValueAtTime(1400, now + duration); // rising pitch
-    
+    osc.frequency.exponentialRampToValueAtTime(1400, now + duration);
     filter.type = "lowpass";
     filter.frequency.setValueAtTime(800, now);
     filter.frequency.exponentialRampToValueAtTime(1600, now + duration);
-    
     gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(0.09, now + 0.4); // swell in
+    gain.gain.linearRampToValueAtTime(0.09, now + 0.4);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-    
-    // Ghostly wind whoosh
     const noise = this.ctx.createBufferSource();
     noise.buffer = this.noiseBuffer;
-    
     const noiseFilter = this.ctx.createBiquadFilter();
     noiseFilter.type = "bandpass";
     noiseFilter.frequency.setValueAtTime(250, now);
     noiseFilter.frequency.exponentialRampToValueAtTime(900, now + duration);
     noiseFilter.Q.value = 2.0;
-    
     const noiseGain = this.ctx.createGain();
     noiseGain.gain.setValueAtTime(0, now);
     noiseGain.gain.linearRampToValueAtTime(0.06, now + 0.6);
     noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-    
     osc.connect(filter);
     filter.connect(gain);
     gain.connect(this.masterGain);
-    
     noise.connect(noiseFilter);
     noiseFilter.connect(noiseGain);
     noiseGain.connect(this.masterGain);
-    
     osc.start(now);
     noise.start(now);
     osc.stop(now + duration + 0.05);
@@ -545,9 +574,13 @@ export class AudioEngine {
 
   playHazard() {
     if (this.muted || !this.ctx) return;
+
+    // Try real monster bite or metal screech first
+    if (this._playBuffer("monster_bite", 0.60)) return;
+    if (this._playBuffer("metal_screech", 0.35)) return;
+
+    // Synthesized fallback
     const now = this.ctx.currentTime;
-    
-    // Low, vibrating hazard alarm (sawtooth)
     const osc = this.ctx.createOscillator();
     const osc2 = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
@@ -615,43 +648,36 @@ export class AudioEngine {
   // Synthesize guttural harsh crow caw (sawtooth carrier modulated by slow sawtooth LFO + bandpass filter)
   playCrow() {
     if (this.muted || !this.ctx) return;
+
+    // Try real distant scream or stinger first
+    if (this._playBuffer("distant_scream", 0.35)) return;
+
+    // Synthesized fallback
     const now = this.ctx.currentTime;
-    
-    // Play two quick caws: "Caw! Caw!"
     for (let c = 0; c < 2; c++) {
       const startTime = now + c * 0.45;
-      
       const carrier = this.ctx.createOscillator();
       const modulator = this.ctx.createOscillator();
       const modGain = this.ctx.createGain();
       const filter = this.ctx.createBiquadFilter();
       const gain = this.ctx.createGain();
-      
       carrier.type = "sawtooth";
       carrier.frequency.setValueAtTime(280, startTime);
-      carrier.frequency.linearRampToValueAtTime(220, startTime + 0.3); // Pitch drops slightly
-      
-      // Ring modulation/FM to create harsh cawing vibration
+      carrier.frequency.linearRampToValueAtTime(220, startTime + 0.3);
       modulator.type = "sawtooth";
-      modulator.frequency.setValueAtTime(38, startTime); // Harsh rattles
+      modulator.frequency.setValueAtTime(38, startTime);
       modGain.gain.setValueAtTime(150, startTime);
-      
       filter.type = "bandpass";
       filter.frequency.setValueAtTime(800, startTime);
       filter.Q.value = 1.5;
-      
-      // Caw amplitude envelope (increased by ~35%)
       gain.gain.setValueAtTime(0, startTime);
-      gain.gain.linearRampToValueAtTime(0.055, startTime + 0.05); // quick onset
+      gain.gain.linearRampToValueAtTime(0.055, startTime + 0.05);
       gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.3);
-      
       modulator.connect(modGain);
       modGain.connect(carrier.frequency);
-      
       carrier.connect(filter);
       filter.connect(gain);
       gain.connect(this.masterGain);
-      
       modulator.start(startTime);
       carrier.start(startTime);
       modulator.stop(startTime + 0.31);
@@ -662,38 +688,33 @@ export class AudioEngine {
   // Synthesize deep ghostly owl hoot (sine wave at 170Hz + lowpass filter + breathing envelope)
   playOwl() {
     if (this.muted || !this.ctx) return;
+
+    // Try real slow stinger first for a spooky background tone
+    if (this._playBuffer("slow_stinger", 0.25)) return;
+
+    // Synthesized fallback
     const now = this.ctx.currentTime;
-    
-    // Owl double hoot sequence: "Hoo... Hoo-Hoo"
     const hoots = [
       { delay: 0.0, duration: 0.4, pitch: 170 },
       { delay: 0.7, duration: 0.2, pitch: 165 },
       { delay: 0.95, duration: 0.35, pitch: 160 }
     ];
-    
     hoots.forEach((h) => {
       const startTime = now + h.delay;
-      
       const osc = this.ctx.createOscillator();
       const filter = this.ctx.createBiquadFilter();
       const gain = this.ctx.createGain();
-      
       osc.type = "sine";
       osc.frequency.setValueAtTime(h.pitch, startTime);
       osc.frequency.linearRampToValueAtTime(h.pitch - 5, startTime + h.duration);
-      
       filter.type = "lowpass";
-      filter.frequency.setValueAtTime(250, startTime); // Muffles the sine to sound deep and distant
-      
-      // Soft breathing volume envelope (increased by 30%)
+      filter.frequency.setValueAtTime(250, startTime);
       gain.gain.setValueAtTime(0, startTime);
-      gain.gain.linearRampToValueAtTime(0.065, startTime + 0.08); // gentle attack
+      gain.gain.linearRampToValueAtTime(0.065, startTime + 0.08);
       gain.gain.exponentialRampToValueAtTime(0.0001, startTime + h.duration);
-      
       osc.connect(filter);
       filter.connect(gain);
       gain.connect(this.masterGain);
-      
       osc.start(startTime);
       osc.stop(startTime + h.duration + 0.05);
     });
@@ -734,47 +755,42 @@ export class AudioEngine {
   // Synthesize deep structural chasm groan (sweeping lowpass saw/triangle detuned nodes + sweeping bandpass noise)
   playChasmGroan() {
     if (this.muted || !this.ctx) return;
+
+    // Try real deep drone doom first
+    if (this._playBuffer("drone_doom", 0.50)) return;
+
+    // Synthesized fallback
     const now = this.ctx.currentTime;
-    
     const osc1 = this.ctx.createOscillator();
     const osc2 = this.ctx.createOscillator();
     const noise = this.ctx.createBufferSource();
     noise.buffer = this.noiseBuffer;
-    
     const filter = this.ctx.createBiquadFilter();
     filter.type = "lowpass";
     filter.frequency.setValueAtTime(140, now);
     filter.frequency.exponentialRampToValueAtTime(45, now + 3.0);
     filter.Q.value = 4.0;
-    
     const noiseFilter = this.ctx.createBiquadFilter();
     noiseFilter.type = "bandpass";
     noiseFilter.frequency.setValueAtTime(350, now);
     noiseFilter.frequency.exponentialRampToValueAtTime(120, now + 3.0);
     noiseFilter.Q.value = 1.0;
-    
     osc1.type = "sawtooth";
     osc1.frequency.setValueAtTime(40, now);
     osc1.frequency.linearRampToValueAtTime(32, now + 3.0);
-    
     osc2.type = "triangle";
-    osc2.frequency.setValueAtTime(41, now); // detune
+    osc2.frequency.setValueAtTime(41, now);
     osc2.frequency.linearRampToValueAtTime(33, now + 3.0);
-    
     const gain = this.ctx.createGain();
     gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(0.22, now + 0.8); // slow build
+    gain.gain.linearRampToValueAtTime(0.22, now + 0.8);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + 3.0);
-    
     osc1.connect(filter);
     osc2.connect(filter);
     noise.connect(noiseFilter);
-    
     filter.connect(gain);
     noiseFilter.connect(gain);
-    
     gain.connect(this.masterGain);
-    
     osc1.start(now);
     osc2.start(now);
     noise.start(now);
@@ -786,191 +802,162 @@ export class AudioEngine {
   // Synthesize trembling voice whisper (tremolo modulated high-resonance bandpass white noise sweep)
   playWhisper() {
     if (this.muted || !this.ctx) return;
+
+    // Try real ghost moan or breath first
+    if (this._playBuffer("ghost_moan", 0.35)) return;
+    if (this._playBuffer("monster_breath", 0.30)) return;
+
+    // Synthesized fallback
     const now = this.ctx.currentTime;
-    
     const noise = this.ctx.createBufferSource();
     noise.buffer = this.noiseBuffer;
-    
     const filter = this.ctx.createBiquadFilter();
     filter.type = "bandpass";
     filter.frequency.setValueAtTime(600, now);
     filter.frequency.linearRampToValueAtTime(1400, now + 0.4);
     filter.frequency.exponentialRampToValueAtTime(500, now + 1.2);
-    filter.Q.setValueAtTime(5.0, now); // sharp whistle/breath resonance
-    
-    // Add LFO to make it shudder/tremble like a shivering voice
+    filter.Q.setValueAtTime(5.0, now);
     const lfo = this.ctx.createOscillator();
     lfo.type = "sine";
-    lfo.frequency.value = 12.0; // 12 Hz vibration
-    
+    lfo.frequency.value = 12.0;
     const lfoGain = this.ctx.createGain();
     lfoGain.gain.value = 180;
-    
     lfo.connect(lfoGain);
     lfoGain.connect(filter.frequency);
-    
     const gain = this.ctx.createGain();
     gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(0.08, now + 0.2); // sudden breath gasp
+    gain.gain.linearRampToValueAtTime(0.08, now + 0.2);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
-    
     noise.connect(filter);
     filter.connect(gain);
     gain.connect(this.masterGain);
-    
     lfo.start(now);
     noise.start(now);
     lfo.stop(now + 1.3);
     noise.stop(now + 1.3);
   }
 
+  // Shadow monster spawn sound - real audio asset
   playShadowSpawn() {
     if (this.muted || !this.ctx) return;
-    const now = this.ctx.currentTime;
-    
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    const filter = this.ctx.createBiquadFilter();
-    
-    osc.type = "sawtooth";
-    osc.frequency.setValueAtTime(80, now);
-    osc.frequency.linearRampToValueAtTime(30, now + 1.5);
-    
-    filter.type = "lowpass";
-    filter.frequency.setValueAtTime(300, now);
-    filter.frequency.linearRampToValueAtTime(100, now + 1.5);
-    
-    gain.gain.setValueAtTime(0.3, now);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.5);
-    
-    osc.connect(filter);
-    filter.connect(gain);
-    gain.connect(this.masterGain);
-    osc.start(now);
-    osc.stop(now + 1.6);
 
-    const osc2 = this.ctx.createOscillator();
-    const gain2 = this.ctx.createGain();
-    
-    osc2.type = "triangle";
-    osc2.frequency.setValueAtTime(800, now);
-    osc2.frequency.linearRampToValueAtTime(400, now + 1.2);
-    
-    gain2.gain.setValueAtTime(0.08, now);
-    gain2.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
-    
-    osc2.connect(gain2);
-    gain2.connect(this.masterGain);
-    osc2.start(now);
-    osc2.stop(now + 1.3);
+    // Play creepy ambience + stinger combo for dramatic spawn
+    this._playBuffer("creepy_ambience", 0.50);
+    setTimeout(() => this._playBuffer("piano_stinger", 0.30), 150);
+    return; // Always use real files, no synthesized fallback needed
   }
 
+  // Shadow monster burn sound (when flashlight hits it)
   playShadowBurn() {
     if (this.muted || !this.ctx) return;
+
+    // Use real hiss sound
+    if (this._playBuffer("monster_hiss", 0.45, 1.1)) return;
+
+    // Synthesized fallback
     const now = this.ctx.currentTime;
-    
     const noise = this.ctx.createBufferSource();
     noise.buffer = this.noiseBuffer;
-    
     const filter = this.ctx.createBiquadFilter();
     filter.type = "highpass";
     filter.frequency.setValueAtTime(6000, now);
-    
     const gain = this.ctx.createGain();
     gain.gain.setValueAtTime(0.12, now);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
-    
     noise.connect(filter);
     filter.connect(gain);
     gain.connect(this.masterGain);
-    
     noise.start(now);
     noise.stop(now + 0.25);
   }
 
+  // JUMPSCARE! Real ghost scream + stinger
   playJumpscare() {
     if (this.muted || !this.ctx) return;
-    const now = this.ctx.currentTime;
-    
-    const osc1 = this.ctx.createOscillator();
-    const osc2 = this.ctx.createOscillator();
-    const noise = this.ctx.createBufferSource();
-    
-    const filterNoise = this.ctx.createBiquadFilter();
-    const gain = this.ctx.createGain();
-    
-    osc1.type = "sawtooth";
-    osc1.frequency.setValueAtTime(2000, now);
-    osc1.frequency.linearRampToValueAtTime(400, now + 1.5);
-    
-    osc2.type = "sawtooth";
-    osc2.frequency.setValueAtTime(120, now);
-    osc2.frequency.linearRampToValueAtTime(40, now + 1.5);
-    
-    noise.buffer = this.noiseBuffer;
-    filterNoise.type = "bandpass";
-    filterNoise.frequency.setValueAtTime(1000, now);
-    
-    gain.gain.setValueAtTime(0.7, now);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.5);
-    
-    osc1.connect(gain);
-    osc2.connect(gain);
-    noise.connect(filterNoise);
-    filterNoise.connect(gain);
-    
-    gain.connect(this.masterGain);
-    
-    osc1.start(now);
-    osc2.start(now);
-    noise.start(now);
-    
-    osc1.stop(now + 1.6);
-    osc2.stop(now + 1.6);
-    noise.stop(now + 1.6);
+
+    // Play the real scream at high volume
+    this._playBuffer("jumpscare_scream", 0.90, 1.0);
+    // Layer monster roar for extra impact
+    this._playBuffer("monster_roar", 0.70, 0.9);
+    // Add suspenseful stinger
+    setTimeout(() => this._playBuffer("stinger", 0.50), 100);
   }
 
+  // Shadow monster ambient groan (distance-based volume)
   playShadowGroan(distance) {
     if (this.muted || !this.ctx) return;
-    const now = this.ctx.currentTime;
-    
+
     const maxDist = 12.0;
     if (distance > maxDist) return;
     const volumeFactor = 1.0 - (distance / maxDist);
+
+    // Randomly pick from several monster sounds for variety
+    const groanSounds = ["monster_growl", "monster_breath", "monster_grunt", "deep_moan"];
+    const pick = groanSounds[Math.floor(Math.random() * groanSounds.length)];
+    const vol = 0.35 * volumeFactor;
+    const rate = 0.85 + Math.random() * 0.3; // pitch variation
+
+    if (this._playBuffer(pick, vol, rate)) return;
+
+    // Synthesized fallback
+    const now = this.ctx.currentTime;
     const volume = 0.20 * volumeFactor;
-    
     const noise = this.ctx.createBufferSource();
     noise.buffer = this.noiseBuffer;
-    
     const filter = this.ctx.createBiquadFilter();
     filter.type = "bandpass";
     filter.frequency.setValueAtTime(250, now);
     filter.frequency.exponentialRampToValueAtTime(100, now + 1.8);
     filter.Q.setValueAtTime(4.0, now);
-    
     const osc = this.ctx.createOscillator();
     osc.type = "sine";
     osc.frequency.setValueAtTime(55, now);
     osc.frequency.linearRampToValueAtTime(45, now + 1.8);
-    
     const gain = this.ctx.createGain();
     gain.gain.setValueAtTime(volume * 0.4, now);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.8);
-    
     const oscGain = this.ctx.createGain();
     oscGain.gain.setValueAtTime(volume * 0.6, now);
     oscGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.8);
-    
     noise.connect(filter);
     filter.connect(gain);
     gain.connect(this.masterGain);
-    
     osc.connect(oscGain);
     oscGain.connect(this.masterGain);
-    
     noise.start(now);
     osc.start(now);
     noise.stop(now + 1.9);
     osc.stop(now + 1.9);
+  }
+
+  // Flashlight toggle sounds
+  playFlashlightOn() {
+    if (this.muted || !this.ctx) return;
+    this._playBuffer("flashlight_on", 0.40);
+  }
+
+  playFlashlightOff() {
+    if (this.muted || !this.ctx) return;
+    this._playBuffer("flashlight_off", 0.40);
+  }
+
+  // Gasp sound (for scary moments)
+  playGasp() {
+    if (this.muted || !this.ctx) return;
+    this._playBuffer("gasp", 0.50);
+  }
+
+  // Door opening creak sound
+  playDoorOpen() {
+    if (this.muted || !this.ctx) return;
+    this._playBuffer("door_squeak", 0.35);
+  }
+
+  // Play a random ambient horror stinger
+  playRandomStinger() {
+    if (this.muted || !this.ctx) return;
+    const stingers = ["piano_stinger", "stinger", "slow_stinger", "suspense_rise"];
+    const pick = stingers[Math.floor(Math.random() * stingers.length)];
+    this._playBuffer(pick, 0.25);
   }
 }

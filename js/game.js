@@ -556,7 +556,11 @@ export class Game {
   toggleLantern() {
     if (this.state && this.state.gameState === "playing") {
       this.state.lanternOn = !this.state.lanternOn;
-      this.audio.playPickup(); // Simple click/toggle sound
+      if (this.state.lanternOn) {
+        this.audio.playFlashlightOn();
+      } else {
+        this.audio.playFlashlightOff();
+      }
       if (this.onStateChange) this.onStateChange();
     }
   }

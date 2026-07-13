@@ -2369,7 +2369,8 @@ export class CanvasRenderer {
           const faceMat = new ShaderMatClass({
             uniforms: {
               map: { value: this.jumpscareTexture },
-              opacity: { value: 1.0 }
+              opacity: { value: 1.0 },
+              time: { value: 0.0 }
             },
             vertexShader: `
               varying vec2 vUv;
@@ -2381,14 +2382,26 @@ export class CanvasRenderer {
             fragmentShader: `
               uniform sampler2D map;
               uniform float opacity;
+              uniform float time;
               varying vec2 vUv;
               void main() {
-                vec4 texColor = texture2D(map, vUv);
-                // Discard pixels where all channels are dark (background)
+                // 1. Gaseous boiling ripple distortion
+                vec2 distortedUv = vUv;
+                distortedUv.x += sin(vUv.y * 8.0 + time * 3.5) * 0.012;
+                distortedUv.y += cos(vUv.x * 8.0 + time * 2.8) * 0.012;
+                
+                vec4 texColor = texture2D(map, distortedUv);
+                
+                // 2. Discard black/dark background pixels
                 if (texColor.r < 0.14 && texColor.g < 0.14 && texColor.b < 0.14) {
                   discard;
                 }
-                gl_FragColor = vec4(texColor.rgb, texColor.a * opacity);
+                
+                // 3. Smooth vignette edge fade (makes plane boundaries perfectly invisible)
+                float dist = distance(vUv, vec2(0.5, 0.5));
+                float edgeFade = 1.0 - smoothstep(0.32, 0.50, dist);
+                
+                gl_FragColor = vec4(texColor.rgb, texColor.a * opacity * edgeFade);
               }
             `,
             // Fallback parameters for MeshBasicMaterial
@@ -2400,7 +2413,7 @@ export class CanvasRenderer {
           });
           const faceMesh = new THREE.Mesh(faceGeom, faceMat);
           faceMesh.name = "face";
-          faceMesh.position.set(0, 1.1, 0.35); // shifted forward to avoid smoke occlusion
+          faceMesh.position.set(0, 0.75, 0.35); // Lowered to player eye level (y=0.75) and shifted forward
           this.shadowMonsterMesh.add(faceMesh);
           
           // 3. Volumetric Smoke Body (15 overlapping black/dark spheres)
@@ -2420,7 +2433,7 @@ export class CanvasRenderer {
             const mesh = new THREE.Mesh(geom, mat);
             mesh.position.set(
               (Math.random() - 0.5) * 0.6,
-              1.1 + (Math.random() - 0.5) * 0.6,
+              0.75 + (Math.random() - 0.5) * 0.6, // Lowered center height to y=0.75
               -0.15 + (Math.random() - 0.5) * 0.4 // offset backward so it acts as background/body
             );
             mesh.userData = {
@@ -2437,7 +2450,7 @@ export class CanvasRenderer {
           // 4. Red Point Light casting eerie glow on walls
           const shadowLight = new THREE.PointLight(0xff0000, 1.2, 5.0);
           shadowLight.name = "shadowLight";
-          shadowLight.position.set(0, 1.1, 0.2);
+          shadowLight.position.set(0, 0.75, 0.2); // Lowered center height to y=0.75
           this.shadowMonsterMesh.add(shadowLight);
           
           this.scene.add(this.shadowMonsterMesh);
@@ -2467,13 +2480,21 @@ export class CanvasRenderer {
           if (eyeR.material) eyeR.material.opacity = burnRatio;
         }
         
-        // Update face opacity (supporting both ShaderMaterial uniforms and MeshBasicMaterial fallback)
+        // Update face animations and shader uniforms (supporting both ShaderMaterial uniforms and MeshBasicMaterial fallback)
         const face = this.shadowMonsterMesh.getObjectByName("face");
-        if (face && face.material) {
-          if (face.material.uniforms && face.material.uniforms.opacity) {
-            face.material.uniforms.opacity.value = burnRatio;
-          } else {
-            face.material.opacity = burnRatio;
+        if (face) {
+          // 1. Subtle breathing scale pulse and side-to-side rotation sway
+          const faceScale = 1.0 + Math.sin(time * 1.5) * 0.05;
+          face.scale.set(faceScale, faceScale, faceScale);
+          face.rotation.z = Math.sin(time * 2.0) * 0.06;
+          
+          if (face.material) {
+            if (face.material.uniforms) {
+              if (face.material.uniforms.opacity) face.material.uniforms.opacity.value = burnRatio;
+              if (face.material.uniforms.time) face.material.uniforms.time.value = time;
+            } else {
+              face.material.opacity = burnRatio;
+            }
           }
         }
         

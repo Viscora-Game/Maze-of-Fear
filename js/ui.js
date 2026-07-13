@@ -511,6 +511,7 @@ function setupUI(game) {
   // 4. In-Game HUD & Inventory Sync
   game.onStateChange = () => {
     const s = game.state;
+    if (!s) return;
     const p = s.player;
 
     // Level and Floor
@@ -686,7 +687,7 @@ function setupUI(game) {
 
     // Listen to touchstart on window to allow dynamic floating/fixed joystick placement
     window.addEventListener("touchstart", (e) => {
-      if (game.state.gameState !== "playing" || joystickActive) return;
+      if (!game.state || game.state.gameState !== "playing" || joystickActive) return;
       
       const target = e.target;
       const touch = e.changedTouches[0];
@@ -1251,7 +1252,7 @@ function setupUI(game) {
   if (hud.btnOpenInventory) {
     const handleOpenBag = (e) => {
       e.preventDefault();
-      if (game.state.gameState !== "playing") return;
+      if (!game.state || game.state.gameState !== "playing") return;
       game.state.gameState = "modal";
       hud.modalInventory.classList.remove("hidden");
       selectedItemId = null;
@@ -1318,7 +1319,7 @@ function setupUI(game) {
   // Open Map / Close Map helpers
   let mapAnimId = null;
   const openMap = () => {
-    if (game.state.gameState !== "playing") return;
+    if (!game.state || game.state.gameState !== "playing") return;
     game.state.gameState = "modal";
     document.getElementById("modal-map").classList.remove("hidden");
     

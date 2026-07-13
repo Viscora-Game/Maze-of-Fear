@@ -11,6 +11,9 @@ export class AudioEngine {
     this.activePantingNode = null;
     this.activeScreamNode = null;
     this.ambientTimeout = null;
+    this.lastScreamTime = 0;
+    this.lastStingerTime = 0;
+    this.lastGroanTime = 0;
   }
 
   init() {
@@ -211,30 +214,59 @@ export class AudioEngine {
       });
     }, 5000);
 
-    // 4. Random Environmental Horror Sound Effects (Crows/Screams, Owls, Rustles, Chasm Groans, and Ghostly Whispers)
-    // Scheduled at completely random times (15 to 35 seconds) to feel unpredictable and prevent overlapping
+    // 4. Random Environmental Horror Sound Effects (Sound Director System)
+    // Runs checks every 8 to 15 seconds, applying individual cooldowns to heavy sounds
+    // and falling back to lighter sounds (whispers/rustles) to allow natural density without scream overlaps
     const scheduleNextAmbient = () => {
       if (this.ambientTimeout) {
         clearTimeout(this.ambientTimeout);
       }
       
-      const randomDelay = 40000 + Math.random() * 50000; // 40 to 90 seconds (longer silences build better tension)
+      const randomDelay = 8000 + Math.random() * 7000; // Check every 8 to 15 seconds
       this.ambientTimeout = setTimeout(() => {
         if (this.muted || !this.ctx) {
           scheduleNextAmbient();
           return;
         }
         
+        // 35% chance of absolute silence during this check (creates silent pacing gaps)
+        if (Math.random() < 0.35) {
+          scheduleNextAmbient();
+          return;
+        }
+        
+        const now = Date.now();
         const r = Math.random();
+        
         if (r < 0.20) {
-          this.playCrow(); // Distant scream
+          // Scream (Crow) - 45s Cooldown. Fallback to whisper if on cooldown
+          if (now - this.lastScreamTime > 45000) {
+            this.lastScreamTime = now;
+            this.playCrow();
+          } else {
+            this.playWhisper();
+          }
         } else if (r < 0.40) {
-          this.playOwl(); // Slow stinger
+          // Owl (Slow stinger) - 30s Cooldown. Fallback to rustle if on cooldown
+          if (now - this.lastStingerTime > 30000) {
+            this.lastStingerTime = now;
+            this.playOwl();
+          } else {
+            this.playRustle();
+          }
         } else if (r < 0.60) {
+          // Rustle - No cooldown, play freely
           this.playRustle();
         } else if (r < 0.80) {
-          this.playChasmGroan();
+          // Chasm Groan - 25s Cooldown. Fallback to whisper if on cooldown
+          if (now - this.lastGroanTime > 25000) {
+            this.lastGroanTime = now;
+            this.playChasmGroan();
+          } else {
+            this.playWhisper();
+          }
         } else {
+          // Whisper - No cooldown, play freely
           this.playWhisper();
         }
         

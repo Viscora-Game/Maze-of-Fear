@@ -302,6 +302,12 @@ export class CanvasRenderer {
     this.armsModel = null;
     this.armsAnimations = null;
     this.loadArmsAsset();
+
+    // Load custom FBX decoration assets (flowers, rocks, grass)
+    this.flowerModels = [];
+    this.rockModels = [];
+    this.grassModel = null;
+    this.loadDecorationsAssets();
   }
 
   loadArmsAsset() {
@@ -332,6 +338,82 @@ export class CanvasRenderer {
       }
     }, undefined, (err) => {
       console.error("Failed to load GLTF arms model:", err);
+    });
+  }
+
+  loadDecorationsAssets() {
+    if (typeof THREE.FBXLoader === "undefined") {
+      console.warn("THREE.FBXLoader is not available.");
+      return;
+    }
+    const loader = new THREE.FBXLoader();
+    
+    // Helper to process loaded FBX model (enabling shadows, setting up materials)
+    const processFBX = (fbx, scaleVal) => {
+      fbx.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+          if (child.material) {
+            const mats = Array.isArray(child.material) ? child.material : [child.material];
+            mats.forEach(m => {
+              m.roughness = 0.95;
+              m.metalness = 0.05;
+              // Make sure double-sided rendering is active for leafy shapes
+              m.side = THREE.DoubleSide;
+            });
+          }
+        }
+      });
+      fbx.scale.set(scaleVal, scaleVal, scaleVal);
+      return fbx;
+    };
+
+    // Load Flowers
+    const flowers = ['flower1.fbx', 'flower2.fbx', 'flower3.fbx'];
+    let loadedCount = 0;
+    const totalCount = 7;
+    const checkAllLoaded = () => {
+      loadedCount++;
+      if (loadedCount >= totalCount && this.lastState) {
+        this.rebuildScene(this.lastState);
+      }
+    };
+
+    flowers.forEach((name, idx) => {
+      loader.load(`assets/models/decorations/${name}`, (fbx) => {
+        const processed = processFBX(fbx, 0.0035);
+        this.flowerModels[idx] = processed;
+        console.log(`FBX Decoration ${name} loaded successfully!`);
+        checkAllLoaded();
+      }, undefined, (err) => {
+        console.warn(`Failed to load FBX ${name}:`, err);
+        loadedCount++; // still progress to not block loading
+      });
+    });
+
+    // Load Rocks
+    const rocks = ['rock1.fbx', 'rock2.fbx', 'rock3.fbx'];
+    rocks.forEach((name, idx) => {
+      loader.load(`assets/models/decorations/${name}`, (fbx) => {
+        const processed = processFBX(fbx, 0.0035);
+        this.rockModels[idx] = processed;
+        console.log(`FBX Decoration ${name} loaded successfully!`);
+        checkAllLoaded();
+      }, undefined, (err) => {
+        console.warn(`Failed to load FBX ${name}:`, err);
+        loadedCount++;
+      });
+    });
+
+    // Load Grass
+    loader.load('assets/models/decorations/grass.fbx', (fbx) => {
+      this.grassModel = processFBX(fbx, 0.0035);
+      console.log("FBX Decoration grass.fbx loaded successfully!");
+      checkAllLoaded();
+    }, undefined, (err) => {
+      console.warn("Failed to load FBX grass.fbx:", err);
+      loadedCount++;
     });
   }
 
@@ -651,14 +733,32 @@ export class CanvasRenderer {
           if (randVal < 0.18) {
             // Rubble clusters (2-4 small stones clustered together)
             const rubbleGroup = new THREE.Group();
-            const numStones = 2 + Math.floor(Math.random() * 3);
-            for (let i = 0; i < numStones; i++) {
-              const stone = new THREE.Mesh(pebbleGeo, pebbleMat);
-              const s = 0.5 + Math.random() * 0.8;
-              stone.scale.set(s * 1.5, s * 0.4, s * 1.0);
-              stone.position.set((Math.random() - 0.5) * 0.18, 0.005, (Math.random() - 0.5) * 0.18);
-              stone.rotation.set(0, Math.random() * Math.PI, 0);
-              rubbleGroup.add(stone);
+            if (this.rockModels && this.rockModels.length > 0) {
+              // Spawn actual FBX low-poly rock models!
+              const numStones = 1 + Math.floor(Math.random() * 2);
+              for (let i = 0; i < numStones; i++) {
+                const rockIdx = Math.floor(Math.random() * this.rockModels.length);
+                const rockModel = this.rockModels[rockIdx];
+                if (rockModel) {
+                  const rockClone = rockModel.clone();
+                  const s = 0.5 + Math.random() * 0.5; // Scale relative to default 0.0035
+                  rockClone.scale.set(s * 0.0035, s * 0.0035, s * 0.0035);
+                  rockClone.position.set((Math.random() - 0.5) * 0.18, 0, (Math.random() - 0.5) * 0.18);
+                  rockClone.rotation.set(Math.random() * 0.1, Math.random() * Math.PI, Math.random() * 0.1);
+                  rubbleGroup.add(rockClone);
+                }
+              }
+            } else {
+              // Fallback: Procedural stone meshes (spheres)
+              const numStones = 2 + Math.floor(Math.random() * 3);
+              for (let i = 0; i < numStones; i++) {
+                const stone = new THREE.Mesh(pebbleGeo, pebbleMat);
+                const s = 0.5 + Math.random() * 0.8;
+                stone.scale.set(s * 1.5, s * 0.4, s * 1.0);
+                stone.position.set((Math.random() - 0.5) * 0.18, 0.005, (Math.random() - 0.5) * 0.18);
+                stone.rotation.set(0, Math.random() * Math.PI, 0);
+                rubbleGroup.add(stone);
+              }
             }
             rubbleGroup.position.set((Math.random() - 0.5) * 0.35, 0, (Math.random() - 0.5) * 0.35);
             cellGroup.add(rubbleGroup);
@@ -681,22 +781,48 @@ export class CanvasRenderer {
             mush.position.set((Math.random() - 0.5) * 0.35, 0, (Math.random() - 0.5) * 0.35);
             cellGroup.add(mush);
           } else if (randVal < 0.46) {
-            // Creeping Dark Green Vines / Ivy Sprouts creeping on the stone path
-            const vineGroup = new THREE.Group();
-            const leafMat = new THREE.MeshStandardMaterial({ 
-              map: this.hedgeTexture, 
-              color: "#1b351e", // deep rich ivy green matching the muted walls
-              roughness: 0.95 
-            });
-            for (let i = 0; i < 3; i++) {
-              const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.04 + Math.random() * 0.02, 6, 6), leafMat);
-              leaf.scale.set(1.5, 0.2, 1.0);
-              leaf.position.set((Math.random() - 0.5) * 0.22, 0.005, (Math.random() - 0.5) * 0.22);
-              leaf.rotation.set(0, Math.random() * Math.PI, 0);
-              vineGroup.add(leaf);
-            }
-            vineGroup.position.set((Math.random() - 0.5) * 0.35, 0, (Math.random() - 0.5) * 0.35);
-            cellGroup.add(vineGroup);
+             // Creeping Dark Green Vines / Ivy Sprouts or Beautiful Flowers on the stone path
+             const vineGroup = new THREE.Group();
+             
+             // Randomly choose between grass model, flower models, or procedural leaves
+             const chooseModel = Math.random();
+             if (chooseModel < 0.4 && this.grassModel) {
+               // Spawn actual FBX grass model!
+               const grassClone = this.grassModel.clone();
+               const s = 0.7 + Math.random() * 0.6;
+               grassClone.scale.set(s * 0.0035, s * 0.0035, s * 0.0035);
+               grassClone.position.set(0, 0, 0);
+               grassClone.rotation.set(0, Math.random() * Math.PI, 0);
+               vineGroup.add(grassClone);
+             } else if (chooseModel < 0.85 && this.flowerModels && this.flowerModels.length > 0) {
+               // Spawn actual FBX flower model (flower1, flower2, or flower3)!
+               const flowerIdx = Math.floor(Math.random() * this.flowerModels.length);
+               const flowerModel = this.flowerModels[flowerIdx];
+               if (flowerModel) {
+                 const flowerClone = flowerModel.clone();
+                 const s = 0.6 + Math.random() * 0.5;
+                 flowerClone.scale.set(s * 0.0035, s * 0.0035, s * 0.0035);
+                 flowerClone.position.set(0, 0, 0);
+                 flowerClone.rotation.set(0, Math.random() * Math.PI, 0);
+                 vineGroup.add(flowerClone);
+               }
+             } else {
+               // Fallback: Procedural green leaves (spheres)
+               const leafMat = new THREE.MeshStandardMaterial({ 
+                 map: this.hedgeTexture, 
+                 color: "#1b351e", // deep rich ivy green matching the muted walls
+                 roughness: 0.95 
+               });
+               for (let i = 0; i < 3; i++) {
+                 const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.04 + Math.random() * 0.02, 6, 6), leafMat);
+                 leaf.scale.set(1.5, 0.2, 1.0);
+                 leaf.position.set((Math.random() - 0.5) * 0.22, 0.005, (Math.random() - 0.5) * 0.22);
+                 leaf.rotation.set(0, Math.random() * Math.PI, 0);
+                 vineGroup.add(leaf);
+               }
+             }
+             vineGroup.position.set((Math.random() - 0.5) * 0.35, 0, (Math.random() - 0.5) * 0.35);
+             cellGroup.add(vineGroup);
           }
 
           // Removed Ceiling for open-air sky experience

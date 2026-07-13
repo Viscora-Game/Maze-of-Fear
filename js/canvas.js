@@ -639,8 +639,8 @@ export class CanvasRenderer {
     this.dirLight.shadow.bias = -0.0005;
     this.scene.add(this.dirLight);
 
-    // Flashlight SpotLight - PRIMARY neutral white light source with realistic flashlight properties (decay = 1.2, range = 14.0m)
-    this.lantern = new THREE.SpotLight("#ffffff", 9.0, 14.0, Math.PI / 9.5, 0.9, 1.2);
+    // Flashlight SpotLight - PRIMARY neutral white light source with realistic flashlight properties (decay = 1.8, range = 11.0m)
+    this.lantern = new THREE.SpotLight("#ffffff", 16.0, 11.0, Math.PI / 6.0, 0.85, 1.8);
     this.lantern.castShadow = false; // Disable shadows to prevent hand/self-shadow blocking bugs
     this.scene.add(this.lantern);
 
@@ -800,26 +800,26 @@ export class CanvasRenderer {
              
              // Randomly choose between grass model, flower models, or procedural leaves
              const chooseModel = Math.random();
-             if (chooseModel < 0.4 && this.grassModel) {
-               // Spawn actual FBX grass model!
-               const grassClone = this.grassModel.clone();
-               const s = 0.7 + Math.random() * 0.6;
-               grassClone.scale.set(s * 0.0035, s * 0.0035, s * 0.0035);
-               grassClone.position.set(0, 0, 0);
-               grassClone.rotation.set(0, Math.random() * Math.PI, 0);
-               vineGroup.add(grassClone);
-             } else if (chooseModel < 0.85 && this.flowerModels && this.flowerModels.length > 0) {
-               // Spawn actual FBX flower model (flower1, flower2, or flower3)!
-               const flowerIdx = Math.floor(Math.random() * this.flowerModels.length);
-               const flowerModel = this.flowerModels[flowerIdx];
-               if (flowerModel) {
-                 const flowerClone = flowerModel.clone();
-                 const s = 0.6 + Math.random() * 0.5;
-                 flowerClone.scale.set(s * 0.0035, s * 0.0035, s * 0.0035);
-                 flowerClone.position.set(0, 0, 0);
-                 flowerClone.rotation.set(0, Math.random() * Math.PI, 0);
-                 vineGroup.add(flowerClone);
-               }
+              if (chooseModel < 0.4 && this.grassModel) {
+                // Spawn actual FBX grass model!
+                const grassClone = this.grassModel.clone();
+                const s = 0.7 + Math.random() * 0.6;
+                grassClone.scale.set(s * 0.0006, s * 0.0006, s * 0.0006);
+                grassClone.position.set(0, 0, 0);
+                grassClone.rotation.set(0, Math.random() * Math.PI, 0);
+                vineGroup.add(grassClone);
+              } else if (chooseModel < 0.85 && this.flowerModels && this.flowerModels.length > 0) {
+                // Spawn actual FBX flower model (flower1, flower2, or flower3)!
+                const flowerIdx = Math.floor(Math.random() * this.flowerModels.length);
+                const flowerModel = this.flowerModels[flowerIdx];
+                if (flowerModel) {
+                  const flowerClone = flowerModel.clone();
+                  const s = 0.6 + Math.random() * 0.5;
+                  flowerClone.scale.set(s * 0.0004, s * 0.0004, s * 0.0004);
+                  flowerClone.position.set(0, 0, 0);
+                  flowerClone.rotation.set(0, Math.random() * Math.PI, 0);
+                  vineGroup.add(flowerClone);
+                }
              } else {
                // Fallback: Procedural green leaves (spheres)
                const leafMat = new THREE.MeshStandardMaterial({ 
@@ -1862,7 +1862,7 @@ export class CanvasRenderer {
     // Toggle lantern light and flame core visibility
     if (this.lantern) {
       if (state.lanternOn && player.fuel > 0) {
-        this.lantern.intensity = 9.0; // Balanced narrow flashlight beam to keep texture details and colors rich
+        this.lantern.intensity = 16.0; // Distance-decay flashlight beam to keep texture details and colors rich
         if (this.lanternFlame) this.lanternFlame.visible = true;
       } else {
         this.lantern.intensity = 0.0; // completely off

@@ -1083,12 +1083,22 @@ function setupUI(game) {
     const offsetX = (w - s.width * cellSize) / 2;
     const offsetY = (h - s.height * cellSize) / 2;
     
-    // Draw cells
-    for (let y = 0; y < s.height; y++) {
-      for (let x = 0; x < s.width; x++) {
-        const cell = grid[y][x];
-        const cx = offsetX + x * cellSize;
-        const cy = offsetY + y * cellSize;
+    // Draw cells with Fog of War (unvisited cells remain hidden in dark vintage parchment)
+     for (let y = 0; y < s.height; y++) {
+       for (let x = 0; x < s.width; x++) {
+         const cell = grid[y][x];
+         const cx = offsetX + x * cellSize;
+         const cy = offsetY + y * cellSize;
+         
+         const visited = s.visitedMap && s.visitedMap[s.currentFloor] && s.visitedMap[s.currentFloor][y][x];
+         if (!visited) {
+           ctx.fillStyle = "#854d0e"; // Dark vintage parchment color
+           ctx.fillRect(cx, cy, cellSize, cellSize);
+           ctx.strokeStyle = "rgba(0, 0, 0, 0.05)";
+           ctx.lineWidth = 1;
+           ctx.strokeRect(cx, cy, cellSize, cellSize);
+           continue;
+         }
         
         if (cell.type === "wall") {
           // Draw hedge wall (leaf green)

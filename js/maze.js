@@ -531,9 +531,9 @@ export function generateMaze(width, height, numFloors = 1) {
           chestContent = { type: "gold", amount: 10 };
         }
       } else if (roll < 0.80) {
-        chestContent = { type: "trap", damage: 30 + Math.floor(Math.random() * 15) }; // Increased to 30-45 damage
+        chestContent = { type: "trap", damage: 25 }; // Constant 25 damage (survive up to 3 chests)
       } else {
-        chestContent = { type: "mimic", damage: 45 + Math.floor(Math.random() * 15) }; // Increased to 45-60 damage
+        chestContent = { type: "mimic", damage: 25 }; // Constant 25 damage (survive up to 3 chests)
       }
 
       c.chest = {

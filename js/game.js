@@ -100,6 +100,7 @@ export class Game {
   setCanvas(canvasElement) {
     this.canvas = canvasElement;
     this.renderer = new CanvasRenderer(canvasElement);
+    this.renderer.audio = this.audio;
   }
 
   t(key, replacements = {}) {

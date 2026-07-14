@@ -953,52 +953,7 @@ export class CanvasRenderer {
               cellGroup.add(vineGroup);
           }
 
-          // Spawn hanging ceiling lily-flowers near wall edges
-          if (this.flowerModels && this.flowerModels[2]) {
-            const isWall = (tx, ty) => {
-              if (tx < 0 || tx >= width || ty < 0 || ty >= height) return true;
-              return grid[ty][tx].type === "wall";
-            };
 
-            const wallN = isWall(x, y - 1);
-            const wallS = isWall(x, y + 1);
-            const wallE = isWall(x + 1, y);
-            const wallW = isWall(x - 1, y);
-
-            if (wallN || wallS || wallE || wallW) {
-              // Spawn a hanging ceiling flower with 30% chance if there is an adjacent wall
-              if (Math.random() < 0.30) {
-                const hangingFlower = this.flowerModels[2].clone();
-                // Choose a random wall to mount close to
-                let ox = 0, oz = 0;
-                if (wallN && Math.random() < 0.5) oz = -0.41;
-                else if (wallS && Math.random() < 0.5) oz = 0.41;
-                else if (wallE && Math.random() < 0.5) ox = 0.41;
-                else if (wallW && Math.random() < 0.5) ox = -0.41;
-                else {
-                  // Fallback: choose the first available wall
-                  if (wallN) oz = -0.41;
-                  else if (wallS) oz = 0.41;
-                  else if (wallE) ox = 0.41;
-                  else if (wallW) ox = -0.41;
-                }
-
-                // Random small adjustments to offset
-                ox += (Math.random() - 0.5) * 0.12;
-                oz += (Math.random() - 0.5) * 0.12;
-
-                // Position at ceiling level (Y = 1.23)
-                hangingFlower.position.set(ox, 1.23, oz);
-                // Random Y rotation
-                hangingFlower.rotation.set(0, Math.random() * Math.PI * 2, 0);
-                // Scale down significantly: s * 0.0003 (where s = 0.8 + Math.random() * 0.4)
-                const s = 0.8 + Math.random() * 0.4;
-                hangingFlower.scale.set(s * 0.0003, s * 0.0003, s * 0.0003);
-                
-                cellGroup.add(hangingFlower);
-              }
-            }
-          }
 
           // D. Wall Torches (Spawns a glowing warm torch on adjacent walls with a very low 5.5% probability)
           {
@@ -1026,33 +981,66 @@ export class CanvasRenderer {
                   const torchGroup = new THREE.Group();
                   torchGroup.name = "torch";
 
-                  // 1. Wooden handle/holder (angled cylinder)
-                  const handleGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.18, 6);
-                  const handleMat = new THREE.MeshStandardMaterial({ color: "#451a03", roughness: 0.9 });
+                  // 1. Backing metal wall plate (bracket)
+                  const bracketGeo = new THREE.BoxGeometry(0.04, 0.10, 0.015);
+                  const ironMat = new THREE.MeshStandardMaterial({ color: "#1e293b", metalness: 0.85, roughness: 0.35 });
+                  const bracket = new THREE.Mesh(bracketGeo, ironMat);
+                  bracket.position.set(0, 0.05, -0.01);
+                  torchGroup.add(bracket);
+
+                  // 2. Angled metal holding arm
+                  const armGeo = new THREE.CylinderGeometry(0.006, 0.006, 0.07, 6);
+                  const arm = new THREE.Mesh(armGeo, ironMat);
+                  arm.position.set(0, 0.03, 0.015);
+                  arm.rotation.x = Math.PI / 4.0; // tilt outward
+                  torchGroup.add(arm);
+
+                  // 3. Wooden handle/holder (angled cylinder)
+                  const handleGeo = new THREE.CylinderGeometry(0.013, 0.009, 0.16, 8);
+                  const handleMat = new THREE.MeshStandardMaterial({ color: "#2d1b10", roughness: 0.95 }); // dark charcoal brown wood
                   const handle = new THREE.Mesh(handleGeo, handleMat);
-                  handle.position.set(0, 0, 0.04);
-                  handle.rotation.x = Math.PI / 5.5; // tilt forward
+                  handle.position.set(0, 0.06, 0.04);
+                  handle.rotation.x = Math.PI / 6.0; // tilt slightly forward
                   torchGroup.add(handle);
 
-                  // 2. Metal clamp (cylinder ring)
-                  const clampGeo = new THREE.CylinderGeometry(0.018, 0.018, 0.025, 6);
-                  const clampMat = new THREE.MeshStandardMaterial({ color: "#374151", metalness: 0.8, roughness: 0.4 });
-                  const clamp = new THREE.Mesh(clampGeo, clampMat);
-                  clamp.position.set(0, -0.04, 0.018);
-                  clamp.rotation.x = Math.PI / 5.5;
-                  torchGroup.add(clamp);
+                  // 4. Metal cage/flared cup holding the fire (cylindrical cup structure)
+                  const cupGeo = new THREE.CylinderGeometry(0.026, 0.014, 0.055, 8, 1, true); // open cylinder
+                  const cup = new THREE.Mesh(cupGeo, ironMat);
+                  cup.position.set(0, 0.13, 0.072);
+                  cup.rotation.x = Math.PI / 6.0;
+                  torchGroup.add(cup);
 
-                  // 3. Glowing flame cone
-                  const flameGeo = new THREE.ConeGeometry(0.028, 0.075, 5);
-                  const flameMat = new THREE.MeshBasicMaterial({ color: "#ea580c" });
-                  const flame = new THREE.Mesh(flameGeo, flameMat);
-                  flame.position.set(0, 0.08, 0.075);
-                  flame.rotation.x = Math.PI / 5.5;
-                  torchGroup.add(flame);
+                  // 5. Burning glowing charcoal base (inside cup)
+                  const coalGeo = new THREE.SphereGeometry(0.015, 6, 6);
+                  const coalMat = new THREE.MeshBasicMaterial({ color: "#ef4444" }); // glowing hot red coal base
+                  const coal = new THREE.Mesh(coalGeo, coalMat);
+                  coal.position.set(0, 0.12, 0.07);
+                  coal.rotation.x = Math.PI / 6.0;
+                  torchGroup.add(coal);
 
-                  // 4. PointLight (warm flickering point light)
+                  // 6. Layered flame core (Double overlapping cones with distinct colors for volumetric flame depth)
+                  const flameGroup = new THREE.Group();
+                  flameGroup.position.set(0, 0.16, 0.088);
+                  flameGroup.rotation.x = Math.PI / 6.0;
+
+                  // Outer flame (large soft orange)
+                  const outerFlameGeo = new THREE.ConeGeometry(0.025, 0.075, 6);
+                  const outerFlameMat = new THREE.MeshBasicMaterial({ color: "#f97316", transparent: true, opacity: 0.85 });
+                  const outerFlame = new THREE.Mesh(outerFlameGeo, outerFlameMat);
+                  flameGroup.add(outerFlame);
+
+                  // Inner flame (small intense yellow core)
+                  const innerFlameGeo = new THREE.ConeGeometry(0.013, 0.045, 6);
+                  const innerFlameMat = new THREE.MeshBasicMaterial({ color: "#fbbf24" });
+                  const innerFlame = new THREE.Mesh(innerFlameGeo, innerFlameMat);
+                  innerFlame.position.set(0, -0.01, 0); // slightly lower inside outer flame
+                  flameGroup.add(innerFlame);
+
+                  torchGroup.add(flameGroup);
+
+                  // 7. PointLight (warm flickering light)
                   const torchLight = new THREE.PointLight("#ea580c", 2.2, 4.0);
-                  torchLight.position.set(0, 0.11, 0.09);
+                  torchLight.position.set(0, 0.18, 0.10);
                   torchLight.castShadow = false;
                   torchGroup.add(torchLight);
 
@@ -1062,11 +1050,11 @@ export class CanvasRenderer {
 
                   cellGroup.add(torchGroup);
 
-                  // Register torch light for flickering animation
+                  // Register torch light and flame group for flickering animation
                   if (this.torches) {
                     this.torches.push({
                       light: torchLight,
-                      flame: flame,
+                      flame: flameGroup,
                       baseIntensity: 2.2
                     });
                   }
@@ -2060,6 +2048,7 @@ export class CanvasRenderer {
     // Update warm wall torches flickering effect (pulsing flame scales and PointLight intensities)
     if (this.torches && this.torches.length > 0) {
       const time = performance.now() * 0.005;
+      let minTorchDist = 999.0;
       this.torches.forEach((t, i) => {
         const flicker = Math.sin(time * 3.3 + i) * 0.18 + Math.cos(time * 6.7 + i * 2.1) * 0.12 + Math.sin(time * 19.3 + i * 3.4) * 0.06;
         t.light.intensity = t.baseIntensity + flicker;
@@ -2067,7 +2056,25 @@ export class CanvasRenderer {
           const s = 1.0 + flicker * 0.45;
           t.flame.scale.set(s, s * 1.25, s);
         }
+
+        // Calculate distance to nearest torch to fade ambient fire crackle loop
+        if (t.light && t.light.parent) {
+          const torchPos = new THREE.Vector3();
+          t.light.parent.getWorldPosition(torchPos);
+          const dist = Math.hypot(player.visualX - torchPos.x, player.visualY - torchPos.z);
+          if (dist < minTorchDist) {
+            minTorchDist = dist;
+          }
+        }
       });
+
+      if (this.audio && typeof this.audio.updateFireVolume === "function") {
+        this.audio.updateFireVolume(minTorchDist);
+      }
+    } else {
+      if (this.audio && typeof this.audio.updateFireVolume === "function") {
+        this.audio.updateFireVolume(999.0);
+      }
     }
 
     // Rebuild Scene Graph when loading new floor

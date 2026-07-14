@@ -187,6 +187,26 @@ function setupUI(game) {
     const btnRun = document.getElementById("btn-run");
     const btnInteract = document.getElementById("btn-interact");
     
+    // Temporarily show the game screen so buttons have physical size/positions in the DOM
+    const gameScreen = document.getElementById("screen-game");
+    const wasGameScreenHidden = gameScreen.classList.contains("hidden");
+    gameScreen.classList.remove("hidden");
+
+    // Hide gameplay panels during editing so the editor screen is clean
+    const canvasContainer = gameScreen.querySelector(".canvas-container");
+    const leftPill = document.getElementById("hud-left-pill");
+    const rightPill = document.getElementById("hud-right-pill");
+    const questsPanel = document.getElementById("hud-quests-panel");
+    const compassPanel = document.getElementById("hud-compass-panel");
+    const crosshair = document.getElementById("fps-crosshair");
+
+    if (canvasContainer) canvasContainer.style.visibility = "hidden";
+    if (leftPill) leftPill.style.visibility = "hidden";
+    if (rightPill) rightPill.style.visibility = "hidden";
+    if (questsPanel) questsPanel.style.visibility = "hidden";
+    if (compassPanel) compassPanel.style.visibility = "hidden";
+    if (crosshair) crosshair.style.visibility = "hidden";
+
     const buttonsToEdit = [
       { id: "btn-open-inventory", el: hud.btnOpenInventory },
       { id: "btn-open-map", el: btnOpenMap },
@@ -214,6 +234,7 @@ function setupUI(game) {
       b.el.style.transform = `scale(${currentScale})`;
       b.el.style.zIndex = "999";
       b.el.style.border = "2px dashed rgba(255, 255, 255, 0.4)";
+      b.el.style.touchAction = "none"; // prevent mobile page scrolling while dragging buttons!
       
       originalPositions[b.id] = {
         left: rect.left,
@@ -398,6 +419,23 @@ function setupUI(game) {
       window.removeEventListener("pointercancel", pointerUpHandler);
       slider.removeEventListener("input", sliderHandler);
       slider.disabled = true;
+
+      // Restore visibility of in-game elements
+      if (canvasContainer) canvasContainer.style.visibility = "";
+      if (leftPill) leftPill.style.visibility = "";
+      if (rightPill) rightPill.style.visibility = "";
+      if (questsPanel) questsPanel.style.visibility = "";
+      if (compassPanel) compassPanel.style.visibility = "";
+      if (crosshair) crosshair.style.visibility = "";
+      
+      buttonsToEdit.forEach(b => {
+        b.el.style.touchAction = "";
+      });
+
+      // Hide game screen if it was previously hidden
+      if (wasGameScreenHidden) {
+        gameScreen.classList.add("hidden");
+      }
     };
     
     document.getElementById("btn-hud-editor-save").onclick = saveLayout;
@@ -600,7 +638,7 @@ function setupUI(game) {
     if (hud.fuelVal && hud.fuelBar) {
       hud.fuelVal.textContent = `${Math.ceil(p.fuel)}%`;
       hud.fuelBar.style.width = `${p.fuel}%`;
-      hud.fuelBar.className = "progress-bar-fill " + (p.fuel < 25 ? "bg-red-pulse" : "bg-gold");
+      hud.fuelBar.className = "battery-fill " + (p.fuel < 25 ? "bg-red-pulse" : "bg-gold");
     }
 
     // Toggle crosshair visibility in gameplay

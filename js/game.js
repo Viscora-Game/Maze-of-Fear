@@ -587,7 +587,7 @@ export class Game {
 
     // Fuel consumption when lantern is ON
     if (this.state.lanternOn && p.fuel > 0) {
-      p.fuel = Math.max(0, p.fuel - dt * 0.25); // 0.25% battery per second (lasts 400 seconds)
+      p.fuel = Math.max(0, p.fuel - dt * (100 / 240)); // depletion in exactly 240 seconds
       if (p.fuel === 0) {
         this.state.lanternOn = false; // Turn off automatically when out of fuel
       }

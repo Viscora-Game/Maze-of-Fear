@@ -753,8 +753,11 @@ export class CanvasRenderer {
     }
     this.scene.add(this.lantern.target);
 
-    // 1b. Rain Particles System (Gloomy, moody falling rain - optimized to 400 count)
-    const rainCount = 400;
+    // Detect mobile device to scale particle counts and ensure peak 60 FPS rendering on mobile GPUs
+    const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+
+    // 1b. Rain Particles System (Gloomy, moody falling rain - dynamically scaled for mobile)
+    const rainCount = isMobile ? 120 : 400;
     const rainGeo = new THREE.BufferGeometry();
     const positions = new Float32Array(rainCount * 3);
     this.rainVelocities = [];
@@ -780,8 +783,8 @@ export class CanvasRenderer {
     this.rainParticles = new THREE.Points(rainGeo, rainMat);
     this.scene.add(this.rainParticles);
 
-    // 1c. Low-Lying Ground Fog Particles System (Infinite player-locked drifting mist)
-    const fogCount = 65;
+    // 1c. Low-Lying Ground Fog Particles System (Infinite player-locked drifting mist - dynamically scaled for mobile)
+    const fogCount = isMobile ? 20 : 65;
     const fogGeo = new THREE.BufferGeometry();
     const fogPositions = new Float32Array(fogCount * 3);
     this.fogDriftVelocities = [];
@@ -2065,6 +2068,9 @@ export class CanvasRenderer {
           if (dist < minTorchDist) {
             minTorchDist = dist;
           }
+
+          // DYNAMIC LIGHT CULLING: Only enable heavy PointLight calculations if torch is within 5.0m of camera
+          t.light.visible = (dist < 5.0);
         }
       });
 

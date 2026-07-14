@@ -159,6 +159,14 @@
         <span>🪙 <span id="hud-gold-val">0</span></span>
         <span class="hud-separator">|</span>
         <span>🪜 <span id="hud-floor-val">1</span>/<span id="hud-max-floor-val">1</span></span>
+        <span class="hud-separator">|</span>
+        <span style="display: flex; align-items: center;" class="battery-wrapper">
+          <div class="battery-shell" style="width: 38px; height: 18px; border: 1.5px solid var(--gold); border-radius: 4px; padding: 1px; display: inline-flex; align-items: center; position: relative; background: rgba(0,0,0,0.35);">
+            <div id="hud-fuel-bar" class="battery-fill bg-gold" style="height: 100%; width: 100%; border-radius: 1.5px; transition: width 0.1s linear;"></div>
+            <span id="hud-fuel-val" style="position: absolute; width: 100%; height: 100%; left: 0; top: 0; display: flex; align-items: center; justify-content: center; font-size: 0.55rem; font-weight: 900; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.85); pointer-events: none;">100%</span>
+            <div style="position: absolute; right: -3.5px; top: 4.5px; width: 2px; height: 6px; background: var(--gold); border-radius: 0 1px 1px 0;"></div>
+          </div>
+        </span>
       </div>
 
       <!-- Crosshair for FPS pointer lock -->

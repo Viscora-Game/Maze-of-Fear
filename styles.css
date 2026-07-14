@@ -1484,6 +1484,15 @@ h1, h2, h3, h4 {
 
 /* --- Mobile Device Sizing & Layout Fixes --- */
 @media (max-width: 768px), (max-height: 560px) {
+  /* 0. Mobile FPS Optimizations (Disable heavy animations and particles) */
+  .menu-bg-container img {
+    animation: none !important;
+    transform: scale(1.05) !important;
+  }
+  .dust-particle {
+    display: none !important;
+  }
+
   /* 1. Main Menu Typography scale-down */
   .game-logo {
     font-size: 2.1rem !important;

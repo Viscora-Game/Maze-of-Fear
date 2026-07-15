@@ -1231,73 +1231,67 @@ export class CanvasRenderer {
           // D. Exit Portal (Modern, beautiful gyroscopic dimensional portal aligned with corridor walls)
           if (cell.isExit) {
             const portalGroup = new THREE.Group();
-            portalGroup.position.set(0, 0.58, 0);
-            
-            // Outer glowing purple ring
-            const outerGeo = new THREE.TorusGeometry(0.32, 0.05, 8, 32);
-            const outerMat = new THREE.MeshStandardMaterial({ 
-              color: "#a855f7", 
-              emissive: "#7e22ce", 
-              emissiveIntensity: 2.5,
-              roughness: 0.2,
-              metalness: 0.8
+            portalGroup.position.set(0, 0.0, 0); // Ground-aligned gate
+
+            const ironMat = new THREE.MeshStandardMaterial({ color: "#18181b", metalness: 0.8, roughness: 0.3 });
+            const stoneMat = new THREE.MeshStandardMaterial({
+              map: this.brickTexture,
+              bumpMap: this.brickBump,
+              bumpScale: 0.06,
+              color: "#3f3f46", // Dark slate stone
+              roughness: 0.95
             });
-            const outerRing = new THREE.Mesh(outerGeo, outerMat);
-            portalGroup.add(outerRing);
-            
-            // Inner glowing cyan ring (slightly smaller)
-            const innerGeo = new THREE.TorusGeometry(0.24, 0.03, 8, 32);
-            const innerMat = new THREE.MeshStandardMaterial({ 
-              color: "#06b6d4", 
-              emissive: "#0891b2", 
-              emissiveIntensity: 2.5,
-              roughness: 0.2,
-              metalness: 0.8
-            });
-            const innerRing = new THREE.Mesh(innerGeo, innerMat);
-            portalGroup.add(innerRing);
-            
-            // Vortex core disc (semi-transparent swirling dimensional membrane)
-            const coreGeo = new THREE.CircleGeometry(0.22, 32);
-            const coreMat = new THREE.MeshStandardMaterial({
-              color: "#c084fc",
-              emissive: "#a855f7",
-              emissiveIntensity: 3.0,
-              transparent: true,
-              opacity: 0.7,
-              depthWrite: false,
+
+            // 1. Gothic Stone Archway (left column, right column, top lintel)
+            const colL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.25, 0.12), stoneMat);
+            colL.position.set(-0.44, 0.625, 0);
+            const colR = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.25, 0.12), stoneMat);
+            colR.position.set(0.44, 0.625, 0);
+            const lintel = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.12, 0.14), stoneMat);
+            lintel.position.set(0, 1.25, 0);
+            portalGroup.add(colL, colR, lintel);
+
+            // 2. Bright Golden Light Plane behind the doors (representing safety & sunlight beyond)
+            const lightPlaneGeo = new THREE.PlaneGeometry(0.76, 1.18);
+            const lightPlaneMat = new THREE.MeshBasicMaterial({ 
+              color: "#fef08a", 
               side: THREE.DoubleSide
             });
-            const coreMesh = new THREE.Mesh(coreGeo, coreMat);
-            portalGroup.add(coreMesh);
+            const lightPlane = new THREE.Mesh(lightPlaneGeo, lightPlaneMat);
+            lightPlane.position.set(0, 0.59, -0.06);
+            portalGroup.add(lightPlane);
 
-            // Small orbital core energy spheres
-            const energyGeo = new THREE.SphereGeometry(0.015, 6, 6);
-            const energyMat = new THREE.MeshBasicMaterial({ color: "#22d3ee" });
-            const energySpheres = [];
-            for (let i = 0; i < 4; i++) {
-              const sphere = new THREE.Mesh(energyGeo, energyMat);
-              portalGroup.add(sphere);
-              energySpheres.push(sphere);
-            }
+            // 3. Ancient Heavy Wooden Dungeon Double-Doors (slightly ajar/open outwards)
+            const doorL = new THREE.Mesh(new THREE.BoxGeometry(0.38, 1.15, 0.04), woodMat);
+            doorL.position.set(-0.25, 0.575, 0.12);
+            doorL.rotation.y = Math.PI / 4.0; // swing open left
             
-            // Soft cyan-purple point light for illumination - INCREASED RANGE/INTENSITY FOR GREATER VISIBILITY
-            const portalLight = new THREE.PointLight("#a855f7", 4.0, 6.0);
+            const doorR = new THREE.Mesh(new THREE.BoxGeometry(0.38, 1.15, 0.04), woodMat);
+            doorR.position.set(0.25, 0.575, 0.12);
+            doorR.rotation.y = -Math.PI / 4.0; // swing open right
+
+            // Add iron hinges/bands to make them look reinforced
+            const bandL1 = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.024, 0.045), ironMat);
+            bandL1.position.set(-0.25, 0.35 + 0.575, 0.12);
+            bandL1.rotation.y = Math.PI / 4.0;
+            const bandL2 = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.024, 0.045), ironMat);
+            bandL2.position.set(-0.25, -0.35 + 0.575, 0.12);
+            bandL2.rotation.y = Math.PI / 4.0;
+
+            const bandR1 = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.024, 0.045), ironMat);
+            bandR1.position.set(0.25, 0.35 + 0.575, 0.12);
+            bandR1.rotation.y = -Math.PI / 4.0;
+            const bandR2 = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.024, 0.045), ironMat);
+            bandR2.position.set(0.25, -0.35 + 0.575, 0.12);
+            bandR2.rotation.y = -Math.PI / 4.0;
+
+            portalGroup.add(doorL, doorR, bandL1, bandL2, bandR1, bandR2);
+
+            // 4. Soft Golden point light leaking into the dark hallway
+            const portalLight = new THREE.PointLight("#fbbf24", 5.0, 4.0);
+            portalLight.position.set(0, 0.58, -0.15); // Behind the door
             portalGroup.add(portalLight);
 
-            // Glowing vertical beacon cylinder shooting up to the sky to make the exit highly visible from down the hall
-            const beaconGeo = new THREE.CylinderGeometry(0.18, 0.18, 4.0, 16, 1, true);
-            const beaconMat = new THREE.MeshBasicMaterial({
-              color: "#c084fc",
-              transparent: true,
-              opacity: 0.25,
-              side: THREE.DoubleSide,
-              depthWrite: false
-            });
-            const beacon = new THREE.Mesh(beaconGeo, beaconMat);
-            beacon.position.y = 1.5; // stand vertically centered
-            portalGroup.add(beacon);
-            
             // Set portal orientation based on corridor direction (faces the hallway path, blocks width)
             const isWall = (tx, ty) => {
               if (tx < 0 || tx >= width || ty < 0 || ty >= height) return true;
@@ -1318,10 +1312,6 @@ export class CanvasRenderer {
             // Save references for dynamic animation
             this.exitPortals.push({
               group: portalGroup,
-              outerRing: outerRing,
-              innerRing: innerRing,
-              coreMesh: coreMesh,
-              energySpheres: energySpheres,
               light: portalLight,
               timeOffset: Math.random() * 100
             });
@@ -3074,46 +3064,13 @@ export class CanvasRenderer {
       }
     }
 
-    // Update exit portals (swirling core, opposite ring rotations, and orbital energy spheres)
+    // Update exit portals (soft warm light pulse leaking from behind the gothic doors)
     if (this.exitPortals && this.exitPortals.length > 0) {
       this.exitPortals.forEach(portal => {
         const t = (Date.now() * 0.001) + portal.timeOffset;
-        
-        // 1. Swirl and pulse core disc
-        if (portal.coreMesh) {
-          portal.coreMesh.rotation.z = t * 0.5; // spin vortex
-          const s = 1.0 + Math.sin(t * 3.0) * 0.06; // breathing pulse
-          portal.coreMesh.scale.set(s, s, 1.0);
-        }
-        
-        // 2. Rotate outer & inner rings in opposite directions
-        if (portal.outerRing) {
-          portal.outerRing.rotation.z = t * 0.8;
-          portal.outerRing.rotation.x = Math.sin(t * 0.4) * 0.15;
-        }
-        if (portal.innerRing) {
-          portal.innerRing.rotation.z = -t * 1.2;
-          portal.innerRing.rotation.y = Math.cos(t * 0.5) * 0.15;
-        }
-        
-        // 3. Orbit energy spheres around the center core
-        if (portal.energySpheres && portal.energySpheres.length > 0) {
-          const numSpheres = portal.energySpheres.length;
-          for (let i = 0; i < numSpheres; i++) {
-            const sphere = portal.energySpheres[i];
-            const angle = (t * 2.0) + (i * Math.PI * 2 / numSpheres);
-            const radius = 0.14 + Math.sin(t * 4.0 + i) * 0.02; // waving radius
-            sphere.position.set(
-              Math.cos(angle) * radius,
-              Math.sin(angle) * radius,
-              Math.sin(t * 5.0 + i) * 0.02 // slight forward/back bobbing
-            );
-          }
-        }
-        
-        // 4. Pulse light intensity slightly
         if (portal.light) {
-          portal.light.intensity = 1.6 + Math.sin(t * 4.0) * 0.3;
+          // Intense warm golden breathing pulse
+          portal.light.intensity = 4.0 + Math.sin(t * 3.5) * 1.5;
         }
       });
     }

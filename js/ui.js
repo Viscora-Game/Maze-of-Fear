@@ -1238,10 +1238,10 @@ function setupUI(game) {
     content.querySelector("#btn-key-enter").addEventListener("click", () => {
       modals.keypad.classList.add("hidden");
       if (entered === correctCode) {
-        alert(game.t("puzzle.keypadCorrect"));
+        game.showToast(game.t("puzzle.keypadCorrect"));
         onSubmit(true);
       } else {
-        alert(game.t("puzzle.keypadIncorrect"));
+        game.showToast(game.t("puzzle.keypadIncorrect"));
         onSubmit(false);
       }
     });
@@ -1667,6 +1667,7 @@ function setupUI(game) {
       if (!game.state || !game.state.mapRevealMode) return;
       
       e.preventDefault();
+      e.stopPropagation();
       
       const rect = mapCanvas.getBoundingClientRect();
       let clientX, clientY;
@@ -1686,7 +1687,8 @@ function setupUI(game) {
       const y = ((clientY - rect.top) / rect.height) * mapCanvas.height;
       
       game.revealMapAt(x, y, mapCanvas.width, mapCanvas.height);
-      closeMap();
+      // Brief delay so player can see the revealed area before the map closes
+      setTimeout(() => closeMap(), 400);
     };
     
     mapCanvas.addEventListener("click", handleMapClick);

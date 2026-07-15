@@ -15,7 +15,7 @@ export const randomEvents = [
         outcomeText: { en: "The flames glow blue. Your wounds close immediately.", tr: "Alevler mavi renkte parlıyor. Yaralarınız hemen kapanıyor." }
       },
       {
-        text: { en: "Extinguish flames for loot (Gain 20 Gold, Lose 15 Fuel)", tr: "Ganimet için ateşi söndür (20 Altın kazan, 15 Fener Yakıtı kaybet)" },
+        text: { en: "Extinguish flames for loot (Gain 20 Gold, Lose 15 Fuel)", tr: "Ganimet için ateşi söndür (20 Altın kazan, 15 Pil kaybet)" },
         effect: (p) => { p.gold += 20; p.fuel = Math.max(0, p.fuel - 15); },
         outcomeText: { en: "You throw damp earth on the fire. You find gold coins in the ashes, but the smoke dims your vision.", tr: "Ateşe nemli toprak atıyorsunuz. Küllerin arasından altın buldunuz ama duman fenerinizi kirletiyor." }
       },
@@ -58,7 +58,7 @@ export const randomEvents = [
         outcomeText: { en: "A shadow blade cuts your hand. Gold pieces drop from the ceiling onto the altar.", tr: "Gölgeden bir bıçak elinizi kesiyor. Tavandan sunağın üzerine altın sikkeler düşüyor." }
       },
       {
-        text: { en: "Sacrifice 30 Fuel (Gain a Key)", tr: "30 Fener Yakıtı kurban et (Bir Anahtar kazan)" },
+        text: { en: "Sacrifice 30 Fuel (Gain a Key)", tr: "30 Pil kurban et (Bir Anahtar kazan)" },
         requirement: (p) => p.fuel >= 30,
         effect: (p) => { p.fuel = Math.max(0, p.fuel - 30); p.inventory.key++; },
         outcomeText: { en: "The shadow absorbs your light. Out of the darkness, a rusty key materializes.", tr: "Gölge fenerinizin ışığını emiyor. Karanlığın içinden paslı bir anahtar beliriyor." }
@@ -92,7 +92,7 @@ export const randomEvents = [
             p.fuel = Math.min(100, p.fuel + 15);
           }
         },
-        outcomeText: { en: "You reach into the mossy roots. You find old lantern oil, but thorny vines scratch your arms.", tr: "Yosunlu köklerin arasına uzanıyorsunuz. Eski fener yağı buluyorsunuz ancak dikenli sarmaşıklar kollarınızı çiziyor." }
+        outcomeText: { en: "You reach into the mossy roots. You find an old battery, but thorny vines scratch your arms.", tr: "Yosunlu köklerin arasına uzanıyorsunuz. Eski bir pil buluyorsunuz ancak dikenli sarmaşıklar kollarınızı çiziyor." }
       }
     ]
   },
@@ -144,9 +144,9 @@ export const randomEvents = [
     },
     choices: [
       {
-        text: { en: "Take Lantern Fuel and Rope", tr: "Fener Yakıtı ve Halat Al" },
+        text: { en: "Take Battery and Rope", tr: "Pil ve Halat Al" },
         effect: (p) => { p.inventory.fuel++; p.inventory.rope++; },
-        outcomeText: { en: "You find a bottle of oil and a bundle of rope. Useful survival gear!", tr: "Bir şişe fener yağı ve bir rulo halat buldunuz. Faydalı ekipmanlar!" }
+        outcomeText: { en: "You find a battery pack and a bundle of rope. Useful survival gear!", tr: "Bir pil paketi ve bir rulo halat buldunuz. Faydalı ekipmanlar!" }
       },
       {
         text: { en: "Take Gold (Gain 20 Gold)", tr: "Altını Al (20 Altın kazan)" },
@@ -163,7 +163,7 @@ export const randomEvents = [
     },
     choices: [
       {
-        text: { en: "Use Lantern Fuel to melt it (Consume 30 Fuel, Gain Axe)", tr: "Fener Yakıtı ile erit (30 Yakıt harca, Balta kazan)" },
+        text: { en: "Use Battery to melt it (Consume 30 Fuel, Gain Axe)", tr: "Pil ile erit (30 Yakıt harca, Balta kazan)" },
         requirement: (p) => p.fuel >= 30,
         effect: (p) => { p.fuel = Math.max(0, p.fuel - 30); p.inventory.axe++; },
         outcomeText: { en: "The fire melts the ice, revealing a sturdy iron axe.", tr: "Ateş buzu eriterek sağlam demir bir balta ortaya çıkarıyor." }
@@ -204,7 +204,7 @@ export const randomEvents = [
       {
         text: { en: "Rummage through it (Gain 1 Cheese, 10 Fuel)", tr: "Çantayı karıştır (1 Peynir, 10 Yakıt kazan)" },
         effect: (p) => { p.inventory.cheese++; p.fuel = Math.min(100, p.fuel + 10); },
-        outcomeText: { en: "You find some old cheese and a half-empty oil flask.", tr: "Biraz eski peynir ve yarı yarıya dolu bir yağ matarası buluyorsunuz." }
+        outcomeText: { en: "You find some old cheese and a half-charged battery.", tr: "Biraz eski peynir ve yarı dolu bir pil buluyorsunuz." }
       },
       {
         text: { en: "Leave it alone", tr: "Kendi haline bırak" },
@@ -225,7 +225,7 @@ export const randomEvents = [
       {
         text: { en: "Hold your breath and run (Lose 10 HP, Lose 15 Fuel)", tr: "Nefesini tut ve koş (10 Can kaybet, 15 Yakıt kaybet)" },
         effect: (p) => { p.health = Math.max(1, p.health - 10); p.fuel = Math.max(0, p.fuel - 15); },
-        outcomeText: { en: "You escape the cloud, but the gas reacts with your lantern, burning oil rapidly.", tr: "Buluttan kaçıyorsunuz ancak gaz fenerinizle reaksiyona girerek yağı hızla yakıyor." }
+        outcomeText: { en: "You escape the cloud, but the gas reacts with your flashlight, draining the battery rapidly.", tr: "Buluttan kaçıyorsunuz ancak gaz fenerinizle reaksiyona girerek pili hızla tüketiyor." }
       },
       {
         text: { en: "Crawl slowly under the smoke (Lose 25 HP)", tr: "Dumanın altından yavaşça sürün (25 Can kaybet)" },
@@ -312,7 +312,7 @@ export const randomEvents = [
       {
         text: { en: "Struggle and crawl (Lose 25 HP, Lose 20 Fuel)", tr: "Çırpın ve sürün (25 Can kaybet, 20 Yakıt kaybet)" },
         effect: (p) => { p.health = Math.max(1, p.health - 25); p.fuel = Math.max(0, p.fuel - 20); },
-        outcomeText: { en: "You escape, but the exhausting struggle leaves you wounded and spills your oil.", tr: "Kurtuluyorsunuz ama yorucu mücadele sizi yaralıyor ve yağınızı döküyor." }
+        outcomeText: { en: "You escape, but the exhausting struggle leaves you wounded and drains your battery.", tr: "Kurtuluyorsunuz ama yorucu mücadele sizi yaralıyor ve pilinizi tüketiyor." }
       }
     ]
   },
@@ -386,8 +386,8 @@ export const deathEvents = [
   {
     id: "dying_angel",
     text: {
-      en: "A beautiful, glowing spirit descends. 'I will grant you my life force,' she says, 'but the light of your lantern will dim as a result (Lantern fuel permanently locked to 50 max).'",
-      tr: "Parıldayan güzel bir melek ruhu iniyor. 'Sana yaşam gücümü vereceğim,' diyor, 'ancak fenerinin ışığı bunun sonucunda sönecek (Fener yakıtı maks 50 ile kilitlenir).'"
+      en: "A beautiful, glowing spirit descends. 'I will grant you my life force,' she says, 'but your flashlight will dim as a result (Battery permanently locked to 50 max).'",
+      tr: "Parıldayan güzel bir melek ruhu iniyor. 'Sana yaşam gücümü vereceğim,' diyor, 'ancak fenerinin ışığı bunun sonucunda sönecek (Pil maks 50 ile kilitlenir).'"
     },
     choices: [
       {

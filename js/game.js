@@ -220,8 +220,9 @@ export class Game {
       },
 
       merchantStock: {
+        fuel: { cost: 10, count: 3 },
         rope: { cost: 15, count: 2 },
-        axe: { cost: 20, count: 1 } // Added axe so player can clear roadblocks
+        axe: { cost: 20, count: 1 }
       },
 
       lastCheckPoint: { x: 1.5, y: 1.5, floor: 0 },
@@ -1149,7 +1150,7 @@ export class Game {
                 if (this.onStateChange) this.onStateChange();
                 this.triggerNPCInteraction(cell);
               } else {
-                alert(this.t("npc.merchant.noGold"));
+                if (this.showToast) this.showToast(this.t("npc.merchant.noGold"));
                 this.state.gameState = "playing";
               }
             }
@@ -1282,7 +1283,7 @@ export class Game {
         ? `${this.t("directionNames." + vert)}-${this.t("directionNames." + horiz)}` 
         : this.t("directionNames." + (vert || horiz || "south"));
         
-      alert(`${this.t("compassActive")} (${dirTrans})`);
+      if (this.showToast) this.showToast(`${this.t("compassActive")} (${dirTrans})`);
       this.audio.playUnlock();
     }
   }
@@ -1292,7 +1293,7 @@ export class Game {
     if (!s || !s.mapRevealMode) return;
     
     // Check if player actually has a map piece
-    const p = this.player;
+    const p = this.state.player;
     if (!p || !p.inventory || (p.inventory.map_piece || 0) <= 0) {
       s.mapRevealMode = false;
       const instructions = document.getElementById("map-instructions");
@@ -1648,7 +1649,7 @@ export class Game {
               this.state.gameState = "playing";
               this.revealArea(Math.floor(p.x), Math.floor(p.y));
               if (this.onStateChange) this.onStateChange();
-              alert(c.outcomeText[this.lang]);
+              if (this.showToast) this.showToast(c.outcomeText[this.lang]);
             } else {
               this.triggerGameOver();
             }

@@ -4,7 +4,8 @@ export class AudioEngine {
     this.masterGain = null;
     this.windNode = null;
     this.noiseBuffer = null;
-    this.muted = false;
+    this.muted = (localStorage.getItem("maze_muted") === "true");
+    this.volume = parseFloat(localStorage.getItem("maze_volume") || "1.0");
     this.soundBuffers = {}; // Cache for loaded audio file buffers
     this._loadingPromises = {}; // Prevent duplicate loading
     this.rapidHeartbeatInterval = null;
@@ -26,7 +27,9 @@ export class AudioEngine {
     try {
       this.ctx = new (window.AudioContext || window.webkitAudioContext)();
       this.masterGain = this.ctx.createGain();
-      this.masterGain.gain.setValueAtTime(this.muted ? 0 : 0.3, this.ctx.currentTime);
+      // Apply the global volume scaled down by 0.3 maximum gain
+      const startingGain = this.muted ? (0.1 * 0.3) : (this.volume * 0.3);
+      this.masterGain.gain.setValueAtTime(startingGain, this.ctx.currentTime);
       this.masterGain.connect(this.ctx.destination);
       this.ctx.resume(); // Force immediate resume on user click gesture
       this.createNoiseBuffer();
@@ -88,10 +91,22 @@ export class AudioEngine {
 
   toggleMute() {
     this.muted = !this.muted;
+    localStorage.setItem("maze_muted", this.muted.toString());
     if (this.masterGain && this.ctx) {
-      this.masterGain.gain.setValueAtTime(this.muted ? 0 : 0.3, this.ctx.currentTime);
+      // If muted, clamp to 10% volume (0.1 * 0.3) instead of 0!
+      const targetGain = this.muted ? (0.1 * 0.3) : (this.volume * 0.3);
+      this.masterGain.gain.setValueAtTime(targetGain, this.ctx.currentTime);
     }
     return this.muted;
+  }
+
+  setVolume(vol) {
+    this.volume = Math.max(0.1, vol); // Minimum volume is 10%
+    localStorage.setItem("maze_volume", this.volume.toString());
+    if (this.masterGain && this.ctx) {
+      const targetGain = this.muted ? (0.1 * 0.3) : (this.volume * 0.3);
+      this.masterGain.gain.setValueAtTime(targetGain, this.ctx.currentTime);
+    }
   }
 
   createNoiseBuffer() {

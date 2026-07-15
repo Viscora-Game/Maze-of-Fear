@@ -77,7 +77,9 @@ function setupUI(game) {
     // Re-render settings buttons check
     document.getElementById("btn-lang-tr").classList.toggle("active", game.lang === "tr");
     document.getElementById("btn-lang-en").classList.toggle("active", game.lang === "en");
-    document.getElementById("btn-sound").textContent = game.audio.muted ? game.t("soundOff") : game.t("soundOn");
+    const soundBtn = document.getElementById("btn-sound");
+    soundBtn.textContent = game.audio.muted ? game.t("soundOff") : game.t("soundOn");
+    soundBtn.classList.toggle("btn-danger", game.audio.muted);
 
     // Difficulty buttons toggle
     const difficulties = ["easy", "medium", "hard"];
@@ -191,6 +193,9 @@ function setupUI(game) {
     const gameScreen = document.getElementById("screen-game");
     const wasGameScreenHidden = gameScreen.classList.contains("hidden");
     gameScreen.classList.remove("hidden");
+    
+    // Apply special dark HUD editor preview backdrop style class
+    gameScreen.classList.add("hud-editor-active");
 
     // Hide gameplay panels during editing so the editor screen is clean
     const canvasContainer = gameScreen.querySelector(".canvas-container");
@@ -206,6 +211,25 @@ function setupUI(game) {
     if (questsPanel) questsPanel.style.visibility = "hidden";
     if (compassPanel) compassPanel.style.visibility = "hidden";
     if (crosshair) crosshair.style.visibility = "hidden";
+
+    // Force control containers to be visible on all screen sizes/types during layout editing
+    const leftControls = gameScreen.querySelector(".floating-left-controls");
+    const rightControls = gameScreen.querySelector(".floating-right-controls");
+    if (leftControls) {
+      leftControls.style.display = "flex";
+      leftControls.style.visibility = "visible";
+    }
+    if (rightControls) {
+      rightControls.style.display = "flex";
+      rightControls.style.visibility = "visible";
+    }
+
+    // Temporarily make the joystick base visible at 70% opacity for preview alignment
+    const joystickBase = document.getElementById("joystick-base");
+    if (joystickBase) {
+      joystickBase.style.opacity = "0.7";
+      joystickBase.style.border = "2px dashed var(--violet)";
+    }
 
     const buttonsToEdit = [
       { id: "btn-open-inventory", el: hud.btnOpenInventory },
@@ -297,41 +321,13 @@ function setupUI(game) {
       selectedButton.el.style.top = `${newTop}px`;
     };
     
-    const checkOverlap = (el1, el2) => {
-      const r1 = el1.getBoundingClientRect();
-      const r2 = el2.getBoundingClientRect();
-      return !(r1.right < r2.left + 5 || 
-               r1.left > r2.right - 5 || 
-               r1.bottom < r2.top + 5 || 
-               r1.top > r2.bottom - 5);
-    };
-    
     const pointerUpHandler = (e) => {
       if (!dragActive || e.pointerId !== dragTouchId) return;
       dragActive = false;
       dragTouchId = null;
       
-      let overlap = false;
-      for (let btn of buttonsToEdit) {
-        if (btn.id !== selectedButton.id && checkOverlap(selectedButton.el, btn.el)) {
-          overlap = true;
-          break;
-        }
-      }
-      
-      if (btnSettings && checkOverlap(selectedButton.el, btnSettings)) {
-        overlap = true;
-      }
-      
-      if (overlap) {
-        const orig = originalPositions[selectedButton.id];
-        selectedButton.el.style.left = `${orig.left}px`;
-        selectedButton.el.style.top = `${orig.top}px`;
-        selectedButton.el.style.border = "3px solid var(--red)";
-        setTimeout(() => {
-          selectedButton.el.style.border = "3px solid var(--violet)";
-        }, 300);
-      } else {
+      // Smoothly update position coordinates - no overlap snap-back restrictions!
+      if (selectedButton) {
         originalPositions[selectedButton.id].left = parseFloat(selectedButton.el.style.left);
         originalPositions[selectedButton.id].top = parseFloat(selectedButton.el.style.top);
       }
@@ -344,27 +340,7 @@ function setupUI(game) {
       
       selectedButton.el.style.transform = `scale(${scale})`;
       selectedButton.el.dataset.scale = scale.toString();
-      
-      let overlap = false;
-      for (let btn of buttonsToEdit) {
-        if (btn.id !== selectedButton.id && checkOverlap(selectedButton.el, btn.el)) {
-          overlap = true;
-          break;
-        }
-      }
-      if (btnSettings && checkOverlap(selectedButton.el, btnSettings)) {
-        overlap = true;
-      }
-      
-      if (overlap) {
-        const orig = originalPositions[selectedButton.id];
-        slider.value = Math.round(orig.scale * 100);
-        sliderVal.textContent = `${slider.value}%`;
-        selectedButton.el.style.transform = `scale(${orig.scale})`;
-        selectedButton.el.dataset.scale = orig.scale.toString();
-      } else {
-        originalPositions[selectedButton.id].scale = scale;
-      }
+      originalPositions[selectedButton.id].scale = scale;
     };
     
     window.addEventListener("pointerdown", pointerDownHandler, { passive: false });
@@ -420,6 +396,9 @@ function setupUI(game) {
       slider.removeEventListener("input", sliderHandler);
       slider.disabled = true;
 
+      // Remove backdrop style class
+      gameScreen.classList.remove("hud-editor-active");
+
       // Restore visibility of in-game elements
       if (canvasContainer) canvasContainer.style.visibility = "";
       if (leftPill) leftPill.style.visibility = "";
@@ -428,6 +407,22 @@ function setupUI(game) {
       if (compassPanel) compassPanel.style.visibility = "";
       if (crosshair) crosshair.style.visibility = "";
       
+      // Restore default controls container styles
+      if (leftControls) {
+        leftControls.style.display = "";
+        leftControls.style.visibility = "";
+      }
+      if (rightControls) {
+        rightControls.style.display = "";
+        rightControls.style.visibility = "";
+      }
+
+      // Reset joystick preview state
+      if (joystickBase) {
+        joystickBase.style.border = "";
+      }
+      updateAnalogModeUI();
+
       buttonsToEdit.forEach(b => {
         b.el.style.touchAction = "";
       });
@@ -447,6 +442,21 @@ function setupUI(game) {
   setTimeout(() => {
     updateAnalogModeUI();
     applySavedHUDLayout();
+
+    // Initialize audio volume slider and percentage label from saved state
+    const volSlider = document.getElementById("settings-volume-slider");
+    const volVal = document.getElementById("settings-volume-val");
+    if (volSlider && volVal) {
+      const savedVol = Math.round(game.audio.volume * 100);
+      volSlider.value = savedVol;
+      volVal.textContent = `${savedVol}%`;
+      
+      // If initialized in a muted/creepy state, display the warnings
+      if (game.audio.muted) {
+        document.getElementById("btn-sound").classList.add("btn-danger");
+        document.getElementById("creepy-sound-warning").classList.remove("hidden");
+      }
+    }
   }, 100);
 
   document.getElementById("btn-play").addEventListener("click", () => {
@@ -564,7 +574,65 @@ function setupUI(game) {
     const isMuted = game.audio.toggleMute();
     localStorage.setItem("maze_audio", (!isMuted).toString());
     translateUI();
+
+    const warningEl = document.getElementById("creepy-sound-warning");
+    const volSlider = document.getElementById("settings-volume-slider");
+    const volVal = document.getElementById("settings-volume-val");
+
+    if (isMuted) {
+      if (warningEl) warningEl.classList.remove("hidden");
+      if (volSlider) volSlider.value = 10;
+      if (volVal) volVal.textContent = "10%";
+      
+      // Force volume to 10% even on mute toggle!
+      game.audio.setVolume(0.1);
+      
+      // Play a creepy stinger sound as an easter egg!
+      if (game.audio && typeof game.audio.init === "function") {
+        game.audio.init();
+        if (typeof game.audio._playBuffer === "function") {
+          game.audio._playBuffer("slow_stinger", 0.7);
+        }
+      }
+    } else {
+      if (warningEl) warningEl.classList.add("hidden");
+      const savedVol = Math.round(game.audio.volume * 100);
+      if (volSlider) volSlider.value = savedVol;
+      if (volVal) volVal.textContent = `${savedVol}%`;
+      game.audio.setVolume(game.audio.volume);
+    }
   });
+
+  const settingsVolSlider = document.getElementById("settings-volume-slider");
+  if (settingsVolSlider) {
+    settingsVolSlider.addEventListener("input", (e) => {
+      let val = parseInt(e.target.value);
+      const warningEl = document.getElementById("creepy-sound-warning");
+      const volVal = document.getElementById("settings-volume-val");
+
+      if (val === 0) {
+        // Snap back to 10% - NO MUTE ALLOWED!
+        e.target.value = 10;
+        val = 10;
+        
+        if (warningEl) warningEl.classList.remove("hidden");
+        game.audio.setVolume(0.1);
+        
+        // Trigger a creepy stinger sound!
+        if (game.audio && typeof game.audio.init === "function") {
+          game.audio.init();
+          if (typeof game.audio._playBuffer === "function") {
+            game.audio._playBuffer("slow_stinger", 0.7);
+          }
+        }
+      } else {
+        if (warningEl) warningEl.classList.add("hidden");
+        game.audio.setVolume(val / 100);
+      }
+      
+      if (volVal) volVal.textContent = `${val}%`;
+    });
+  }
 
   const difficulties = ["easy", "medium", "hard"];
   difficulties.forEach(diff => {

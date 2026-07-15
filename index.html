@@ -60,50 +60,70 @@
     </div>
 
     <!-- 2. SETTINGS SCREEN -->
-    <div id="screen-settings" class="screen hidden">
-      <h2 class="glow-text text-violet text-3xl mb-8" data-t="settings">Settings</h2>
+    <div id="screen-settings" class="screen hidden" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box;">
+      <h2 class="glow-text text-violet text-3xl mb-8" data-t="settings" style="margin-top: 0;">Settings</h2>
 
-      <!-- Language Toggle -->
-      <div class="settings-group">
-        <div class="settings-label" data-t="language">Language</div>
-        <div class="btn-group">
-          <button class="btn btn-toggle active" id="btn-lang-tr">Türkçe</button>
-          <button class="btn btn-toggle" id="btn-lang-en">English</button>
+      <!-- Settings Cards Grid -->
+      <div class="settings-grid">
+        
+        <!-- CARD 1: Game & Language Settings -->
+        <div class="settings-card">
+          <div class="settings-card-title">🌐 <span data-t="language">Language</span></div>
+          <div class="settings-group">
+            <div class="settings-label" data-t="language">Dil Seçeneği</div>
+            <div class="btn-group">
+              <button class="btn btn-toggle active" id="btn-lang-tr">Türkçe</button>
+              <button class="btn btn-toggle" id="btn-lang-en">English</button>
+            </div>
+          </div>
+          <div class="settings-group" style="margin-bottom: 0;">
+            <div class="settings-label" data-t="difficulty">Maze Size</div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <button class="btn btn-toggle w-full active" id="btn-diff-easy" data-t="diffEasy">Small (11x11)</button>
+              <button class="btn btn-toggle w-full" id="btn-diff-medium" data-t="diffMedium">Medium (15x15)</button>
+              <button class="btn btn-toggle w-full" id="btn-diff-hard" data-t="diffHard">Large (21x21)</button>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <!-- Sound FX Toggle -->
-      <div class="settings-group">
-        <div class="settings-label" data-t="sound">Sound FX</div>
-        <button class="btn w-full" id="btn-sound">ON</button>
-      </div>
-
-      <!-- Difficulty (Maze size) selection -->
-      <div class="settings-group">
-        <div class="settings-label" data-t="difficulty">Maze Size</div>
-        <div class="flex flex-col gap-2">
-          <button class="btn btn-toggle w-full active" id="btn-diff-easy" data-t="diffEasy">Small (11x11)</button>
-          <button class="btn btn-toggle w-full mt-2" id="btn-diff-medium" data-t="diffMedium">Medium (15x15)</button>
-          <button class="btn btn-toggle w-full mt-2" id="btn-diff-hard" data-t="diffHard">Large (21x21)</button>
+        <!-- CARD 2: Sound Settings (Creepy volume control slider) -->
+        <div class="settings-card">
+          <div class="settings-card-title">🔊 <span data-t="soundTitle">Ses Ayarları</span></div>
+          <div class="settings-group">
+            <div class="settings-label" data-t="sound">Ses Efektleri</div>
+            <button class="btn w-full" id="btn-sound">AÇIK / ON</button>
+          </div>
+          <div class="settings-group" style="margin-bottom: 0;">
+            <div class="settings-label" data-t="soundVolume">Ses Seviyesi</div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <input type="range" id="settings-volume-slider" min="0" max="100" value="100" style="flex: 1; accent-color: var(--violet); cursor: pointer; height: 6px; border-radius: 3px;">
+              <span id="settings-volume-val" style="font-size: 0.85rem; color: var(--cyan); font-weight: bold; width: 40px; text-align: right;">100%</span>
+            </div>
+          </div>
+          <div id="creepy-sound-warning" class="creepy-warning hidden" data-t="creepyWarning">
+            Sesi Kapatarak Kaçabileceğini mi sandın?
+          </div>
         </div>
-      </div>
 
-      <!-- Analog Mode Settings -->
-      <div class="settings-group">
-        <div class="settings-label" data-t="analogMode">Analog Mode</div>
-        <div class="btn-group">
-          <button class="btn btn-toggle active" id="btn-analog-floating" data-t="analogFloating">Gizli/Yüzen</button>
-          <button class="btn btn-toggle" id="btn-analog-fixed" data-t="analogFixed">Sabit</button>
+        <!-- CARD 3: Interface & Control Settings -->
+        <div class="settings-card">
+          <div class="settings-card-title">🎮 <span data-t="controlsTitle">Kontroller</span></div>
+          <div class="settings-group">
+            <div class="settings-label" data-t="analogMode">Analog Tarzı</div>
+            <div class="btn-group">
+              <button class="btn btn-toggle active" id="btn-analog-floating" data-t="analogFloating">Gizli/Yüzen</button>
+              <button class="btn btn-toggle" id="btn-analog-fixed" data-t="analogFixed">Sabit</button>
+            </div>
+          </div>
+          <div class="settings-group" style="margin-bottom: 0;">
+            <div class="settings-label" data-t="hudCustom">Arayüz Özelleştirme</div>
+            <button class="btn w-full btn-success glow-box" id="btn-edit-hud" data-t="btnEditHud" style="background: linear-gradient(135deg, #10b981, #047857); border: none; font-weight: bold; letter-spacing: 0.5px;">Buton Düzenini Özelleştir</button>
+          </div>
         </div>
+
       </div>
 
-      <!-- Customize HUD Layout -->
-      <div class="settings-group">
-        <div class="settings-label" data-t="hudCustom">HUD Layout</div>
-        <button class="btn w-full btn-success" id="btn-edit-hud" data-t="btnEditHud">Buton Düzenini Özelleştir</button>
-      </div>
-
-      <button class="btn btn-danger btn-back" data-t="back">Back</button>
+      <button class="btn btn-danger btn-back" data-t="back" style="width: 100%; max-width: 200px; padding: 12px; margin-top: 10px;">Back</button>
     </div>
 
     <!-- 3. HOW TO PLAY SCREEN -->

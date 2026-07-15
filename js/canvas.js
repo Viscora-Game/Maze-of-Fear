@@ -1003,7 +1003,11 @@ export class CanvasRenderer {
                   arm.rotation.x = Math.PI / 4.0; // tilt outward
                   torchGroup.add(arm);
 
-                  // 3. Wooden handle/holder (angled cylinder)
+                  // 3. Create a unified tilted Stem Group (locks handle, cup, coal, and flame together)
+                  const stemGroup = new THREE.Group();
+                  stemGroup.position.set(0, 0.02, 0.015); // pivot base connecting to the arm
+
+                  // A. Wooden handle/holder
                   const handleGeo = new THREE.CylinderGeometry(0.013, 0.009, 0.16, 8);
                   const handleMat = new THREE.MeshPhongMaterial({ 
                     color: "#5c4033", // warm brown wood
@@ -1011,18 +1015,16 @@ export class CanvasRenderer {
                     shininess: 10
                   });
                   const handle = new THREE.Mesh(handleGeo, handleMat);
-                  handle.position.set(0, 0.06, 0.04);
-                  handle.rotation.x = Math.PI / 6.0; // tilt slightly forward
-                  torchGroup.add(handle);
+                  handle.position.set(0, 0.08, 0); // centered along local Y axis
+                  stemGroup.add(handle);
 
-                  // 4. Metal cage/flared cup holding the fire (cylindrical cup structure)
-                  const cupGeo = new THREE.CylinderGeometry(0.026, 0.014, 0.055, 8, 1, true); // open cylinder
+                  // B. Metal flared cup
+                  const cupGeo = new THREE.CylinderGeometry(0.026, 0.014, 0.055, 8, 1, true);
                   const cup = new THREE.Mesh(cupGeo, ironMat);
-                  cup.position.set(0, 0.13, 0.072);
-                  cup.rotation.x = Math.PI / 6.0;
-                  torchGroup.add(cup);
+                  cup.position.set(0, 0.15, 0); // positioned at the top of handle
+                  stemGroup.add(cup);
 
-                  // 5. Burning glowing charcoal base (inside cup)
+                  // C. Burning glowing charcoal base (inside cup)
                   const coalGeo = new THREE.SphereGeometry(0.016, 8, 8);
                   const coalMat = new THREE.MeshPhongMaterial({
                     color: "#292524",
@@ -1031,57 +1033,59 @@ export class CanvasRenderer {
                     shininess: 5
                   });
                   const coal = new THREE.Mesh(coalGeo, coalMat);
-                  coal.position.set(0, 0.12, 0.07);
-                  coal.rotation.x = Math.PI / 6.0;
-                  torchGroup.add(coal);
+                  coal.position.set(0, 0.14, 0); // nestled inside the cup
+                  stemGroup.add(coal);
 
-                  // 6. Layered volumetric teardrop flame (overlapping Sphere + Cone meshes for organic look)
+                  // D. Layered volumetric flame (grouped to move dynamically relative to stem Y)
                   const flameGroup = new THREE.Group();
-                  flameGroup.position.set(0, 0.155, 0.085);
-                  flameGroup.rotation.x = Math.PI / 6.0;
+                  flameGroup.position.set(0, 0.175, 0); // positioned directly above the cup
 
-                  // A. Outer flame (large soft orange glow)
+                  // Outer flame (large soft orange glow)
                   const outerFlameGroup = new THREE.Group();
                   const outerBaseGeo = new THREE.SphereGeometry(0.024, 12, 12);
                   const outerFlameMat = new THREE.MeshBasicMaterial({ color: "#f97316", transparent: true, opacity: 0.70 });
                   const outerBase = new THREE.Mesh(outerBaseGeo, outerFlameMat);
-                  outerBase.position.set(0, -0.015, 0);
+                  outerBase.position.set(0, 0, 0);
                   outerFlameGroup.add(outerBase);
 
                   const outerTipGeo = new THREE.ConeGeometry(0.024, 0.072, 12);
                   const outerTip = new THREE.Mesh(outerTipGeo, outerFlameMat);
-                  outerTip.position.set(0, 0.015, 0);
+                  outerTip.position.set(0, 0.03, 0);
                   outerFlameGroup.add(outerTip);
                   flameGroup.add(outerFlameGroup);
 
-                  // B. Inner flame (intense yellow hot core)
+                  // Inner flame (intense yellow core)
                   const innerFlameGroup = new THREE.Group();
                   const innerBaseGeo = new THREE.SphereGeometry(0.012, 12, 12);
                   const innerFlameMat = new THREE.MeshBasicMaterial({ color: "#fbbf24", transparent: true, opacity: 0.90 });
                   const innerBase = new THREE.Mesh(innerBaseGeo, innerFlameMat);
-                  innerBase.position.set(0, -0.012, 0);
+                  innerBase.position.set(0, 0, 0);
                   innerFlameGroup.add(innerBase);
 
                   const innerTipGeo = new THREE.ConeGeometry(0.012, 0.040, 12);
                   const innerTip = new THREE.Mesh(innerTipGeo, innerFlameMat);
-                  innerTip.position.set(0, 0.008, 0);
+                  innerTip.position.set(0, 0.02, 0);
                   innerFlameGroup.add(innerTip);
                   flameGroup.add(innerFlameGroup);
 
-                  // C. Base hot blue core (realistic natural gas/hot fire base)
+                  // Base hot blue core
                   const blueBaseGeo = new THREE.SphereGeometry(0.006, 8, 8);
                   const blueFlameMat = new THREE.MeshBasicMaterial({ color: "#0ea5e9", transparent: true, opacity: 0.75 });
                   const blueBase = new THREE.Mesh(blueBaseGeo, blueFlameMat);
-                  blueBase.position.set(0, -0.022, 0);
+                  blueBase.position.set(0, -0.012, 0);
                   flameGroup.add(blueBase);
 
-                  torchGroup.add(flameGroup);
+                  stemGroup.add(flameGroup);
 
-                  // 7. PointLight (warm flickering light)
+                  // E. PointLight (warm light source moving along with the tilted cup)
                   const torchLight = new THREE.PointLight("#ea580c", 2.2, 4.0);
-                  torchLight.position.set(0, 0.18, 0.10);
+                  torchLight.position.set(0, 0.19, 0.02);
                   torchLight.castShadow = false;
-                  torchGroup.add(torchLight);
+                  stemGroup.add(torchLight);
+
+                  // Apply 30 degrees tilt forward to the entire stem assembly
+                  stemGroup.rotation.x = Math.PI / 6.0;
+                  torchGroup.add(stemGroup);
 
                   // Set position at eye level (y = 0.46)
                   torchGroup.position.set(mount.x, 0.46, mount.z);

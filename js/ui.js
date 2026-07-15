@@ -53,61 +53,22 @@ function setupUI(game) {
     end: document.getElementById("modal-end")
   };
 
-  // 2. State & Screen Management Helper with Horror Static Transition
-  let isTransitioning = false;
+  // 2. State & Screen Management Helper with Minimal CSS Entry Transition
   const showScreen = (screenName) => {
-    const overlay = document.getElementById("horror-transition-overlay");
-    if (!overlay || isTransitioning) {
-      // Fallback if overlay is not found or already transitioning
-      Object.entries(screens).forEach(([name, el]) => {
-        if (name === screenName) el.classList.remove("hidden");
-        else el.classList.add("hidden");
-      });
-      return;
-    }
-
-    isTransitioning = true;
-    overlay.classList.remove("hidden");
-    
-    // Trigger sudden glitch stinger effect on the active screen
-    const currentActiveScreen = document.querySelector(".screen:not(.hidden)");
-    if (currentActiveScreen) {
-      currentActiveScreen.classList.add("screen-glitch-shake");
-    }
-
-    // Force layout reflow
-    void overlay.offsetWidth;
-    overlay.classList.add("active");
-
-    setTimeout(() => {
-      // Mid-point of transition: Switch screens
-      Object.entries(screens).forEach(([name, el]) => {
-        if (name === screenName) el.classList.remove("hidden");
-        else el.classList.add("hidden");
-      });
-
-      // Remove glitch shake from the old screen
-      if (currentActiveScreen) {
-        currentActiveScreen.classList.remove("screen-glitch-shake");
+    Object.entries(screens).forEach(([name, el]) => {
+      if (name === screenName) {
+        el.classList.remove("hidden");
+        // Apply a quick, hardware-accelerated fade-in transition only on entering screen (excluding Three.js game screen to prevent size bugs)
+        if (screenName !== "game") {
+          el.classList.remove("screen-fade-in");
+          void el.offsetWidth; // Force layout reflow to restart animation
+          el.classList.add("screen-fade-in");
+        }
+      } else {
+        el.classList.add("hidden");
+        el.classList.remove("screen-fade-in");
       }
-
-      // Add a slight fade-in entrance to the new screen
-      const newActiveScreen = document.querySelector(".screen:not(.hidden)");
-      if (newActiveScreen) {
-        newActiveScreen.classList.add("screen-fade-in");
-        setTimeout(() => {
-          newActiveScreen.classList.remove("screen-fade-in");
-        }, 300);
-      }
-
-      // Fade out the transition overlay
-      overlay.classList.remove("active");
-
-      setTimeout(() => {
-        overlay.classList.add("hidden");
-        isTransitioning = false;
-      }, 250); // Match CSS transition duration
-    }, 200); // Glitch transition peak
+    });
   };
 
   const translateUI = () => {

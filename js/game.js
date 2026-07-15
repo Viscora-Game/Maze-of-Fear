@@ -29,6 +29,14 @@ const jumpscareConfigs = [
   { url: jumpscare6Url, filter: "hue-rotate(330deg) saturate(3.5) contrast(1.5) sepia(0.8)" }
 ];
 
+// Preload jumpscare images to avoid filesystem/network lag spikes during gameplay
+if (typeof Image !== "undefined") {
+  jumpscareConfigs.forEach(config => {
+    const img = new Image();
+    img.src = config.url;
+  });
+}
+
 export class Game {
   constructor() {
     this.lang = localStorage.getItem("maze_lang") || "tr";

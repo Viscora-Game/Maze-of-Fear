@@ -1998,3 +1998,68 @@ h1, h2, h3, h4 {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(139, 92, 246, 0.75);
 }
+
+/* --- Premium Retro Dialogue UI Styling --- */
+.dialog-avatar-box {
+  width: 56px;
+  height: 56px;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6), inset 0 0 8px rgba(0, 0, 0, 0.8);
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dialog-portrait-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.dialog-crt-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%, 
+    rgba(0, 0, 0, 0.35) 50%
+  ), linear-gradient(
+    90deg,
+    rgba(255, 0, 0, 0.06),
+    rgba(0, 255, 0, 0.02),
+    rgba(0, 0, 255, 0.06)
+  );
+  background-size: 100% 4px, 6px 100%;
+}
+
+.dialog-text {
+  font-family: 'Courier New', Courier, monospace !important;
+  font-size: 0.95rem !important;
+  color: #a7f3d0 !important; /* Retro Terminal Emerald green */
+  text-shadow: 0 0 2px rgba(167, 243, 208, 0.6);
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+}
+
+.dialog-typewriter-prompt {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-family: monospace;
+  margin-top: 8px;
+  text-align: right;
+  animation: blink 1.2s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}

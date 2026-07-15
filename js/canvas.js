@@ -158,6 +158,59 @@ export class CanvasRenderer {
     const jumpscareUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
     this.jumpscareTexture = loader.load(jumpscareUrl);
 
+    // Precompiled Shadow Monster Geometries and Materials (prevents WebGL compile-time lag spikes during gameplay)
+    const ShaderMatClass = THREE.ShaderMaterial || THREE.MeshBasicMaterial;
+    this.monsterFaceGeom = new THREE.PlaneGeometry(1.2, 1.2);
+    this.monsterFaceMat = new ShaderMatClass({
+      uniforms: {
+        map: { value: this.jumpscareTexture },
+        opacity: { value: 1.0 },
+        time: { value: 0.0 }
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform sampler2D map;
+        uniform float opacity;
+        uniform float time;
+        varying vec2 vUv;
+        void main() {
+          vec2 distortedUv = vUv;
+          distortedUv.x += sin(vUv.y * 8.0 + time * 3.5) * 0.012;
+          distortedUv.y += cos(vUv.x * 8.0 + time * 2.8) * 0.012;
+          
+          vec4 texColor = texture2D(map, distortedUv);
+          
+          if (texColor.r < 0.14 && texColor.g < 0.14 && texColor.b < 0.14) {
+            discard;
+          }
+          
+          float dist = distance(vUv, vec2(0.5, 0.5));
+          float edgeFade = 1.0 - smoothstep(0.32, 0.50, dist);
+          
+          gl_FragColor = vec4(texColor.rgb, texColor.a * opacity * edgeFade);
+        }
+      `,
+      map: this.jumpscareTexture,
+      transparent: true,
+      opacity: 1.0,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    });
+
+    this.monsterSmokeGeom = new THREE.SphereGeometry(1.0, 8, 8); // shared unit sphere
+    this.monsterSmokeMat = new THREE.MeshBasicMaterial({
+      color: 0x080808,
+      transparent: true,
+      opacity: 0.25,
+      depthWrite: false
+    });
+
     // 3. Initialize Scene Graph & Fog (Gloomy, dark night-fog atmosphere - no day/night cycle)
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color("#080a0f"); // Pitch black / dark night sky
@@ -2672,54 +2725,7 @@ export class CanvasRenderer {
           this.shadowMonsterMesh = new THREE.Group();
           
           // 1. Billboard Jumpscare Face Plane
-          const faceGeom = new THREE.PlaneGeometry(1.2, 1.2);
-          const ShaderMatClass = THREE.ShaderMaterial || THREE.MeshBasicMaterial;
-          const faceMat = new ShaderMatClass({
-            uniforms: {
-              map: { value: this.jumpscareTexture },
-              opacity: { value: 1.0 },
-              time: { value: 0.0 }
-            },
-            vertexShader: `
-              varying vec2 vUv;
-              void main() {
-                vUv = uv;
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-              }
-            `,
-            fragmentShader: `
-              uniform sampler2D map;
-              uniform float opacity;
-              uniform float time;
-              varying vec2 vUv;
-              void main() {
-                // 1. Gaseous boiling ripple distortion
-                vec2 distortedUv = vUv;
-                distortedUv.x += sin(vUv.y * 8.0 + time * 3.5) * 0.012;
-                distortedUv.y += cos(vUv.x * 8.0 + time * 2.8) * 0.012;
-                
-                vec4 texColor = texture2D(map, distortedUv);
-                
-                // 2. Discard black/dark background pixels
-                if (texColor.r < 0.14 && texColor.g < 0.14 && texColor.b < 0.14) {
-                  discard;
-                }
-                
-                // 3. Smooth vignette edge fade (makes plane boundaries perfectly invisible)
-                float dist = distance(vUv, vec2(0.5, 0.5));
-                float edgeFade = 1.0 - smoothstep(0.32, 0.50, dist);
-                
-                gl_FragColor = vec4(texColor.rgb, texColor.a * opacity * edgeFade);
-              }
-            `,
-            // Fallback parameters for MeshBasicMaterial
-            map: this.jumpscareTexture,
-            transparent: true,
-            opacity: 1.0,
-            side: THREE.DoubleSide,
-            depthWrite: false
-          });
-          const faceMesh = new THREE.Mesh(faceGeom, faceMat);
+          const faceMesh = new THREE.Mesh(this.monsterFaceGeom, this.monsterFaceMat);
           faceMesh.name = "face";
           faceMesh.position.set(0, 0.75, 0.25); // Lowered to player eye level (y=0.75) and shifted slightly forward (z=0.25)
           this.shadowMonsterMesh.add(faceMesh);
@@ -2731,14 +2737,8 @@ export class CanvasRenderer {
           
           for (let i = 0; i < 15; i++) {
             const size = 0.25 + Math.random() * 0.25; // Smaller, more compact smoke body spheres (0.25m to 0.50m)
-            const geom = new THREE.SphereGeometry(size, 8, 8);
-            const mat = new THREE.MeshBasicMaterial({
-              color: 0x080808,
-              transparent: true,
-              opacity: 0.25,
-              depthWrite: false
-            });
-            const mesh = new THREE.Mesh(geom, mat);
+            const mesh = new THREE.Mesh(this.monsterSmokeGeom, this.monsterSmokeMat);
+            mesh.scale.set(size, size, size); // scale the shared unit sphere geometry
             mesh.position.set(
               (Math.random() - 0.5) * 0.45,
               0.75 + (Math.random() - 0.5) * 0.45, // Lowered center height to y=0.75

@@ -1033,17 +1033,29 @@ function setupUI(game) {
       return;
     }
 
-    // Determine NPC avatar/emoji
-    let npcEmoji = "🚧";
+    // Determine NPC avatar/portrait
+    const portraitExplorer = new URL('../assets/portrait_explorer.png', import.meta.url).href;
+    const portraitSage = new URL('../assets/portrait_sage.png', import.meta.url).href;
+    const portraitMerchant = new URL('../assets/portrait_merchant.png', import.meta.url).href;
+    const portraitChild = new URL('../assets/portrait_child.png', import.meta.url).href;
+    const portraitMouse = new URL('../assets/portrait_mouse.png', import.meta.url).href;
+
+    let npcPortrait = portraitSage;
     const titleLower = config.title.toLowerCase();
     if (titleLower.includes("gezgin") || titleLower.includes("traveler") || titleLower.includes("bilge") || titleLower.includes("sage")) {
-      npcEmoji = "🧙";
+      npcPortrait = portraitSage;
     } else if (titleLower.includes("tüccar") || titleLower.includes("merchant")) {
-      npcEmoji = "👳";
+      npcPortrait = portraitMerchant;
     } else if (titleLower.includes("çocuk") || titleLower.includes("child") || titleLower.includes("genç") || titleLower.includes("youth") || titleLower.includes("teen")) {
-      npcEmoji = "👦";
+      npcPortrait = portraitChild;
     } else if (titleLower.includes("fare") || titleLower.includes("sıçan") || titleLower.includes("mouse") || titleLower.includes("rat")) {
-      npcEmoji = "🐀";
+      npcPortrait = portraitMouse;
+    }
+
+    // Clear any active typewriter interval
+    if (window._dialogTypewriterInterval) {
+      clearInterval(window._dialogTypewriterInterval);
+      window._dialogTypewriterInterval = null;
     }
 
     const container = document.createElement("div");
@@ -1053,21 +1065,28 @@ function setupUI(game) {
       <!-- NPC Speech Bubble on Left -->
       <div class="dialog-npc-side animate-fade-in-left">
         <div class="dialog-portrait-wrapper">
-          <div class="dialog-avatar" style="background: var(--violet);">${npcEmoji}</div>
+          <div class="dialog-avatar-box">
+            <img src="${npcPortrait}" class="dialog-portrait-img">
+            <div class="dialog-crt-overlay"></div>
+          </div>
           <span class="dialog-name">${config.title}</span>
         </div>
-        <div class="dialog-bubble">
-          <p style="margin: 0;">${config.text}</p>
+        <div class="dialog-bubble dialog-bubble-npc">
+          <p class="dialog-text" style="margin: 0;"></p>
+          <div class="dialog-typewriter-prompt">${game.state.lang === "tr" ? "▶ Hızlandırmak için buraya tıkla" : "▶ Click here to skip"}</div>
         </div>
       </div>
 
       <!-- Player Options Bubble on Right -->
       <div class="dialog-player-side animate-fade-in-right">
         <div class="dialog-portrait-wrapper">
-          <div class="dialog-avatar" style="background: var(--cyan);">🕵️</div>
+          <div class="dialog-avatar-box">
+            <img src="${portraitExplorer}" class="dialog-portrait-img">
+            <div class="dialog-crt-overlay"></div>
+          </div>
           <span class="dialog-name">${game.state.lang === "tr" ? "Kaşif" : "Explorer"}</span>
         </div>
-        <div class="dialog-bubble" style="display: flex; flex-direction: column; gap: 8px;">
+        <div class="dialog-bubble dialog-bubble-player" style="display: flex; flex-direction: column; gap: 8px;">
           <div class="modal-buttons" id="dialog-buttons" style="flex-direction: column; width: 100%;"></div>
         </div>
       </div>
@@ -1075,7 +1094,13 @@ function setupUI(game) {
 
     modals.dialog.appendChild(container);
 
+    const dialogTextEl = container.querySelector(".dialog-text");
     const btnContainer = container.querySelector("#dialog-buttons");
+    const promptEl = container.querySelector(".dialog-typewriter-prompt");
+    const npcSide = container.querySelector(".dialog-npc-side");
+
+    // Build choices inside container
+    btnContainer.innerHTML = "";
     config.choices.forEach(c => {
       const btn = document.createElement("button");
       btn.className = "btn-modal btn-primary";
@@ -1083,11 +1108,58 @@ function setupUI(game) {
       btn.style.margin = "0";
       btn.textContent = c.text;
       btn.addEventListener("click", () => {
+        if (window._dialogTypewriterInterval) {
+          clearInterval(window._dialogTypewriterInterval);
+          window._dialogTypewriterInterval = null;
+        }
         modals.dialog.classList.add("hidden");
         c.action();
       });
       btnContainer.appendChild(btn);
     });
+
+    // Temporarily disable buttons
+    btnContainer.style.opacity = "0.2";
+    btnContainer.style.pointerEvents = "none";
+    btnContainer.style.transition = "opacity 0.25s ease";
+
+    const textToType = config.text;
+    let index = 0;
+    let visibleText = "";
+
+    const finishTypewriter = () => {
+      if (window._dialogTypewriterInterval) {
+        clearInterval(window._dialogTypewriterInterval);
+        window._dialogTypewriterInterval = null;
+      }
+      dialogTextEl.innerHTML = textToType.replace(/\n/g, '<br>');
+      btnContainer.style.opacity = "1";
+      btnContainer.style.pointerEvents = "auto";
+      if (promptEl) promptEl.style.display = "none";
+    };
+
+    window._dialogTypewriterInterval = setInterval(() => {
+      if (index >= textToType.length) {
+        finishTypewriter();
+        return;
+      }
+      if (textToType[index] === '\n') {
+        visibleText += "<br>";
+        index++;
+      } else {
+        visibleText += textToType[index];
+        index++;
+      }
+      dialogTextEl.innerHTML = visibleText;
+    }, 15);
+
+    if (npcSide) {
+      npcSide.addEventListener("click", () => {
+        if (window._dialogTypewriterInterval) {
+          finishTypewriter();
+        }
+      });
+    }
   };
 
   // Chest Overlay

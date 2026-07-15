@@ -1624,38 +1624,56 @@ export class CanvasRenderer {
                  turban.position.y = 0.95; turban.scale.set(1.1, 0.75, 1.1); npcSubGroup.add(turban);
                }
             } else if (cell.npc.id === "well") {
-              // Stone Well
+              // Stone Well Base (Waist-height, realistic scale)
               const wellBase = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.25, 0.25, 0.20, 12),
+                new THREE.CylinderGeometry(0.45, 0.45, 0.75, 16),
                 new THREE.MeshStandardMaterial({ 
                   map: this.brickTexture, 
                   bumpMap: this.brickBump,
                   bumpScale: 0.06,
-                  color: "#888888",
+                  color: "#555555",
                   roughness: 0.9 
                 })
               );
-              wellBase.position.y = 0.1;
+              wellBase.position.y = 0.375;
               npcSubGroup.add(wellBase);
 
-              // Water
+              // Water surface inside the well
               const water = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.21, 0.21, 0.02, 10),
-                new THREE.MeshStandardMaterial({ color: "#2563eb", roughness: 0.1, metalness: 0.8 })
+                new THREE.CylinderGeometry(0.41, 0.41, 0.02, 12),
+                new THREE.MeshStandardMaterial({ 
+                  color: "#1e3a8a", 
+                  roughness: 0.05, 
+                  metalness: 0.9,
+                  emissive: "#0f172a" 
+                })
               );
-              water.position.y = 0.18;
+              water.position.y = 0.68;
               npcSubGroup.add(water);
 
-              // Wooden posts & roof
-              const postL = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.38, 6), woodMat);
-              postL.position.set(-0.2, 0.28, 0);
-              const postR = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.38, 6), woodMat);
-              postR.position.set(0.2, 0.28, 0);
+              // Wooden posts on both sides
+              const postL = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.2, 8), woodMat);
+              postL.position.set(-0.38, 0.6, 0);
+              const postR = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.2, 8), woodMat);
+              postR.position.set(0.38, 0.6, 0);
               npcSubGroup.add(postL, postR);
 
-              const roof = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.03, 0.32), woodMat);
-              roof.position.set(0, 0.46, 0);
-              npcSubGroup.add(roof);
+              // Horizontal winding spool/crank post
+              const spool = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.76, 8), woodMat);
+              spool.rotation.z = Math.PI / 2;
+              spool.position.set(0, 1.05, 0);
+              npcSubGroup.add(spool);
+
+              // Beautiful sloped wooden/shingled roof (two angled boxes)
+              const roofL = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.03, 0.65), woodMat);
+              roofL.position.set(-0.22, 1.25, 0);
+              roofL.rotation.z = -Math.PI / 8; // sloped left
+              
+              const roofR = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.03, 0.65), woodMat);
+              roofR.position.set(0.22, 1.25, 0);
+              roofR.rotation.z = Math.PI / 8; // sloped right
+
+              npcSubGroup.add(roofL, roofR);
              } else if (cell.npc.id === "child") {
                if (this.childModel) {
                  const clone = this.childModel.clone();
@@ -1834,25 +1852,40 @@ export class CanvasRenderer {
             const type = cell.obstacle.type;
             if (type === "gate") {
               const ironMat = new THREE.MeshStandardMaterial({ color: "#27272a", metalness: 0.85, roughness: 0.2 });
-              const goldTipMat = new THREE.MeshStandardMaterial({ color: "#eab308", metalness: 0.9, roughness: 0.1 });
+              const goldTipMat = new THREE.MeshStandardMaterial({ color: "#d97706", metalness: 0.9, roughness: 0.1 });
               
-              // Vertical bars (spanning from -0.48 to +0.48, touching the 1.0 corridor walls)
-              for (let i = -0.48; i <= 0.48; i += 0.12) {
-                const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 1.25), ironMat);
-                bar.position.set(i, 0.625, 0);
+              // 1. Solid Outer Door Frame (left post, right post, top header)
+              const frameL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.25, 0.04), ironMat);
+              frameL.position.set(-0.48, 0.625, 0);
+              const frameR = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.25, 0.04), ironMat);
+              frameR.position.set(0.48, 0.625, 0);
+              const frameTop = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.04, 0.04), ironMat);
+              frameTop.position.set(0, 1.23, 0);
+              obsSubGroup.add(frameL, frameR, frameTop);
+
+              // 2. Vertical bars (spaced between the frames)
+              for (let i = -0.40; i <= 0.40; i += 0.133) {
+                const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 1.21), ironMat);
+                bar.position.set(i, 0.605, 0);
                 obsSubGroup.add(bar);
                 
                 // Gold spikes at the top (touching the ceiling)
                 const spike = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.06, 6), goldTipMat);
-                spike.position.set(i, 1.28, 0);
+                spike.position.set(i, 1.24, 0);
                 obsSubGroup.add(spike);
               }
-              // Horizontal crossbeams (top & bottom, scaled to block the 1.0 corridor)
-              const beamTop = new THREE.Mesh(new THREE.BoxGeometry(0.98, 0.024, 0.024), ironMat);
-              beamTop.position.set(0, 1.20, 0);
-              const beamBottom = new THREE.Mesh(new THREE.BoxGeometry(0.98, 0.024, 0.024), ironMat);
+              // 3. Horizontal crossbeams (top & bottom structural support)
+              const beamTop = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.024, 0.024), ironMat);
+              beamTop.position.set(0, 1.15, 0);
+              const beamBottom = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.024, 0.024), ironMat);
               beamBottom.position.set(0, 0.08, 0);
-              obsSubGroup.add(beamTop, beamBottom);
+              
+              // 4. Large Golden Padlock in the center (clearly signaling it is a locked door!)
+              const lockBody = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.09, 0.04), goldTipMat);
+              lockBody.position.set(0, 0.60, 0.025);
+              const lockShackle = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.01, 8, 12, Math.PI), ironMat);
+              lockShackle.position.set(0, 0.65, 0.025);
+              obsSubGroup.add(beamTop, beamBottom, lockBody, lockShackle);
             } else if (type === "ivy") {
               // 🌿 Realistic Overgrown Thorny Ivy/Foliage Barricade
               const branchMat = new THREE.MeshStandardMaterial({ color: "#2d1a10", roughness: 0.95 }); // dark brown woody branches
@@ -1950,17 +1983,32 @@ export class CanvasRenderer {
             } else if (type === "codeLock") {
               // Detailed Code Lock Gate: iron bars + a number pad panel in the center
               const ironMat = new THREE.MeshStandardMaterial({ color: "#27272a", metalness: 0.85, roughness: 0.2 });
+              const goldTipMat = new THREE.MeshStandardMaterial({ color: "#d97706", metalness: 0.9, roughness: 0.1 });
               
-              // Full-width iron bars (same as gate style)
-              for (let i = -0.48; i <= 0.48; i += 0.16) {
-                const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 1.25), ironMat);
-                bar.position.set(i, 0.625, 0);
+              // 1. Solid Outer Door Frame (left post, right post, top header)
+              const frameL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.25, 0.04), ironMat);
+              frameL.position.set(-0.48, 0.625, 0);
+              const frameR = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.25, 0.04), ironMat);
+              frameR.position.set(0.48, 0.625, 0);
+              const frameTop = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.04, 0.04), ironMat);
+              frameTop.position.set(0, 1.23, 0);
+              obsSubGroup.add(frameL, frameR, frameTop);
+
+              // 2. Vertical bars (spaced between the frames)
+              for (let i = -0.40; i <= 0.40; i += 0.16) {
+                const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 1.21), ironMat);
+                bar.position.set(i, 0.605, 0);
                 obsSubGroup.add(bar);
+
+                // Gold spikes at the top (touching the ceiling)
+                const spike = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.06, 6), goldTipMat);
+                spike.position.set(i, 1.24, 0);
+                obsSubGroup.add(spike);
               }
-              // Horizontal crossbeams
-              const beamT = new THREE.Mesh(new THREE.BoxGeometry(0.98, 0.024, 0.024), ironMat);
-              beamT.position.set(0, 1.20, 0);
-              const beamB = new THREE.Mesh(new THREE.BoxGeometry(0.98, 0.024, 0.024), ironMat);
+              // 3. Horizontal crossbeams
+              const beamT = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.024, 0.024), ironMat);
+              beamT.position.set(0, 1.15, 0);
+              const beamB = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.024, 0.024), ironMat);
               beamB.position.set(0, 0.08, 0);
               obsSubGroup.add(beamT, beamB);
               
@@ -2019,8 +2067,8 @@ export class CanvasRenderer {
               obsSubGroup.add(keyPlate);
             }
             
-            // Determine orientation of gate/barricade/codeLock obstacles based on adjacent regions and walls
-            if (type === "gate" || type === "barricade" || type === "codeLock") {
+            // Determine orientation of gate/barricade/codeLock/ivy obstacles based on adjacent regions and walls
+            if (type === "gate" || type === "barricade" || type === "codeLock" || type === "ivy") {
               const isWall = (tx, ty) => {
                 if (tx < 0 || tx >= width || ty < 0 || ty >= height) return true;
                 return grid[ty][tx].type === "wall";

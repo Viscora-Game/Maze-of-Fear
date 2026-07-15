@@ -577,11 +577,17 @@ export class Game {
       this.pantSoundTimer -= dt;
       if (this.pantSoundTimer <= 0) {
         this.audio.playPanting();
-        // Dynamic interval: scales from 0.72s (rapid continuous loops at 0% stamina) to 1.10s (at 20% stamina)
-        this.pantSoundTimer = 0.72 + (p.stamina / 20.0) * 0.38;
+        // Dynamic interval: matches actual breathing sound duration (~1.5s to 2.2s) to prevent overlaps
+        this.pantSoundTimer = 1.5 + (p.stamina / 20.0) * 0.7;
       }
-    } else {
+    } else if (p.stamina > 35.0) {
+      // Only reset the timer when stamina has recovered sufficiently, preventing oscillation
       this.pantSoundTimer = 0;
+    } else {
+      // Between 20% and 35% stamina, let the timer continue ticking down if it was active
+      if (this.pantSoundTimer > 0) {
+        this.pantSoundTimer -= dt;
+      }
     }
 
     this.revealArea(cellX, cellY);
@@ -1591,8 +1597,14 @@ export class Game {
       if (canMoveTo(sm.x, nextY)) sm.y = nextY;
       
     } else {
-      // Chase player using smart BFS pathfinding through corridors
-      const nextStep = this.findPathToPlayer(sm.x, sm.y, p.x, p.y, grid, s.width, s.height);
+      // Recalculate chase path only every 12 ticks (~200ms) to prevent high-frequency CPU/BFS overhead
+      sm.pathRecalcTimer = (sm.pathRecalcTimer || 0) - dt;
+      if (sm.pathRecalcTimer <= 0 || !sm.lastNextStep) {
+        sm.pathRecalcTimer = 0.20; // 200ms cooldown
+        sm.lastNextStep = this.findPathToPlayer(sm.x, sm.y, p.x, p.y, grid, s.width, s.height);
+      }
+      
+      const nextStep = sm.lastNextStep;
       if (nextStep) {
         let chaseX = nextStep.x - sm.x;
         let chaseY = nextStep.y - sm.y;

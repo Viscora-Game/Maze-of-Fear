@@ -973,10 +973,10 @@ export class CanvasRenderer {
             if (wallN || wallS || wallE || wallW) {
               if (Math.random() < 0.055) { // 5.5% probability per path cell adjacent to a wall
                 const walls = [];
-                if (wallN) walls.push({ x: 0, z: -0.49, rotationY: 0 }); // mounts on North wall, faces South
-                if (wallS) walls.push({ x: 0, z: 0.49, rotationY: Math.PI }); // mounts on South wall, faces North
-                if (wallE) walls.push({ x: 0.49, z: 0, rotationY: -Math.PI / 2 }); // mounts on East wall, faces West
-                if (wallW) walls.push({ x: -0.49, z: 0, rotationY: Math.PI / 2 }); // mounts on West wall, faces East
+                if (wallN) walls.push({ x: 0, z: -0.478, rotationY: 0 }); // mounts on North wall, faces South
+                if (wallS) walls.push({ x: 0, z: 0.478, rotationY: Math.PI }); // mounts on South wall, faces North
+                if (wallE) walls.push({ x: 0.478, z: 0, rotationY: -Math.PI / 2 }); // mounts on East wall, faces West
+                if (wallW) walls.push({ x: -0.478, z: 0, rotationY: Math.PI / 2 }); // mounts on West wall, faces East
 
                 if (walls.length > 0) {
                   const mount = walls[Math.floor(Math.random() * walls.length)];
@@ -986,7 +986,12 @@ export class CanvasRenderer {
 
                   // 1. Backing metal wall plate (bracket)
                   const bracketGeo = new THREE.BoxGeometry(0.04, 0.10, 0.015);
-                  const ironMat = new THREE.MeshStandardMaterial({ color: "#1e293b", metalness: 0.85, roughness: 0.35 });
+                  const ironMat = new THREE.MeshPhongMaterial({ 
+                    color: "#334155", // bright slate gray
+                    emissive: "#291507", // warm orange glow response from fire
+                    shininess: 30,
+                    side: THREE.DoubleSide
+                  });
                   const bracket = new THREE.Mesh(bracketGeo, ironMat);
                   bracket.position.set(0, 0.05, -0.01);
                   torchGroup.add(bracket);
@@ -1000,7 +1005,11 @@ export class CanvasRenderer {
 
                   // 3. Wooden handle/holder (angled cylinder)
                   const handleGeo = new THREE.CylinderGeometry(0.013, 0.009, 0.16, 8);
-                  const handleMat = new THREE.MeshStandardMaterial({ color: "#2d1b10", roughness: 0.95 }); // dark charcoal brown wood
+                  const handleMat = new THREE.MeshPhongMaterial({ 
+                    color: "#5c4033", // warm brown wood
+                    emissive: "#2d1608", // warm flame glow response
+                    shininess: 10
+                  });
                   const handle = new THREE.Mesh(handleGeo, handleMat);
                   handle.position.set(0, 0.06, 0.04);
                   handle.rotation.x = Math.PI / 6.0; // tilt slightly forward
@@ -1015,11 +1024,11 @@ export class CanvasRenderer {
 
                   // 5. Burning glowing charcoal base (inside cup)
                   const coalGeo = new THREE.SphereGeometry(0.016, 8, 8);
-                  const coalMat = new THREE.MeshStandardMaterial({
-                    color: "#1c1917", // dark charcoal grey base
-                    emissive: "#ef4444", // deep hot ember glow
-                    emissiveIntensity: 3.5,
-                    roughness: 0.95
+                  const coalMat = new THREE.MeshPhongMaterial({
+                    color: "#292524",
+                    emissive: "#ef4444",
+                    emissiveIntensity: 4.0,
+                    shininess: 5
                   });
                   const coal = new THREE.Mesh(coalGeo, coalMat);
                   coal.position.set(0, 0.12, 0.07);

@@ -201,30 +201,6 @@ h1, h2, h3, h4 {
 .logo-container {
   margin-bottom: 40px;
   position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.game-logo-img {
-  width: 250px;
-  height: 250px;
-  object-fit: contain;
-  margin-bottom: 12px;
-  filter: drop-shadow(0 0 15px rgba(220, 38, 38, 0.45)) drop-shadow(0 0 30px rgba(0, 0, 0, 0.7));
-  border-radius: 50%;
-  animation: logo-pulse 4s infinite ease-in-out;
-}
-
-@keyframes logo-pulse {
-  0%, 100% {
-    transform: scale(1.0);
-    filter: drop-shadow(0 0 15px rgba(220, 38, 38, 0.4)) drop-shadow(0 0 30px rgba(0, 0, 0, 0.7));
-  }
-  50% {
-    transform: scale(1.03);
-    filter: drop-shadow(0 0 25px rgba(220, 38, 38, 0.65)) drop-shadow(0 0 40px rgba(0, 0, 0, 0.9));
-  }
 }
 
 /* Glitch Title Horror Effect */
@@ -242,7 +218,7 @@ h1, h2, h3, h4 {
 
 .game-logo::before,
 .game-logo::after {
-  content: "SEÇİMLER LABİRENTİ";
+  content: "MAZE OF FEAR";
   position: absolute;
   top: 0;
   left: 0;
@@ -1518,16 +1494,11 @@ h1, h2, h3, h4 {
   }
 
   /* 1. Main Menu Typography scale-down */
-  .game-logo-img {
-    width: 160px !important;
-    height: 160px !important;
-    margin-bottom: 8px !important;
-  }
   .game-logo {
     font-size: 2.1rem !important;
   }
   .game-subtitle {
-    font-size: 0.80rem !important;
+    font-size: 0.85rem !important;
   }
 
   /* 2. General screens padding */

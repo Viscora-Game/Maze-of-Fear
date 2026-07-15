@@ -469,6 +469,9 @@ h1, h2, h3, h4 {
   width: 100%;
   max-width: 900px;
   margin: 0 auto 25px auto;
+  overflow-y: auto;
+  max-height: 72vh;
+  padding: 4px;
 }
 
 /* Stack cards in a single column on mobile portrait and landscape viewports for perfect readability */
@@ -1876,4 +1879,122 @@ h1, h2, h3, h4 {
   45% { transform: rotate(-90deg); }
   90% { transform: rotate(0deg); }
   100% { transform: rotate(0deg); }
+}
+
+/* --- Mobile Landscape Sizing Adjustments (max-height: 520px) --- */
+@media (max-height: 520px) {
+  /* 1. Main Menu Compactness */
+  .logo-container {
+    margin-bottom: 12px !important;
+  }
+  .game-logo {
+    font-size: 1.85rem !important;
+  }
+  .game-subtitle {
+    font-size: 0.72rem !important;
+    margin-top: 4px !important;
+  }
+  .menu-buttons {
+    gap: 8px !important;
+    max-width: 250px !important;
+  }
+  #screen-menu .btn {
+    padding: 10px 14px !important;
+    font-size: 0.76rem !important;
+  }
+
+  /* 2. Settings Grid (2 Columns Side-by-Side in Landscape Mobile) */
+  .settings-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+    max-height: 52vh !important;
+    padding: 2px !important;
+  }
+  .settings-card {
+    padding: 10px 14px !important;
+    border-radius: 10px !important;
+  }
+  .settings-card-title {
+    font-size: 0.78rem !important;
+    margin-bottom: 6px !important;
+  }
+  .settings-group {
+    margin-bottom: 6px !important;
+  }
+  .settings-label {
+    font-size: 0.7rem !important;
+    margin-bottom: 4px !important;
+  }
+  .btn-group {
+    gap: 4px !important;
+  }
+  .btn-group .btn, .settings-card .btn {
+    padding: 6px 10px !important;
+    font-size: 0.7rem !important;
+  }
+  input[type="range"] {
+    height: 4px !important;
+  }
+  .settings-card p, .settings-card ul, .settings-card li {
+    font-size: 0.68rem !important;
+    line-height: 1.35 !important;
+  }
+  .btn-back {
+    margin-top: 6px !important;
+    padding: 8px !important;
+    font-size: 0.72rem !important;
+    max-width: 140px !important;
+  }
+
+  /* 3. Pause & Modal Overlay Screens (Game Over, Victory, Code Lock) */
+  .modal-content {
+    padding: 10px 16px !important;
+    border-radius: 12px !important;
+    max-width: 440px !important;
+  }
+  .end-emoji {
+    font-size: 2.2rem !important;
+    margin-bottom: 4px !important;
+  }
+  .modal-title {
+    font-size: 1.15rem !important;
+    margin-bottom: 4px !important;
+  }
+  .modal-text {
+    font-size: 0.7rem !important;
+    margin: 4px 0 8px 0 !important;
+    line-height: 1.35 !important;
+  }
+  .stats-panel {
+    padding: 8px 12px !important;
+    margin-bottom: 8px !important;
+    font-size: 0.74rem !important;
+    gap: 4px !important;
+  }
+  .btn-modal {
+    padding: 8px !important;
+    font-size: 0.72rem !important;
+    margin-bottom: 4px !important;
+  }
+  .modal-buttons {
+    gap: 6px !important;
+  }
+}
+
+/* --- Custom Sleek Theme Scrollbar --- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.35);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.4);
+  border-radius: 3px;
+  transition: background 0.3s;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.75);
 }

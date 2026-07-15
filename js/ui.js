@@ -1390,7 +1390,7 @@ function setupUI(game) {
       
       <div class="stats-panel glass py-4 px-6 mb-6 inline-block text-left w-full">
         <div>💰 ${game.t("gold")}: <span class="font-bold text-gold">${game.state.player.gold}</span></div>
-        <div>👣 ${game.t("back")} / Steps: <span class="font-bold text-violet">${game.state.stepsTaken}</span></div>
+        <div>👣 ${game.t("steps")}: <span class="font-bold text-violet">${Math.round(game.state.stepsTaken)}</span></div>
         <div>🧩 ${game.t("difficulty")}: <span class="font-bold text-cyan">${game.t("diff" + game.difficulty.charAt(0).toUpperCase() + game.difficulty.slice(1))}</span></div>
       </div>
 

@@ -1029,10 +1029,10 @@ export class AudioEngine {
   playShadowSpawn() {
     if (this.muted || !this.ctx) return;
 
-    // Play creepy ambience + stinger combo for dramatic spawn
-    this._playBuffer("creepy_ambience", 0.50);
-    setTimeout(() => this._playBuffer("piano_stinger", 0.30), 150);
-    return; // Always use real files, no synthesized fallback needed
+    // Play scary stinger + heavy monster roar for dominant spawn alert
+    this._playBuffer("monster_roar", 0.90, 0.95); // Slightly pitched down for extra weight
+    this._playBuffer("stinger", 0.80);
+    return;
   }
 
   // Shadow monster burn sound (when flashlight hits it)

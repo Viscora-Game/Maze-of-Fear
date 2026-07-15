@@ -240,8 +240,8 @@ export class Game {
         y: 0,
         floor: 0,
         burnTime: 0,
-        spawnTimer: 5.0 + Math.random() * 5.0, // first spawn within 5-10 seconds
-        speed: 1.35, // balanced speed
+        spawnTimer: 30.0 + Math.random() * 15.0, // first spawn within 30-45 seconds (breathing room)
+        speed: 1.55, // balanced speed increased by 15% (was 1.35)
         soundTimer: 0.5
       }
     };
@@ -1494,7 +1494,7 @@ export class Game {
           sm.y = pick.y + 0.5;
           sm.floor = s.currentFloor;
           sm.burnTime = 0;
-          sm.speed = 1.25 + Math.random() * 0.15;
+          sm.speed = (1.25 + Math.random() * 0.15) * 1.15; // Increased by 15%
           sm.soundTimer = 0.5; // Play sound immediately after spawn
           this.audio.playShadowSpawn();
         }
@@ -1546,7 +1546,7 @@ export class Game {
             // If burned for 2 seconds, it dissolves
             if (sm.burnTime >= 2.0) {
               sm.active = false;
-              sm.spawnTimer = 12.0 + Math.random() * 8.0; // respawn after 12-20 seconds
+              sm.spawnTimer = 30.0 + Math.random() * 15.0; // respawn after 30-45 seconds (was 12-20s)
               this.audio.playShadowBurn();
               if (this.onStateChange) this.onStateChange();
               return;

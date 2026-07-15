@@ -261,7 +261,11 @@ export class Game {
         if (this.state.gameState !== "playing") return;
         if (type === "chest") this.triggerChestInteraction(cell);
         else if (type === "npc") this.triggerNPCInteraction(cell);
-        else if (type === "obstacle") this.triggerObstacleInteraction(cell);
+        else if (type === "obstacle") {
+          if (cell.obstacle && !cell.obstacle.resolved) {
+            this.triggerObstacleInteraction(cell);
+          }
+        }
         else if (type === "clue") this.triggerClueInteraction(cell);
         else if (type === "lore") this.triggerLoreInteraction(cell);
       };
@@ -1067,16 +1071,40 @@ export class Game {
         choices.push({
           text: this.t("npc.child.giveWater"),
           action: () => {
-              inv.bucket_full--;
-              inv.bucket++;
-              inv.key++;
-              this.state.quests.childState = "solved";
-              npc.disappearing = true;
-              npc.disappearStartTime = Date.now();
-              this.audio.playGhostFade();
-              this.audio.playPickup();
-              this.state.gameState = "playing";
-              if (this.onStateChange) this.onStateChange();
+            // Quest reward processing
+            inv.bucket_full--;
+            inv.bucket++;
+            inv.key++;
+            this.state.quests.childState = "solved";
+            this.audio.playPickup();
+            if (this.onStateChange) this.onStateChange();
+
+            // Screen 1: Thanks & Reward Description
+            this.onDialog({
+              title: this.t("npc.child.name"),
+              text: this.t("npc.child.thanks"),
+              choices: [{
+                text: this.state.lang === "tr" ? "Dinle..." : "Listen...",
+                action: () => {
+                  // Screen 2: Final mysterious lore quote
+                  this.onDialog({
+                    title: this.t("npc.child.name"),
+                    text: this.t("npc.child.finalQuote"),
+                    choices: [{
+                      text: this.t("npc.traveler.farewell") || "Sohbeti Bitir",
+                      action: () => {
+                        // Ghost fade away trigger
+                        npc.disappearing = true;
+                        npc.disappearStartTime = Date.now();
+                        this.audio.playGhostFade();
+                        this.state.gameState = "playing";
+                        if (this.onStateChange) this.onStateChange();
+                      }
+                    }]
+                  });
+                }
+              }]
+            });
           }
         });
       } else {
@@ -1090,40 +1118,61 @@ export class Game {
         choices.push({
           text: this.t("npc.mouse.giveCheese"),
           action: () => {
+            // Quest reward processing
             inv.cheese--;
             this.state.quests.mouseState = "solved";
-            
-            // Trigger 3D run-away animation
-            if (cell.npc) {
-              cell.npc.disappearing = true;
-              cell.npc.disappearStartTime = Date.now();
-            }
 
-            // Clear adjacent wall nodes (mouse eats through paths)
-            const dirs = [[0, -1], [0, 1], [-1, 0], [1, 0]];
-            dirs.forEach(([dx, dy]) => {
-              const nx = cell.x + dx;
-              const ny = cell.y + dy;
-              if (nx >= 0 && nx < this.state.width && ny >= 0 && ny < this.state.height) {
-                const n = this.state.floors[this.state.currentFloor][ny][nx];
-                if (n && n.type === "wall") {
-                  n.type = "floor";
-                  n.region = cell.region;
+            // Screen 1: Thanks & Short-cut path hint
+            this.onDialog({
+              title: this.t("npc.mouse.name"),
+              text: this.t("npc.mouse.thanks"),
+              choices: [{
+                text: this.state.lang === "tr" ? "Bekle..." : "Wait...",
+                action: () => {
+                  // Screen 2: Final mysterious loop lore quote
+                  this.onDialog({
+                    title: this.t("npc.mouse.name"),
+                    text: this.t("npc.mouse.finalQuote"),
+                    choices: [{
+                      text: this.t("npc.traveler.farewell") || "Sohbeti Bitir",
+                      action: () => {
+                        // Runaway animation and path carving
+                        if (cell.npc) {
+                          cell.npc.disappearing = true;
+                          cell.npc.disappearStartTime = Date.now();
+                        }
+
+                        // Clear adjacent wall nodes (mouse eats path)
+                        const dirs = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+                        dirs.forEach(([dx, dy]) => {
+                          const nx = cell.x + dx;
+                          const ny = cell.y + dy;
+                          if (nx >= 0 && nx < this.state.width && ny >= 0 && ny < this.state.height) {
+                            const n = this.state.floors[this.state.currentFloor][ny][nx];
+                            if (n && n.type === "wall") {
+                              n.type = "floor";
+                              n.region = cell.region;
+                            }
+                          }
+                        });
+
+                        this.audio.playUnlock();
+                        this.state.gameState = "playing";
+                        if (this.onStateChange) this.onStateChange();
+
+                        // Completely remove mouse after walking finishes (3 seconds)
+                        setTimeout(() => {
+                          if (cell.npc && cell.npc.id === "mouse") {
+                            cell.npc = null;
+                            if (this.onStateChange) this.onStateChange();
+                          }
+                        }, 3000);
+                      }
+                    }]
+                  });
                 }
-              }
+              }]
             });
-
-            this.audio.playUnlock();
-            this.state.gameState = "playing";
-            if (this.onStateChange) this.onStateChange();
-
-            // Completely remove the mouse from the grid cell after walking animation finishes (3 seconds)
-            setTimeout(() => {
-              if (cell.npc && cell.npc.id === "mouse") {
-                cell.npc = null;
-                if (this.onStateChange) this.onStateChange();
-              }
-            }, 3000);
           }
         });
       } else {

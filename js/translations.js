@@ -115,7 +115,8 @@ export const translations = {
         hasCheese: "Squeak! That smell! Will you give me the cheese?",
         giveCheese: "Give Cheese",
         declineCheese: "Keep Cheese",
-        thanks: "Delicious! Look at this wall behind me—press here to open a shortcut! Squeak!"
+        thanks: "Delicious! Look at this wall behind me—press here to open a shortcut! Squeak!",
+        finalQuote: "Squeak... You might escape this maze today, big guy, but remember: the end of these corridors always leads back to the very beginning..."
       },
       traveler: {
         name: "Old Sage",
@@ -143,7 +144,8 @@ export const translations = {
         hasWater: "You have fresh well water! Can I have a drink?",
         giveWater: "Give Water",
         declineWater: "Keep Water",
-        thanks: "Thank you! I feel much better. Here, I found this shiny thing on the floor. Take it! (Got a Key!)"
+        thanks: "Thank you! I feel much better. Here, I found this shiny thing on the floor. Take it! (Got a Key!)",
+        finalQuote: "The spirits will never forget your kindness... But you should know, not every child you meet here is me. We are just the same lost souls, trapped in different bodies within this eternal loop..."
       },
       well: {
         name: "Deep Well",
@@ -335,7 +337,8 @@ export const translations = {
         hasCheese: "Ciyak! Bu koku! Peyniri bana verir misin?",
         giveCheese: "Peyniri Ver",
         declineCheese: "Peyniri Sakla",
-        thanks: "Nefis! Arkamdaki duvara bak—kestirme yolu açmak için buraya bas! Ciyak!"
+        thanks: "Nefis! Arkamdaki duvara bak—kestirme yolu açmak için buraya bas! Ciyak!",
+        finalQuote: "Ciyak... Bugün bu labirentten çıkabilirsin belki koca adam, ama unutma; bu dehlizlerin sonu her zaman en başına çıkar..."
       },
       traveler: {
         name: "Yaşlı Bilge",
@@ -363,7 +366,8 @@ export const translations = {
         hasWater: "Taze kuyu suyun var! Bir yudum içebilir miyim?",
         giveWater: "Suyu Ver",
         declineWater: "Suyu Sakla",
-        thanks: "Teşekkürler! Çok daha iyi hissediyorum. Bunu yerde bulmuştum, al senin olsun! (Anahtar kazandın!)"
+        thanks: "Teşekkürler! Çok daha iyi hissediyorum. Bunu yerde bulmuştum, al senin olsun! (Anahtar kazandın!)",
+        finalQuote: "Ruhlar senin iyiliğini asla unutmayacak... Ama bilmelisin ki, bu labirentte karşılaştığın her çocuk ben değilim. Biz sadece bu lanetli döngüde farklı bedenlerde sıkışıp kalmış aynı kayıp ruhlarız..."
       },
       well: {
         name: "Derin Kuyu",

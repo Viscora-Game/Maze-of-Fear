@@ -1098,7 +1098,9 @@ export class CanvasRenderer {
                     this.torches.push({
                       light: torchLight,
                       flame: flameGroup,
-                      baseIntensity: 2.2
+                      baseIntensity: 2.2,
+                      worldX: x + 0.5 + mount.x,
+                      worldZ: y + 0.5 + mount.z
                     });
                   }
                 }
@@ -2105,11 +2107,9 @@ export class CanvasRenderer {
           t.flame.rotation.z = Math.sin(time * 4.0 + i) * 0.05; // tilt sway
         }
 
-        // Calculate distance to nearest torch to fade ambient fire crackle loop
-        if (t.light && t.light.parent) {
-          const torchPos = new THREE.Vector3();
-          t.light.parent.getWorldPosition(torchPos);
-          const dist = Math.hypot(player.visualX - torchPos.x, player.visualY - torchPos.z);
+        // Calculate distance to nearest torch using stored world coordinates
+        if (typeof t.worldX === "number") {
+          const dist = Math.hypot(player.visualX - t.worldX, player.visualY - t.worldZ);
           if (dist < minTorchDist) {
             minTorchDist = dist;
           }

@@ -476,34 +476,36 @@ function setupUI(game) {
     // Show game screen instantly with no animation delay so the DOM layout bounds are computed
     showScreen("game");
     
-    // Micro-delay (30ms) to ensure container sizing is fully populated by the browser
-    setTimeout(() => {
-      game.initNewGame();
-      game.state.gameState = "playing";
-      game.resizeCanvas();
+    // Wait for the browser to paint the game screen (reflow + repaint) before running heavy initialization
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        game.initNewGame();
+        game.state.gameState = "playing";
+        game.resizeCanvas();
 
-      // Show the introductory tip only once per new game session
-      const introTip = document.getElementById("intro-tip-overlay");
-      if (introTip) {
-        introTip.style.display = "block";
-        introTip.style.opacity = "0";
-        // Force reflow
-        void introTip.offsetWidth;
-        introTip.style.opacity = "1";
-        
-        // Clear any existing timeouts if any
-        if (game._introTipTimeout) clearTimeout(game._introTipTimeout);
-        if (game._introTipFadeTimeout) clearTimeout(game._introTipFadeTimeout);
-
-        // Hide it after 4 seconds
-        game._introTipTimeout = setTimeout(() => {
+        // Show the introductory tip only once per new game session
+        const introTip = document.getElementById("intro-tip-overlay");
+        if (introTip) {
+          introTip.style.display = "block";
           introTip.style.opacity = "0";
-          game._introTipFadeTimeout = setTimeout(() => {
-            introTip.style.display = "none";
-          }, 500);
-        }, 4000);
-      }
-    }, 30);
+          // Force reflow
+          void introTip.offsetWidth;
+          introTip.style.opacity = "1";
+          
+          // Clear any existing timeouts if any
+          if (game._introTipTimeout) clearTimeout(game._introTipTimeout);
+          if (game._introTipFadeTimeout) clearTimeout(game._introTipFadeTimeout);
+
+          // Hide it after 4 seconds
+          game._introTipTimeout = setTimeout(() => {
+            introTip.style.opacity = "0";
+            game._introTipFadeTimeout = setTimeout(() => {
+              introTip.style.display = "none";
+            }, 500);
+          }, 4000);
+        }
+      });
+    });
   });
 
   document.getElementById("btn-settings").addEventListener("click", () => {

@@ -470,10 +470,15 @@ function setupUI(game) {
   }, 100);
 
   document.getElementById("btn-play").addEventListener("click", () => {
-    game.initNewGame();
+    // Show game screen instantly with no animation delay so the DOM layout bounds are computed
     showScreen("game");
-    game.state.gameState = "playing";
-    game.resizeCanvas();
+    
+    // Micro-delay (30ms) to ensure container sizing is fully populated by the browser
+    setTimeout(() => {
+      game.initNewGame();
+      game.state.gameState = "playing";
+      game.resizeCanvas();
+    }, 30);
   });
 
   document.getElementById("btn-settings").addEventListener("click", () => {

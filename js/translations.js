@@ -2,7 +2,7 @@ export const translations = {
   en: {
     title: "Maze of Fear",
     subtitle: "A Procedural Adventure of Risk & Decisions",
-    play: "Play Game",
+    play: "Play",
     settings: "Settings",
     howToPlay: "How to Play",
     difficulty: "Maze Size",
@@ -208,7 +208,7 @@ export const translations = {
   tr: {
     title: "Maze of Fear",
     subtitle: "Risk ve Kararların Prosedürel Macerası",
-    play: "Oyunu Başlat",
+    play: "Oyna",
     settings: "Ayarlar",
     howToPlay: "Nasıl Oynanır",
     difficulty: "Labirent Boyutu",

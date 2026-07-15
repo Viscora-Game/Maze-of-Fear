@@ -827,6 +827,7 @@ export class Game {
           else if (cell.npc && !cell.npc.disappearing) type = "npc";
           else if (cell.obstacle && !cell.obstacle.resolved) type = "obstacle";
           else if (cell.puzzleClue) type = "clue";
+          else if (cell.loreParchment) type = "lore";
           
           if (type) {
             // Calculate distance to the center of the cell
@@ -858,6 +859,7 @@ export class Game {
       else if (interactable.type === "npc") this.triggerNPCInteraction(interactable.cell);
       else if (interactable.type === "obstacle") this.triggerObstacleInteraction(interactable.cell);
       else if (interactable.type === "clue") this.triggerClueInteraction(interactable.cell);
+      else if (interactable.type === "lore") this.triggerLoreInteraction(interactable.cell);
     }
   }
 

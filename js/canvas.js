@@ -1624,53 +1624,48 @@ export class CanvasRenderer {
                  turban.position.y = 0.95; turban.scale.set(1.1, 0.75, 1.1); npcSubGroup.add(turban);
                }
             } else if (cell.npc.id === "well") {
-              // Stone Well Base (Waist-height, realistic scale)
+              // Resized Stone Well Base (Formal scale, does not block the corridor passage)
               const wellBase = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.45, 0.45, 0.75, 16),
+                new THREE.CylinderGeometry(0.28, 0.28, 0.45, 14),
                 new THREE.MeshStandardMaterial({ 
                   map: this.brickTexture, 
                   bumpMap: this.brickBump,
-                  bumpScale: 0.06,
-                  color: "#555555",
+                  bumpScale: 0.05,
+                  color: "#666666",
                   roughness: 0.9 
                 })
               );
-              wellBase.position.y = 0.375;
+              wellBase.position.y = 0.225;
               npcSubGroup.add(wellBase);
 
-              // Water surface inside the well
+              // Water inside: completely flat black to represent a deep, dark well
               const water = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.41, 0.41, 0.02, 12),
-                new THREE.MeshStandardMaterial({ 
-                  color: "#1e3a8a", 
-                  roughness: 0.05, 
-                  metalness: 0.9,
-                  emissive: "#0f172a" 
-                })
+                new THREE.CylinderGeometry(0.25, 0.25, 0.02, 10),
+                new THREE.MeshBasicMaterial({ color: "#000000" })
               );
-              water.position.y = 0.68;
+              water.position.y = 0.435;
               npcSubGroup.add(water);
 
-              // Wooden posts on both sides
-              const postL = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.2, 8), woodMat);
-              postL.position.set(-0.38, 0.6, 0);
-              const postR = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.2, 8), woodMat);
-              postR.position.set(0.38, 0.6, 0);
+              // Wooden posts on both sides (scaled to smaller proportions)
+              const postL = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.80, 6), woodMat);
+              postL.position.set(-0.22, 0.40, 0);
+              const postR = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.80, 6), woodMat);
+              postR.position.set(0.22, 0.40, 0);
               npcSubGroup.add(postL, postR);
 
-              // Horizontal winding spool/crank post
-              const spool = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.76, 8), woodMat);
+              // Horizontal winding spool
+              const spool = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.45, 6), woodMat);
               spool.rotation.z = Math.PI / 2;
-              spool.position.set(0, 1.05, 0);
+              spool.position.set(0, 0.72, 0);
               npcSubGroup.add(spool);
 
-              // Beautiful sloped wooden/shingled roof (two angled boxes)
-              const roofL = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.03, 0.65), woodMat);
-              roofL.position.set(-0.22, 1.25, 0);
+              // Sloped wooden roof
+              const roofL = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.015, 0.38), woodMat);
+              roofL.position.set(-0.12, 0.85, 0);
               roofL.rotation.z = -Math.PI / 8; // sloped left
               
-              const roofR = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.03, 0.65), woodMat);
-              roofR.position.set(0.22, 1.25, 0);
+              const roofR = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.015, 0.38), woodMat);
+              roofR.position.set(0.12, 0.85, 0);
               roofR.rotation.z = Math.PI / 8; // sloped right
 
               npcSubGroup.add(roofL, roofR);
@@ -1837,8 +1832,11 @@ export class CanvasRenderer {
               loreSubGroup.add(noteGroup);
             }
 
-            const loreLight = new THREE.PointLight("#22d3ee", 1.0, 1.5); // Cyan-blue light for lore notes
-            loreLight.position.set(offsetX, 0.64, offsetZ);
+            // Pull the light slightly away from the wall (by 0.15 units) so it illuminates the paper instead of overexposing it
+            const lightX = offsetX * 0.70;
+            const lightZ = offsetZ * 0.70;
+            const loreLight = new THREE.PointLight("#22d3ee", 1.2, 1.8); // Rich cyan point light
+            loreLight.position.set(lightX, 0.64, lightZ);
             loreSubGroup.add(loreLight);
 
             cellGroup.add(loreSubGroup);

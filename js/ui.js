@@ -1040,16 +1040,21 @@ function setupUI(game) {
     const portraitChild = new URL('../assets/portrait_child.png', import.meta.url).href;
     const portraitMouse = new URL('../assets/portrait_mouse.png', import.meta.url).href;
 
-    let npcPortrait = portraitSage;
+    let hasNpcPortrait = false;
+    let npcPortrait = "";
     const titleLower = config.title.toLowerCase();
     if (titleLower.includes("gezgin") || titleLower.includes("traveler") || titleLower.includes("bilge") || titleLower.includes("sage")) {
       npcPortrait = portraitSage;
+      hasNpcPortrait = true;
     } else if (titleLower.includes("tüccar") || titleLower.includes("merchant")) {
       npcPortrait = portraitMerchant;
+      hasNpcPortrait = true;
     } else if (titleLower.includes("çocuk") || titleLower.includes("child") || titleLower.includes("genç") || titleLower.includes("youth") || titleLower.includes("teen")) {
       npcPortrait = portraitChild;
+      hasNpcPortrait = true;
     } else if (titleLower.includes("fare") || titleLower.includes("sıçan") || titleLower.includes("mouse") || titleLower.includes("rat")) {
       npcPortrait = portraitMouse;
+      hasNpcPortrait = true;
     }
 
     // Clear any active typewriter interval
@@ -1064,6 +1069,7 @@ function setupUI(game) {
     container.innerHTML = `
       <!-- NPC Speech Bubble on Left -->
       <div class="dialog-npc-side animate-fade-in-left">
+        ${hasNpcPortrait ? `
         <div class="dialog-portrait-wrapper">
           <div class="dialog-avatar-box">
             <img src="${npcPortrait}" class="dialog-portrait-img">
@@ -1071,7 +1077,10 @@ function setupUI(game) {
           </div>
           <span class="dialog-name">${config.title}</span>
         </div>
-        <div class="dialog-bubble dialog-bubble-npc">
+        ` : `
+        <div class="dialog-portrait-wrapper" style="display: none;"></div>
+        `}
+        <div class="dialog-bubble dialog-bubble-npc" style="${hasNpcPortrait ? '' : 'margin-left: 0; width: 100%;'}">
           <p class="dialog-text" style="margin: 0;"></p>
           <div class="dialog-typewriter-prompt">${game.state.lang === "tr" ? "▶ Hızlandırmak için buraya tıkla" : "▶ Click here to skip"}</div>
         </div>

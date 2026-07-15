@@ -1014,30 +1014,57 @@ export class CanvasRenderer {
                   torchGroup.add(cup);
 
                   // 5. Burning glowing charcoal base (inside cup)
-                  const coalGeo = new THREE.SphereGeometry(0.015, 6, 6);
-                  const coalMat = new THREE.MeshBasicMaterial({ color: "#ef4444" }); // glowing hot red coal base
+                  const coalGeo = new THREE.SphereGeometry(0.016, 8, 8);
+                  const coalMat = new THREE.MeshStandardMaterial({
+                    color: "#1c1917", // dark charcoal grey base
+                    emissive: "#ef4444", // deep hot ember glow
+                    emissiveIntensity: 3.5,
+                    roughness: 0.95
+                  });
                   const coal = new THREE.Mesh(coalGeo, coalMat);
                   coal.position.set(0, 0.12, 0.07);
                   coal.rotation.x = Math.PI / 6.0;
                   torchGroup.add(coal);
 
-                  // 6. Layered flame core (Double overlapping cones with distinct colors for volumetric flame depth)
+                  // 6. Layered volumetric teardrop flame (overlapping Sphere + Cone meshes for organic look)
                   const flameGroup = new THREE.Group();
-                  flameGroup.position.set(0, 0.16, 0.088);
+                  flameGroup.position.set(0, 0.155, 0.085);
                   flameGroup.rotation.x = Math.PI / 6.0;
 
-                  // Outer flame (large soft orange)
-                  const outerFlameGeo = new THREE.ConeGeometry(0.025, 0.075, 6);
-                  const outerFlameMat = new THREE.MeshBasicMaterial({ color: "#f97316", transparent: true, opacity: 0.85 });
-                  const outerFlame = new THREE.Mesh(outerFlameGeo, outerFlameMat);
-                  flameGroup.add(outerFlame);
+                  // A. Outer flame (large soft orange glow)
+                  const outerFlameGroup = new THREE.Group();
+                  const outerBaseGeo = new THREE.SphereGeometry(0.024, 12, 12);
+                  const outerFlameMat = new THREE.MeshBasicMaterial({ color: "#f97316", transparent: true, opacity: 0.70 });
+                  const outerBase = new THREE.Mesh(outerBaseGeo, outerFlameMat);
+                  outerBase.position.set(0, -0.015, 0);
+                  outerFlameGroup.add(outerBase);
 
-                  // Inner flame (small intense yellow core)
-                  const innerFlameGeo = new THREE.ConeGeometry(0.013, 0.045, 6);
-                  const innerFlameMat = new THREE.MeshBasicMaterial({ color: "#fbbf24" });
-                  const innerFlame = new THREE.Mesh(innerFlameGeo, innerFlameMat);
-                  innerFlame.position.set(0, -0.01, 0); // slightly lower inside outer flame
-                  flameGroup.add(innerFlame);
+                  const outerTipGeo = new THREE.ConeGeometry(0.024, 0.072, 12);
+                  const outerTip = new THREE.Mesh(outerTipGeo, outerFlameMat);
+                  outerTip.position.set(0, 0.015, 0);
+                  outerFlameGroup.add(outerTip);
+                  flameGroup.add(outerFlameGroup);
+
+                  // B. Inner flame (intense yellow hot core)
+                  const innerFlameGroup = new THREE.Group();
+                  const innerBaseGeo = new THREE.SphereGeometry(0.012, 12, 12);
+                  const innerFlameMat = new THREE.MeshBasicMaterial({ color: "#fbbf24", transparent: true, opacity: 0.90 });
+                  const innerBase = new THREE.Mesh(innerBaseGeo, innerFlameMat);
+                  innerBase.position.set(0, -0.012, 0);
+                  innerFlameGroup.add(innerBase);
+
+                  const innerTipGeo = new THREE.ConeGeometry(0.012, 0.040, 12);
+                  const innerTip = new THREE.Mesh(innerTipGeo, innerFlameMat);
+                  innerTip.position.set(0, 0.008, 0);
+                  innerFlameGroup.add(innerTip);
+                  flameGroup.add(innerFlameGroup);
+
+                  // C. Base hot blue core (realistic natural gas/hot fire base)
+                  const blueBaseGeo = new THREE.SphereGeometry(0.006, 8, 8);
+                  const blueFlameMat = new THREE.MeshBasicMaterial({ color: "#0ea5e9", transparent: true, opacity: 0.75 });
+                  const blueBase = new THREE.Mesh(blueBaseGeo, blueFlameMat);
+                  blueBase.position.set(0, -0.022, 0);
+                  flameGroup.add(blueBase);
 
                   torchGroup.add(flameGroup);
 
@@ -2058,6 +2085,11 @@ export class CanvasRenderer {
         if (t.flame) {
           const s = 1.0 + flicker * 0.45;
           t.flame.scale.set(s, s * 1.25, s);
+          // Organic wind sway and wobble
+          t.flame.position.x = Math.sin(time * 2.5 + i) * 0.003;
+          t.flame.position.z = Math.cos(time * 3.1 + i * 1.7) * 0.003;
+          t.flame.rotation.y = time * 2.0 + i; // gentle spin
+          t.flame.rotation.z = Math.sin(time * 4.0 + i) * 0.05; // tilt sway
         }
 
         // Calculate distance to nearest torch to fade ambient fire crackle loop

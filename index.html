@@ -127,34 +127,64 @@
     </div>
 
     <!-- 3. HOW TO PLAY SCREEN -->
-    <div id="screen-howtoplay" class="screen hidden">
-      <h2 class="glow-text text-cyan text-3xl mb-6" data-t="howToPlay">How to Play</h2>
+    <div id="screen-howtoplay" class="screen hidden" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box;">
+      <h2 class="glow-text text-cyan text-3xl mb-8" data-t="howToPlay" style="margin-top: 0;">How to Play</h2>
       
-      <div class="guide-text flex-1">
-        <p data-t="controlsHelp">Controls: Keyboard WASD/Arrows or On-Screen D-Pad. Walk up to chests, gates, and NPCs to interact.</p>
+      <!-- Scrollable Cards Container -->
+      <div class="settings-grid" style="overflow-y: auto; max-height: 70vh; padding: 5px; width: 100%;">
         
-        <h3>🔑 Engeller & Çözümler / Obstacles</h3>
-        <ul>
-          <li><strong>Demir Kapı / Iron Gate:</strong> Anahtar (Key) gerektirir.</li>
-          <li><strong>Sarmaşıklar / Ivy:</strong> Bahçe Makası (Garden Shears) gerektirir.</li>
-          <li><strong>Ahşap Barikat / Barricade:</strong> Balta (Axe) gerektirir.</li>
-          <li><strong>Uçurum / Chasm:</strong> Halat (Rope) gerektirir.</li>
-          <li><strong>Şifreli Geçit / Code Lock:</strong> Labirentte bulacağınız 4 haneli şifreyi girmelisiniz.</li>
-        </ul>
+        <!-- CARD 1: Controls & Gameplay -->
+        <div class="settings-card">
+          <div class="settings-card-title">🎮 <span data-t="howToPlayTitle1">Kontroller & Oynanış</span></div>
+          <div class="settings-group" style="margin-bottom: 0;">
+            <p style="margin: 0; font-size: 0.82rem; line-height: 1.6; color: #cbd5e1;" data-t="controlsHelp">
+              Kontroller: Klavyede WASD/Yön Tuşları veya Ekran D-Padi. Etkileşime geçmek için sandıklara, kapılara ve NPC'lere doğru yürüyün.
+            </p>
+          </div>
+        </div>
 
-        <h3>📦 Sandıklar / Chests</h3>
-        <p>Her sandık risk taşır. Değerli altınlar, fener yağı veya ekipman çıkabileceği gibi; zehirli tuzaklar veya sandık canavarları (Mimic) da çıkabilir.</p>
+        <!-- CARD 2: Obstacles & Key Items -->
+        <div class="settings-card">
+          <div class="settings-card-title">🔑 <span data-t="howToPlayTitle2">Engeller & Çözümler</span></div>
+          <div class="settings-group" style="margin-bottom: 0;">
+            <ul class="guide-list" style="margin: 0; padding: 0 0 0 4px; list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 0.82rem; color: #cbd5e1;">
+              <li style="display: flex; align-items: center; gap: 6px;">🚪 <strong>Demir Kapı:</strong> 🔑 Anahtar (Key) gerektirir.</li>
+              <li style="display: flex; align-items: center; gap: 6px;">🌿 <strong>Sarmaşıklar:</strong> ✂️ Bahçe Makası (Garden Shears) gerektirir.</li>
+              <li style="display: flex; align-items: center; gap: 6px;">🪵 <strong>Ahşap Barikat:</strong> 🪓 Balta (Axe) gerektirir.</li>
+              <li style="display: flex; align-items: center; gap: 6px;">🕳️ <strong>Uçurum:</strong> 🪢 Halat (Rope) gerektirir.</li>
+              <li style="display: flex; align-items: center; gap: 6px;">🔢 <strong>Şifreli Geçit:</strong> Labirentte bulacağınız 4 haneli şifreyi girin.</li>
+            </ul>
+          </div>
+        </div>
 
-        <h3>📺 Ödüllü Reklamlar / Rewarded Ads</h3>
-        <p>Oyun tamamen ücretsizdir! İsteğe bağlı olarak ödüllü reklam izleyerek:</p>
-        <ul>
-          <li>Tuzak hasarını iptal edebilirsiniz (Undo trap).</li>
-          <li>Öldüğünüzde en son güvenli odadan tam sağlıkla devam edebilirsiniz (Revive).</li>
-          <li>Pusula olmasa bile çıkış yönünü görebilirsiniz.</li>
-        </ul>
+        <!-- CARD 3: Chests & Mimics -->
+        <div class="settings-card">
+          <div class="settings-card-title">📦 <span data-t="howToPlayTitle3">Sandıklar & Mimicler</span></div>
+          <div class="settings-group" style="margin-bottom: 0;">
+            <p style="margin: 0; font-size: 0.82rem; line-height: 1.6; color: #cbd5e1;">
+              Her sandık risk taşır. Değerli altınlar, fener yağı veya ekipman çıkabileceği gibi; zehirli tuzaklar veya sandık canavarları (Mimic) da çıkabilir.
+            </p>
+          </div>
+        </div>
+
+        <!-- CARD 4: Sponsor Ads -->
+        <div class="settings-card">
+          <div class="settings-card-title">📺 <span data-t="howToPlayTitle4">Ödüllü Reklamlar</span></div>
+          <div class="settings-group" style="margin-bottom: 0;">
+            <p style="margin: 0 0 8px 0; font-size: 0.82rem; line-height: 1.5; color: #cbd5e1;">
+              Oyun tamamen ücretsizdir! İsteğe bağlı olarak ödüllü reklam izleyerek:
+            </p>
+            <ul style="margin: 0; padding: 0 0 0 12px; font-size: 0.80rem; color: #cbd5e1; display: flex; flex-direction: column; gap: 4px;">
+              <li>Tuzak hasarını iptal edebilirsiniz (Undo trap).</li>
+              <li>Öldüğünüzde tam sağlıkla canlanabilirsiniz (Revive).</li>
+              <li>Pusula olmasa bile çıkış yönünü görebilirsiniz.</li>
+            </ul>
+          </div>
+        </div>
+
       </div>
 
-      <button class="btn btn-primary btn-back" data-t="back">Back</button>
+      <button class="btn btn-primary btn-back" data-t="back" style="width: 100%; max-width: 200px; padding: 12px; margin-top: 15px;">Back</button>
     </div>
 
     <!-- 4. ACTIVE GAMEPLAY SCREEN -->

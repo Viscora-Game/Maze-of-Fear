@@ -18,6 +18,7 @@ function setupUI(game) {
     settings: document.getElementById("screen-settings"),
     howtoplay: document.getElementById("screen-howtoplay"),
     game: document.getElementById("screen-game"),
+    pause: document.getElementById("screen-pause"),
   };
 
   const hud = {
@@ -61,8 +62,10 @@ function setupUI(game) {
         // Apply a quick, hardware-accelerated fade-in transition only on entering screen (excluding Three.js game screen to prevent size bugs)
         if (screenName !== "game") {
           el.classList.remove("screen-fade-in");
-          void el.offsetWidth; // Force layout reflow to restart animation
-          el.classList.add("screen-fade-in");
+          // Use a micro-delay (15ms) to force mobile browsers to repaint before running the transition
+          setTimeout(() => {
+            el.classList.add("screen-fade-in");
+          }, 15);
         }
       } else {
         el.classList.add("hidden");
@@ -478,6 +481,28 @@ function setupUI(game) {
       game.initNewGame();
       game.state.gameState = "playing";
       game.resizeCanvas();
+
+      // Show the introductory tip only once per new game session
+      const introTip = document.getElementById("intro-tip-overlay");
+      if (introTip) {
+        introTip.style.display = "block";
+        introTip.style.opacity = "0";
+        // Force reflow
+        void introTip.offsetWidth;
+        introTip.style.opacity = "1";
+        
+        // Clear any existing timeouts if any
+        if (game._introTipTimeout) clearTimeout(game._introTipTimeout);
+        if (game._introTipFadeTimeout) clearTimeout(game._introTipFadeTimeout);
+
+        // Hide it after 4 seconds
+        game._introTipTimeout = setTimeout(() => {
+          introTip.style.opacity = "0";
+          game._introTipFadeTimeout = setTimeout(() => {
+            introTip.style.display = "none";
+          }, 500);
+        }, 4000);
+      }
     }, 30);
   });
 
@@ -490,11 +515,29 @@ function setupUI(game) {
   const btnIngameSettings = document.getElementById("btn-ingame-settings");
   if (btnIngameSettings) {
     btnIngameSettings.addEventListener("click", () => {
-      settingsFromGame = true;
       game.state.gameState = "paused";
-      showScreen("settings");
+      showScreen("pause");
     });
   }
+
+  // --- In-Game Pause Screen Event Listeners ---
+  document.getElementById("btn-pause-resume").addEventListener("click", () => {
+    game.state.gameState = "playing";
+    showScreen("game");
+  });
+
+  document.getElementById("btn-pause-restart").addEventListener("click", () => {
+    game.initNewGame();
+    game.state.gameState = "playing";
+    showScreen("game");
+    game.resizeCanvas();
+  });
+
+  document.getElementById("btn-pause-mainmenu").addEventListener("click", () => {
+    game.stopLoop();
+    game.state.gameState = "menu";
+    showScreen("menu");
+  });
 
   document.getElementById("btn-howtoplay").addEventListener("click", () => {
     showScreen("howtoplay");

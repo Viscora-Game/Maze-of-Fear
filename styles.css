@@ -475,10 +475,33 @@ h1, h2, h3, h4 {
 @media (max-width: 768px), (max-height: 560px) {
   .settings-grid {
     grid-template-columns: 1fr !important;
-    gap: 15px !important;
+    gap: 12px !important;
   }
-  #screen-settings, #screen-howtoplay {
-    padding: 16px !important;
+  #screen-settings, #screen-howtoplay, #screen-pause {
+    padding: 12px !important;
+  }
+  .settings-card {
+    padding: 12px 16px !important;
+    border-radius: 12px !important;
+  }
+  .settings-card-title {
+    font-size: 0.82rem !important;
+    margin-bottom: 10px !important;
+  }
+  .settings-group {
+    margin-bottom: 10px !important;
+  }
+  .settings-label {
+    font-size: 0.74rem !important;
+    margin-bottom: 6px !important;
+  }
+  .settings-card p, .settings-card ul, .settings-card li {
+    font-size: 0.74rem !important;
+    line-height: 1.45 !important;
+  }
+  h2.glow-text {
+    font-size: 1.75rem !important;
+    margin-bottom: 15px !important;
   }
 }
 
@@ -612,17 +635,25 @@ h1, h2, h3, h4 {
 
 /* --- Horror Menu Transitions --- */
 .screen-fade-in {
-  animation: screen-fade-in-minimal 0.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  animation: screen-fade-in-minimal 0.25s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  -webkit-animation: screen-fade-in-minimal 0.25s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
 @keyframes screen-fade-in-minimal {
   0% {
     opacity: 0;
-    transform: scale(0.99);
   }
   100% {
     opacity: 1;
-    transform: scale(1);
+  }
+}
+
+@-webkit-keyframes screen-fade-in-minimal {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
   }
 }
 
@@ -827,7 +858,9 @@ h1, h2, h3, h4 {
   text-align: center;
   width: 90%;
   max-width: 420px;
-  animation: fadeInOut 5s forwards;
+  display: none;
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
 }
 
 .intro-tip-content {
@@ -1793,4 +1826,54 @@ h1, h2, h3, h4 {
     transform: translateY(-15px) scale(0.95);
     opacity: 0;
   }
+}
+
+/* --- Landscape Only Orientation Lock Warning --- */
+.orientation-warning {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #070913;
+  z-index: 1000000; /* Over everything */
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  text-align: center;
+  padding: 30px;
+  box-sizing: border-box;
+}
+
+/* Only display if touch device is in portrait mode */
+@media (orientation: portrait) and (hover: none) and (pointer: coarse) {
+  .orientation-warning {
+    display: flex;
+  }
+}
+
+.orientation-warning .phone-icon {
+  font-size: 5rem;
+  margin-bottom: 25px;
+  animation: rotate-phone 2.2s infinite ease-in-out;
+  text-shadow: 0 0 15px rgba(139, 92, 246, 0.45);
+}
+
+.orientation-warning p {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #f3f4f6;
+  margin: 0;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes rotate-phone {
+  0% { transform: rotate(0deg); }
+  45% { transform: rotate(-90deg); }
+  90% { transform: rotate(0deg); }
+  100% { transform: rotate(0deg); }
 }

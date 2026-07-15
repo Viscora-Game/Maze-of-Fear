@@ -187,6 +187,17 @@
       <button class="btn btn-primary btn-back" data-t="back" style="width: 100%; max-width: 200px; padding: 12px; margin-top: 15px;">Back</button>
     </div>
 
+    <!-- 5. IN-GAME PAUSE SCREEN -->
+    <div id="screen-pause" class="screen hidden" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box;">
+      <h2 class="glow-text text-cyan text-3xl mb-8" data-t="gamePaused" style="margin-top: 0;">Oyun Durduruldu</h2>
+      
+      <div class="menu-buttons" style="width: 100%; max-width: 300px; display: flex; flex-direction: column; gap: 15px; margin: 0 auto;">
+        <button class="btn btn-primary glow-box" id="btn-pause-resume" data-t="resume" style="padding: 14px;">Devam Et</button>
+        <button class="btn" id="btn-pause-restart" data-t="restart" style="padding: 14px; background: linear-gradient(135deg, #d97706, #b45309); border: none;">Yeniden Başla</button>
+        <button class="btn btn-danger" id="btn-pause-mainmenu" data-t="exitToMenu" style="padding: 14px;">Ana Menüye Dön</button>
+      </div>
+    </div>
+
     <!-- 4. ACTIVE GAMEPLAY SCREEN -->
     <div id="screen-game" class="screen hidden">
       
@@ -387,6 +398,14 @@
   </div>
 
 
+
+  <!-- Landscape Only Orientation Lock Warning -->
+  <div id="orientation-warning" class="orientation-warning">
+    <div class="warning-content">
+      <div class="phone-icon">📱</div>
+      <p data-t="rotateDevice">Lütfen cihazınızı yatay konuma getirin.</p>
+    </div>
+  </div>
 
   <!-- Jumpscare Overlay -->
   <div id="modal-jumpscare" class="overlay hidden" style="background: #000; z-index: 999; display: flex; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;">

@@ -76,7 +76,7 @@ export const translations = {
       rope: { name: "Rope", desc: "Used to cross bottomless chasms safely." },
       compass: { name: "Compass", desc: "Indicates the general direction of the exit." },
       map_piece: { name: "Map Fragment", desc: "Reveals a section of the maze when consumed." },
-      fuel: { name: "Battery", desc: "Replenishes 30% of flashlight power." },
+      fuel: { name: "Battery", desc: "Replenishes 15% of flashlight power." },
       cheese: { name: "Old Cheese", desc: "Slightly smelly. Might interest a rodent." }
     },
 
@@ -288,7 +288,7 @@ export const translations = {
       rope: { name: "Halat", desc: "Dipsiz uçurumlardan güvenle geçmek için kullanılır." },
       compass: { name: "Pusula", desc: "Çıkışın genel yönünü gösterir." },
       map_piece: { name: "Harita Parçası", desc: "Kullanıldığında labirentin bir kısmını açar." },
-      fuel: { name: "Pil", desc: "El feneri gücünü %30 doldurur." },
+      fuel: { name: "Pil", desc: "El feneri gücünü %15 doldurur." },
       cheese: { name: "Eski Peynir", desc: "Biraz kokulu. Bir kemirgenin ilgisini çekebilir." }
     },
 

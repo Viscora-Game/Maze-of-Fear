@@ -1152,7 +1152,7 @@ function setupUI(game) {
     if (isWarning) {
       icon = "⚠️";
     } else if (message.toLowerCase().includes("altın") || message.toLowerCase().includes("gold")) {
-      icon = "🪙";
+      icon = "💰";
     } else if (message.toLowerCase().includes("anahtar") || message.toLowerCase().includes("key")) {
       icon = "🔑";
     } else if (message.toLowerCase().includes("makas") || message.toLowerCase().includes("shears")) {

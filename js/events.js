@@ -334,9 +334,9 @@ export const randomEvents = [
           outcomeText: { en: "You find golden dust, but trigger a small explosion.", tr: "Altın tozu buldunuz ancak ufak bir patlama tetiklendi." }
         },
         {
-          text: { en: "Search for Safety (+20 Fuel, -10 Gold)", tr: "Güvenliği Seç (+20 Yakıt, -10 Altın)" },
-          effect: (p) => { p.fuel = Math.min(100, p.fuel + 20); p.gold = Math.max(0, p.gold - 10); },
-          outcomeText: { en: "You spend gold to purchase fuel from a container.", tr: "Kapların birinden yakıt almak için altın harcıyorsunuz." }
+          text: { en: "Search for Safety (+15 Battery, -10 Gold)", tr: "Güvenliği Seç (+15 Pil, -10 Altın)" },
+          effect: (p) => { p.fuel = Math.min(100, p.fuel + 15); p.gold = Math.max(0, p.gold - 10); },
+          outcomeText: { en: "You spend gold to purchase a battery from a container.", tr: "Kapların birinden pil almak için altın harcıyorsunuz." }
         }
       ]
     };

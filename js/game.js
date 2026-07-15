@@ -1243,7 +1243,7 @@ export class Game {
 
     if (itemId === "fuel") {
       p.inventory.fuel--;
-      p.fuel = Math.min(100, p.fuel + 30);
+      p.fuel = Math.min(100, p.fuel + 15);
       this.audio.playPickup();
       if (this.onStateChange) this.onStateChange();
     } else if (itemId === "map_piece") {

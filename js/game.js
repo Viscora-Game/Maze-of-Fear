@@ -241,6 +241,9 @@ export class Game {
     this.lastCellX = undefined;
     this.lastCellY = undefined;
 
+    this.gameStartTime = Date.now();
+    this.sageDisappeared = false;
+
     // Reveal start coordinates
     this.revealArea(1, 1);
     this.audio.init();
@@ -252,6 +255,7 @@ export class Game {
         else if (type === "npc") this.triggerNPCInteraction(cell);
         else if (type === "obstacle") this.triggerObstacleInteraction(cell);
         else if (type === "clue") this.triggerClueInteraction(cell);
+        else if (type === "lore") this.triggerLoreInteraction(cell);
       };
     }
 
@@ -275,6 +279,7 @@ export class Game {
 
       if (this.state && this.state.gameState === "playing") {
         this.updatePhysics(dt);
+        this.checkSageDisappearance();
       }
 
       if (this.state && this.state.gameState !== "menu") {
@@ -990,6 +995,26 @@ export class Game {
     }
   }
 
+  // Interacting with Lore Parchments
+  triggerLoreInteraction(cell) {
+    this.state.gameState = "modal";
+    const loreId = cell.loreParchment;
+    const title = this.lang === "tr" ? "Yırtık Bir Günlük Sayfası" : "A Torn Journal Page";
+    const text = this.t(`lore.${loreId}`);
+
+    const choices = [{
+      text: this.lang === "tr" ? "Parşömeni Bırak" : "Put Down Scroll",
+      action: () => {
+        this.state.gameState = "playing";
+        if (this.onStateChange) this.onStateChange();
+      }
+    }];
+
+    if (this.onDialog) {
+      this.onDialog({ title, text, choices, isClue: true });
+    }
+  }
+
   // Interacting with NPCs
   triggerNPCInteraction(cell) {
     this.state.gameState = "modal";
@@ -1089,50 +1114,39 @@ export class Game {
         text = this.t("npc.mouse.noCheese");
       }
     } else if (npc.id === "traveler") {
-      choices.push({
-        text: this.t("npc.traveler.askExit"),
-        action: () => {
-          const dx = this.state.exitCell.x - p.x;
-          const dy = this.state.exitCell.y - p.y;
-          
-          let vert = dy > 0 ? "south" : "north";
-          let horiz = dx > 0 ? "east" : "west";
-          if (Math.abs(dy) < 2) vert = "";
-          if (Math.abs(dx) < 2) horiz = "";
-          
-          const dirTrans = (vert && horiz) 
-            ? `${this.t("directionNames." + vert)}-${this.t("directionNames." + horiz)}` 
-            : this.t("directionNames." + (vert || horiz || "south"));
+      title = this.t("npc.traveler.name");
+      text = npc.currentText || this.t("npc.traveler.greeting");
 
-          text = this.t("npc.traveler.exitHint", { direction: dirTrans });
-            choices = [{
-              text: this.t("npc.traveler.farewell"),
-              action: () => {
-                this.state.gameState = "playing";
-                npc.disappearing = true;
-                npc.disappearStartTime = Date.now();
-                this.audio.playGhostFade();
-                if (this.onStateChange) this.onStateChange();
-              }
-            }];
-          if (this.onDialog) this.onDialog({ title, text, choices });
+      choices.push({
+        text: this.t("npc.traveler.askWho"),
+        action: () => {
+          npc.currentText = this.t("npc.traveler.replyWho");
+          this.triggerNPCInteraction(cell);
         }
       });
       choices.push({
-        text: this.t("npc.traveler.askCode"),
+        text: this.t("npc.traveler.askEscape"),
         action: () => {
-          text = this.t("npc.traveler.codeHint");
-            choices = [{
-              text: this.t("npc.traveler.farewell"),
-              action: () => {
-                 this.state.gameState = "playing";
-                 npc.disappearing = true;
-                 npc.disappearStartTime = Date.now();
-                 this.audio.playGhostFade();
-                 if (this.onStateChange) this.onStateChange();
-              }
-            }];
-          if (this.onDialog) this.onDialog({ title, text, choices });
+          npc.currentText = this.t("npc.traveler.replyEscape");
+          this.triggerNPCInteraction(cell);
+        }
+      });
+      choices.push({
+        text: this.t("npc.traveler.askMonster"),
+        action: () => {
+          npc.currentText = this.t("npc.traveler.replyMonster");
+          this.triggerNPCInteraction(cell);
+        }
+      });
+      choices.push({
+        text: this.t("npc.traveler.farewell"),
+        action: () => {
+          this.state.gameState = "playing";
+          npc.disappearing = true;
+          npc.disappearStartTime = Date.now();
+          this.audio.playGhostFade();
+          this.sageDisappeared = true;
+          if (this.onStateChange) this.onStateChange();
         }
       });
     } else if (npc.id === "merchant") {
@@ -1713,5 +1727,31 @@ export class Game {
       if (this.onStateChange) this.onStateChange();
       this.startLoop();
     });
+  }
+
+  checkSageDisappearance() {
+    if (this.state && this.state.currentFloor === 0 && !this.sageDisappeared) {
+      const grid = this.state.floors[0];
+      let sageCell = null;
+      for (let y = 0; y < this.state.height; y++) {
+        for (let x = 0; x < this.state.width; x++) {
+          if (grid[y][x].npc && grid[y][x].npc.id === "traveler") {
+            sageCell = grid[y][x];
+            break;
+          }
+        }
+        if (sageCell) break;
+      }
+      if (sageCell && sageCell.npc && !sageCell.npc.disappearing) {
+        // If 20 seconds have passed since game start, fade him away
+        if ((Date.now() - this.gameStartTime) > 20000) {
+          sageCell.npc.disappearing = true;
+          sageCell.npc.disappearStartTime = Date.now();
+          this.audio.playGhostFade();
+          this.sageDisappeared = true;
+          if (this.onStateChange) this.onStateChange();
+        }
+      }
+    }
   }
 }

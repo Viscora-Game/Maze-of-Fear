@@ -118,13 +118,15 @@ export const translations = {
         thanks: "Delicious! Look at this wall behind me—press here to open a shortcut! Squeak!"
       },
       traveler: {
-        name: "Old Traveler",
-        greeting: "Greetings, wanderer. I have traversed these corridors for years. My eyes are weak, but my memory is sharp.",
-        askExit: "Ask about Exit",
-        askCode: "Ask about Combination Codes",
-        exitHint: "I believe the escape lies to the {direction} of here. Tread carefully.",
-        codeHint: "Ah, the combination lock? I remember seeing a scribbled note on the wall in a remote room. Keep your eyes peeled.",
-        farewell: "Keep moving, child. Do not let your light fade."
+        name: "Old Sage",
+        greeting: "Greetings, lost soul. You have finally awakened in the Maze of Fear... A purgatory born from the deepest corners of the mind. Do you seek answers, or just survival?",
+        askWho: "Ask 'Who am I? What is this place?'",
+        askEscape: "Ask 'How do I escape?'",
+        askMonster: "Ask 'What is that thing in the dark?'",
+        replyWho: "You are a mortal who surrendered to fear, and this labyrinth is a prison of shadow and sorrow. Escape is possible, but the toll is heavy.",
+        replyEscape: "You must go deeper into the maze. You will need keys and combination codes hidden on the walls. Most importantly, never let your flashlight die.",
+        replyMonster: "That is the Shadow Monster. It hunts when your light fades. Manage your batteries carefully. You can buy them from the merchant in the maze.",
+        farewell: "End Dialogue"
       },
       merchant: {
         name: "Lost Merchant",
@@ -151,6 +153,12 @@ export const translations = {
         drewWater: "You lowered the bucket and drew fresh water.",
         alreadyFull: "You already have a bucket of water."
       }
+    },
+
+    lore: {
+      lore_1: "Lost Journal - Part I:\n\n\"This maze is not real. It is a prison of shadows fed by the darkest corners of our minds. I have forgotten my name... I only know that as my light dims, the whispers grow louder. Protect the light. Batteries are your most precious treasure.\"",
+      lore_2: "Lost Journal - Part II:\n\n\"The Shadow Monster... it is not just darkness. It is the very despair left behind by those who fell here and lost their light. It will swallow you instantly when your lantern goes dark. Buy batteries from the merchant in the maze, he still sells gear for gold.\"",
+      lore_3: "Lost Journal - Part III:\n\n\"The exit gate... it is locked with a 4-digit combination code. I left the combination on the blood-stained parchments on the walls. If you are reading this, hurry to escape the Maze of Fear. The shadows are closing in every second.\""
     },
 
     // Random Events
@@ -330,13 +338,15 @@ export const translations = {
         thanks: "Nefis! Arkamdaki duvara bak—kestirme yolu açmak için buraya bas! Ciyak!"
       },
       traveler: {
-        name: "Yaşlı Gezgin",
-        greeting: "Selam yabancı. Yıllardır bu koridorları arşınlarım. Gözlerim zayıf ama hafızam keskindir.",
-        askExit: "Çıkışı Sor",
-        askCode: "Şifreleri Sor",
-        exitHint: "Kaçış yolunun buradan {direction} yönünde olduğuna inanıyorum. Dikkatli yürü.",
-        codeHint: "Ah, şifreli kapı mı? Uzak bir odada duvara karalanmış bir not gördüğümü hatırlıyorum. Gözünü açık tut.",
-        farewell: "Yola devam et evladım. Işığının sönmesine izin verme."
+        name: "Yaşlı Bilge",
+        greeting: "Selam kayıp ruh. Nihayet Korku Labirenti'nde uyandın... Zihnimizin en karanlık köşelerinden beslenen bu hapishanede cevaplar mı arıyorsun, yoksa sadece hayatta kalmak mı istiyorsun?",
+        askWho: "Soru: 'Ben kimim? Burası neresi?'",
+        askEscape: "Soru: 'Nasıl kaçabilirim?'",
+        askMonster: "Soru: 'Karanlıktaki o şey ne?'",
+        replyWho: "Sen korkularına teslim olmuş bir faniyisin. Bu labirent ise gölgelerin ve acıların hapishanesidir. Buradan kaçış var, ama bedeli ağırdır.",
+        replyEscape: "Labirentin derinliklerine inmelisin. Kapıları açmak için anahtarlara ve duvarlara gizlenmiş şifrelere ihtiyacın olacak. Ama en önemlisi, fenerinin ışığını asla söndürme.",
+        replyMonster: "O, Gölge Canavarı. Işığın söndüğünde seni avlar. Fenerinin pillerini idareli kullan. Labirentteki tüccardan altın karşılığı pil satın alabilirsin.",
+        farewell: "Sohbeti Bitir"
       },
       merchant: {
         name: "Kayıp Tüccar",
@@ -363,6 +373,12 @@ export const translations = {
         drewWater: "Kovayı sarkıtıp taze su çektiniz.",
         alreadyFull: "Zaten su dolu bir kovanız var."
       }
+    },
+
+    lore: {
+      lore_1: "Kayıp Günlük - Parça I:\n\n\"Bu labirent gerçek değil. Burası zihnimizin karanlık köşelerinden beslenen gölgelerin hapishanesi. Adımı unuttum... Sadece ışığım azaldıkça fısıltıların arttığını biliyorum. Işığı koruyun. Piller en değerli hazinenizdir.\"",
+      lore_2: "Kayıp Günlük - Parça II:\n\n\"Gölge Canavarı... o sadece karanlıktan ibaret değil. O, buraya düşüp ışığı sönenlerin geride bıraktığı umutsuzluğun ta kendisi. Feneriniz kapandığında sizi anında yutacaktır. Labirentteki tüccardan pilleri satın alabilirsiniz, o hâlâ altın karşılığında eşya satıyor.\"",
+      lore_3: "Kayıp Günlük - Parça III:\n\n\"Çıkış kapısı... 4 haneli şifreyle kilitlenmiş. Şifreyi duvarlardaki kanlı parşömenlerde bıraktım. Eğer bu notu okuyorsan, Korku Labirenti'nden kaçmak için acele et. Gölgeler her saniye daha da yaklaşıyor.\""
     },
 
     // Random Events

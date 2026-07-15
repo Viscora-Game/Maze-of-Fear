@@ -1036,8 +1036,8 @@ function setupUI(game) {
     // Determine NPC avatar/emoji
     let npcEmoji = "🚧";
     const titleLower = config.title.toLowerCase();
-    if (titleLower.includes("gezgin") || titleLower.includes("traveler")) {
-      npcEmoji = "🤠";
+    if (titleLower.includes("gezgin") || titleLower.includes("traveler") || titleLower.includes("bilge") || titleLower.includes("sage")) {
+      npcEmoji = "🧙";
     } else if (titleLower.includes("tüccar") || titleLower.includes("merchant")) {
       npcEmoji = "👳";
     } else if (titleLower.includes("çocuk") || titleLower.includes("child") || titleLower.includes("genç") || titleLower.includes("youth") || titleLower.includes("teen")) {

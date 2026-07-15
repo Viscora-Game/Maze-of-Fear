@@ -62,6 +62,46 @@ const makeClueTexture = (code) => {
   return texture;
 };
 
+const makeLoreTexture = (loreId) => {
+  const canvas = document.createElement("canvas");
+  canvas.width = 128;
+  canvas.height = 128;
+  const ctx = canvas.getContext("2d");
+  
+  // Aged, yellowed parchment color
+  ctx.fillStyle = "#c5b393"; // old dark paper
+  ctx.fillRect(0, 0, 128, 128);
+  
+  // Vignette corners
+  if (ctx.createRadialGradient) {
+    const grad = ctx.createRadialGradient(64, 64, 30, 64, 64, 90);
+    grad.addColorStop(0, "rgba(90, 60, 30, 0)");
+    grad.addColorStop(1, "rgba(40, 20, 5, 0.5)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 128, 128);
+  }
+  
+  // Draw some handwritten lines to look like readable lore script
+  ctx.strokeStyle = "rgba(40, 20, 5, 0.4)";
+  ctx.lineWidth = 2.5;
+  for (let i = 0; i < 6; i++) {
+    const y = 30 + i * 15;
+    ctx.beginPath();
+    ctx.moveTo(20 + Math.random() * 5, y);
+    ctx.lineTo(108 - Math.random() * 5, y);
+    ctx.stroke();
+  }
+
+  // Draw a big fancy title initial letter in red
+  ctx.fillStyle = "#8a0303"; // crimson ink
+  ctx.font = "italic bold 32px 'Georgia', serif";
+  ctx.textAlign = "center";
+  ctx.fillText("📜", 64, 75);
+  
+  const texture = new THREE.CanvasTexture(canvas);
+  return texture;
+};
+
 export class CanvasRenderer {
   constructor(canvas) {
     this.canvas = canvas;
@@ -1670,6 +1710,67 @@ export class CanvasRenderer {
             clueSubGroup.add(clueLight);
 
             cellGroup.add(clueSubGroup);
+          }
+
+          // F3. Lore Parchments (Readable story logs)
+          if (cell.loreParchment) {
+            const loreSubGroup = new THREE.Group();
+            loreSubGroup.userData = { type: "lore", x: x, y: y, cell: cell };
+
+            // Find an adjacent wall to mount the lore paper on
+            let offsetX = 0, offsetZ = 0, rotY = 0;
+            const dirs = [
+              { dx: 0, dy: -1, ox: 0, oz: -0.49, r: 0 },         // North wall
+              { dx: 0, dy: 1, ox: 0, oz: 0.49, r: Math.PI },      // South wall
+              { dx: 1, dy: 0, ox: 0.49, oz: 0, r: -Math.PI / 2 },  // East wall
+              { dx: -1, dy: 0, ox: -0.49, oz: 0, r: Math.PI / 2 }  // West wall
+            ];
+            
+            let mounted = false;
+            for (const d of dirs) {
+              const nx = x + d.dx;
+              const ny = y + d.dy;
+              if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                if (grid[ny][nx].type === "wall") {
+                  offsetX = d.ox;
+                  offsetZ = d.oz;
+                  rotY = d.r;
+                  mounted = true;
+                  break;
+                }
+              }
+            }
+
+            if (!mounted) {
+              const paperGeo = new THREE.BoxGeometry(0.24, 0.02, 0.32);
+              const paperMat = new THREE.MeshPhongMaterial({ color: "#fcd34d", shininess: 5 });
+              const paperMesh = new THREE.Mesh(paperGeo, paperMat);
+              paperMesh.position.set(0, 0.01, 0);
+              loreSubGroup.add(paperMesh);
+            } else {
+              const boardGeo = new THREE.BoxGeometry(0.24, 0.32, 0.015);
+              const boardMesh = new THREE.Mesh(boardGeo, woodMat);
+              
+              const paperGeo = new THREE.BoxGeometry(0.20, 0.28, 0.02);
+              const paperMat = new THREE.MeshStandardMaterial({ 
+                map: makeLoreTexture(cell.loreParchment),
+                roughness: 0.95
+              });
+              const paperMesh = new THREE.Mesh(paperGeo, paperMat);
+              paperMesh.position.set(0, 0, 0.005);
+              
+              const noteGroup = new THREE.Group();
+              noteGroup.add(boardMesh, paperMesh);
+              noteGroup.position.set(offsetX, 0.64, offsetZ);
+              noteGroup.rotation.y = rotY;
+              loreSubGroup.add(noteGroup);
+            }
+
+            const loreLight = new THREE.PointLight("#22d3ee", 1.0, 1.5); // Cyan-blue light for lore notes
+            loreLight.position.set(offsetX, 0.64, offsetZ);
+            loreSubGroup.add(loreLight);
+
+            cellGroup.add(loreSubGroup);
           }
 
           // G. Obstacles (Stylized premium models instead of single blocks)

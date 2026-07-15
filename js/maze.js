@@ -374,7 +374,8 @@ export function generateMaze(width, height, numFloors = 1) {
               !c.chest && 
               !c.npc && 
               !c.staircase && 
-              !c.puzzleClue) {
+              !c.puzzleClue &&
+              !c.loreParchment) {
             list.push(c);
           }
         }
@@ -505,12 +506,43 @@ export function generateMaze(width, height, numFloors = 1) {
     merchantCell.npc = { id: "merchant", name: "Lost Merchant", spokenTo: false };
   }
 
-  // Traveler in Region 0 or 1
-  const travelerRegion = Math.random() < 0.5 ? 0 : 1;
-  const travelerFree = getFreeCellsInRegion(travelerRegion);
-  if (travelerFree.length > 0) {
-    const travelerCell = travelerFree[Math.floor(Math.random() * travelerFree.length)];
-    travelerCell.npc = { id: "traveler", name: "Old Traveler", spokenTo: false };
+  // Force the Old Sage to spawn at the start cell adjacent path on Floor 0
+  const startFloor = floors[0];
+  let sageCell = null;
+  if (startFloor[2] && startFloor[2][1] && startFloor[2][1].type === "path") {
+    sageCell = startFloor[2][1];
+  } else if (startFloor[1] && startFloor[1][2] && startFloor[1][2].type === "path") {
+    sageCell = startFloor[1][2];
+  }
+  if (sageCell) {
+    sageCell.npc = { id: "traveler", name: "Old Sage", spokenTo: false };
+  } else {
+    // Fallback if somehow path is not adjacent
+    const travelerFree = getFreeCellsInRegion(0);
+    if (travelerFree.length > 0) {
+      const travelerCell = travelerFree[Math.floor(Math.random() * travelerFree.length)];
+      travelerCell.npc = { id: "traveler", name: "Old Sage", spokenTo: false };
+    }
+  }
+
+  // Scatter exactly 3 Lore Parchments across the regions
+  // Lore 1 in Region 0 or 1
+  const lore1Free = getFreeCellsInRegion(Math.random() < 0.5 ? 0 : 1);
+  if (lore1Free.length > 0) {
+    const c = lore1Free[Math.floor(Math.random() * lore1Free.length)];
+    c.loreParchment = "lore_1";
+  }
+  // Lore 2 in Region 2
+  const lore2Free = getFreeCellsInRegion(2);
+  if (lore2Free.length > 0) {
+    const c = lore2Free[Math.floor(Math.random() * lore2Free.length)];
+    c.loreParchment = "lore_2";
+  }
+  // Lore 3 in Region 3
+  const lore3Free = getFreeCellsInRegion(3);
+  if (lore3Free.length > 0) {
+    const c = lore3Free[Math.floor(Math.random() * lore3Free.length)];
+    c.loreParchment = "lore_3";
   }
 
   // Scatter Standard Chests & Optional Roadblocks (Barricades & Chasms)

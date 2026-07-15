@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="description" content="Maze of Fear - A Procedural Maze Exploration Game of Risk and Decisions">
   <title>Maze of Fear</title>
-  <link rel="stylesheet" href="styles.css?v=1.2.7">
+  <link rel="stylesheet" href="styles.css?v=1.2.8">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.0/umd/index.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -148,11 +148,11 @@
           <div class="settings-card-title">🔑 <span data-t="howToPlayTitle2">Engeller & Çözümler</span></div>
           <div class="settings-group" style="margin-bottom: 0;">
             <ul class="guide-list" style="margin: 0; padding: 0 0 0 4px; list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 0.82rem; color: #cbd5e1;">
-              <li style="display: flex; align-items: center; gap: 6px;">🚪 <strong>Demir Kapı:</strong> 🔑 Anahtar (Key) gerektirir.</li>
-              <li style="display: flex; align-items: center; gap: 6px;">🌿 <strong>Sarmaşıklar:</strong> ✂️ Bahçe Makası (Garden Shears) gerektirir.</li>
-              <li style="display: flex; align-items: center; gap: 6px;">🪵 <strong>Ahşap Barikat:</strong> 🪓 Balta (Axe) gerektirir.</li>
-              <li style="display: flex; align-items: center; gap: 6px;">🕳️ <strong>Uçurum:</strong> 🪢 Halat (Rope) gerektirir.</li>
-              <li style="display: flex; align-items: center; gap: 6px;">🔢 <strong>Şifreli Geçit:</strong> Labirentte bulacağınız 4 haneli şifreyi girin.</li>
+              <li data-t="obstacleGate">🚪 Demir Kapı: Anahtar (Key) gerektirir.</li>
+              <li data-t="obstacleIvy">🌿 Sarmaşıklar: Bahçe Makası (Garden Shears) gerektirir.</li>
+              <li data-t="obstacleBarricade">🪵 Ahşap Barikat: Balta (Axe) gerektirir.</li>
+              <li data-t="obstacleChasm">🕳️ Uçurum: Halat (Rope) gerektirir.</li>
+              <li data-t="obstacleCodeLock">🔢 Şifreli Geçit: Labirentte bulacağınız 4 haneli şifreyi girin.</li>
             </ul>
           </div>
         </div>
@@ -161,8 +161,8 @@
         <div class="settings-card">
           <div class="settings-card-title">📦 <span data-t="howToPlayTitle3">Sandıklar & Mimicler</span></div>
           <div class="settings-group" style="margin-bottom: 0;">
-            <p style="margin: 0; font-size: 0.82rem; line-height: 1.6; color: #cbd5e1;">
-              Her sandık risk taşır. Değerli altınlar, fener yağı veya ekipman çıkabileceği gibi; zehirli tuzaklar veya sandık canavarları (Mimic) da çıkabilir.
+            <p data-t="howToPlayChestsHelp" style="margin: 0; font-size: 0.82rem; line-height: 1.6; color: #cbd5e1;">
+              Her sandık risk taşır. Değerli altınlar, fener pili veya ekipman çıkabileceği gibi; tuzaklar veya sandık canavarları (Mimic) da çıkabilir.
             </p>
           </div>
         </div>
@@ -171,13 +171,13 @@
         <div class="settings-card">
           <div class="settings-card-title">📺 <span data-t="howToPlayTitle4">Ödüllü Reklamlar</span></div>
           <div class="settings-group" style="margin-bottom: 0;">
-            <p style="margin: 0 0 8px 0; font-size: 0.82rem; line-height: 1.5; color: #cbd5e1;">
+            <p data-t="howToPlayAdsIntro" style="margin: 0 0 8px 0; font-size: 0.82rem; line-height: 1.5; color: #cbd5e1;">
               Oyun tamamen ücretsizdir! İsteğe bağlı olarak ödüllü reklam izleyerek:
             </p>
             <ul style="margin: 0; padding: 0 0 0 12px; font-size: 0.80rem; color: #cbd5e1; display: flex; flex-direction: column; gap: 4px;">
-              <li>Tuzak hasarını iptal edebilirsiniz (Undo trap).</li>
-              <li>Öldüğünüzde tam sağlıkla canlanabilirsiniz (Revive).</li>
-              <li>Pusula olmasa bile çıkış yönünü görebilirsiniz.</li>
+              <li data-t="howToPlayAdsItem1">Tuzak hasarını iptal edebilirsiniz (Undo).</li>
+              <li data-t="howToPlayAdsItem2">Öldüğünüzde tam sağlıkla canlanabilirsiniz (Revive).</li>
+              <li data-t="howToPlayAdsItem3">Pusula olmasa bile çıkış yönünü görebilirsiniz.</li>
             </ul>
           </div>
         </div>
@@ -391,6 +391,6 @@
     <img src="assets/jumpscare.png" style="width: 100%; height: 100%; object-fit: contain; filter: brightness(1.2) contrast(1.3); transform: scale(1.1);" />
   </div>
 
-  <script type="module" src="js/ui.js?v=13"></script>
+  <script type="module" src="js/ui.js?v=14"></script>
 </body>
 </html>

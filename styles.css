@@ -471,6 +471,17 @@ h1, h2, h3, h4 {
   margin: 0 auto 25px auto;
 }
 
+/* Stack cards in a single column on mobile portrait and landscape viewports for perfect readability */
+@media (max-width: 768px), (max-height: 560px) {
+  .settings-grid {
+    grid-template-columns: 1fr !important;
+    gap: 15px !important;
+  }
+  #screen-settings, #screen-howtoplay {
+    padding: 16px !important;
+  }
+}
+
 .settings-card {
   background: rgba(15, 23, 42, 0.45);
   backdrop-filter: blur(12px);

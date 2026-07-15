@@ -1,6 +1,6 @@
 export const translations = {
   en: {
-    title: "Maze of Choices",
+    title: "Maze of Fear",
     subtitle: "A Procedural Adventure of Risk & Decisions",
     play: "Play Game",
     settings: "Settings",
@@ -168,7 +168,7 @@ export const translations = {
 
     // Game states
     victory: "Escape Successful!",
-    victoryDesc: "You navigated the Maze of Choices and found your way back to safety!",
+    victoryDesc: "You navigated the Maze of Fear and found your way back to safety!",
     gameOver: "Lost in the Dark",
     gameOverDesc: "Your health has depleted. The maze claims another explorer...",
     restart: "Start New Adventure",
@@ -188,7 +188,7 @@ export const translations = {
     }
   },
   tr: {
-    title: "Seçimler Labirenti",
+    title: "Maze of Fear",
     subtitle: "Risk ve Kararların Prosedürel Macerası",
     play: "Oyunu Başlat",
     settings: "Ayarlar",
@@ -356,7 +356,7 @@ export const translations = {
 
     // Game states
     victory: "Kaçış Başarılı!",
-    victoryDesc: "Seçimler Labirentini aştınız ve güvenli bölgeye giden yolu buldunuz!",
+    victoryDesc: "Maze of Fear'ı aştınız ve güvenli bölgeye giden yolu buldunuz!",
     gameOver: "Karanlıkta Kayboluş",
     gameOverDesc: "Sağlığınız tükendi. Labirent bir kaşifi daha yuttu...",
     restart: "Yeni Maceraya Başla",

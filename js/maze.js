@@ -509,9 +509,9 @@ export function generateMaze(width, height, numFloors = 1) {
   // Force the Old Sage to spawn at the start cell adjacent path on Floor 0
   const startFloor = floors[0];
   let sageCell = null;
-  if (startFloor[2] && startFloor[2][1] && startFloor[2][1].type === "path") {
+  if (startFloor[2] && startFloor[2][1] && startFloor[2][1].type === "floor") {
     sageCell = startFloor[2][1];
-  } else if (startFloor[1] && startFloor[1][2] && startFloor[1][2].type === "path") {
+  } else if (startFloor[1] && startFloor[1][2] && startFloor[1][2].type === "floor") {
     sageCell = startFloor[1][2];
   }
   if (sageCell) {

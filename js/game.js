@@ -1150,10 +1150,8 @@ export class Game {
         text: this.t("npc.traveler.farewell"),
         action: () => {
           this.state.gameState = "playing";
-          npc.disappearing = true;
-          npc.disappearStartTime = Date.now();
-          this.audio.playGhostFade();
-          this.sageDisappeared = true;
+          npc.hasSpoken = true;
+          npc.dialogueClosedTime = Date.now();
           if (this.onStateChange) this.onStateChange();
         }
       });
@@ -1186,6 +1184,10 @@ export class Game {
       action: () => {
         this.state.gameState = "playing";
         try {
+          if (npc && npc.id === "traveler") {
+            npc.hasSpoken = true;
+            npc.dialogueClosedTime = Date.now();
+          }
           if (npc && npc.id === "merchant" && this.state.merchantStock) {
             const stock = this.state.merchantStock;
             const allSold = Object.keys(stock).length > 0 && Object.keys(stock).every(k => {
@@ -1751,13 +1753,15 @@ export class Game {
         if (sageCell) break;
       }
       if (sageCell && sageCell.npc && !sageCell.npc.disappearing) {
-        // If 20 seconds have passed since game start, fade him away
-        if ((Date.now() - this.gameStartTime) > 20000) {
-          sageCell.npc.disappearing = true;
-          sageCell.npc.disappearStartTime = Date.now();
-          this.audio.playGhostFade();
-          this.sageDisappeared = true;
-          if (this.onStateChange) this.onStateChange();
+        // Only disappear if the dialogue has been opened and closed, and 20 seconds has elapsed since closure
+        if (sageCell.npc.hasSpoken && sageCell.npc.dialogueClosedTime) {
+          if ((Date.now() - sageCell.npc.dialogueClosedTime) > 20000) {
+            sageCell.npc.disappearing = true;
+            sageCell.npc.disappearStartTime = Date.now();
+            this.audio.playGhostFade();
+            this.sageDisappeared = true;
+            if (this.onStateChange) this.onStateChange();
+          }
         }
       }
     }

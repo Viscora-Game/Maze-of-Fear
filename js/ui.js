@@ -1490,7 +1490,9 @@ function setupUI(game) {
   if (btnInteract) {
     const handleInteract = (e) => {
       e.preventDefault();
-      if (game.state && game.state.gameState === "modal") {
+      if (!game.state) return; // Prevent crashes when clicking the button outside a game session (e.g., during HUD editing)
+      
+      if (game.state.gameState === "modal") {
         // Close modal if already in a modal view
         const escapeEvent = new KeyboardEvent("keydown", { key: "Escape" });
         window.dispatchEvent(escapeEvent);
@@ -1545,13 +1547,14 @@ function setupUI(game) {
   };
 
   const closeMap = () => {
+    if (!game.state) return;
     game.state.gameState = "playing";
     document.getElementById("modal-map").classList.add("hidden");
     
     // Hide instructions and cancel reveal mode
     const instructions = document.getElementById("map-instructions");
     if (instructions) instructions.style.display = "none";
-    if (game.state) game.state.mapRevealMode = false;
+    game.state.mapRevealMode = false;
     
     if (mapAnimId) {
       cancelAnimationFrame(mapAnimId);

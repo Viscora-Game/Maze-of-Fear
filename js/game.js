@@ -831,7 +831,7 @@ export class Game {
   }
 
   interactWithClosest() {
-    if (this.state.gameState !== "playing") return;
+    if (!this.state || this.state.gameState !== "playing") return;
     const interactable = this.findClosestInteractable();
     if (interactable) {
       if (interactable.type === "chest") this.triggerChestInteraction(interactable.cell);

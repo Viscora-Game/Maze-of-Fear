@@ -69,6 +69,11 @@ function setupUI(game) {
           }, 15);
         }
       } else {
+        // Keep the game screen (and its WebGL canvas) active and visible in the DOM when the pause menu is opened on top of it.
+        // This prevents the browser/WebView from suspending WebGL and destroying compiled shaders/textures, which causes 20-30s black screen delays when resuming.
+        if (name === "game" && screenName === "pause") {
+          return;
+        }
         el.classList.add("hidden");
         el.classList.remove("screen-fade-in");
       }

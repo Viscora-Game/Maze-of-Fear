@@ -929,7 +929,7 @@ export class Game {
     const grid = this.state.floors[this.state.currentFloor];
     let closestCell = null;
     let closestType = null;
-    let minDistance = 1.15; // max interaction range (forces player to get closer)
+    let minDistance = 1.6; // max interaction range (forces player to get closer, with comfortable buffer for mobile joystick/grid spacing)
 
     // Scan a 5x5 region around the player's grid cell
     const px = Math.floor(p.x);
@@ -1995,7 +1995,7 @@ export class Game {
       if (sageCell && sageCell.npc && !sageCell.npc.disappearing) {
         // Only disappear if the dialogue has been opened and closed, and 20 seconds has elapsed since closure
         if (sageCell.npc.hasSpoken && sageCell.npc.dialogueClosedTime) {
-          if ((Date.now() - sageCell.npc.dialogueClosedTime) > 20000) {
+          if ((Date.now() - sageCell.npc.dialogueClosedTime) > 2000) {
             sageCell.npc.disappearing = true;
             sageCell.npc.disappearStartTime = Date.now();
             this.audio.playGhostFade();

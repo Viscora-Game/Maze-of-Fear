@@ -2425,19 +2425,14 @@ export class CanvasRenderer {
       this.rollAngle += (0 - this.rollAngle) * 0.15;
     }
 
-    // 1. Throttled Cell Visibility Culling (runs once every 6 frames, approx 100ms, saving >85% CPU overhead)
+    // 1. Throttled Cell Visibility Culling (Disabled to resolve 3D wall gaps/invisible walls)
     this.visibilityFrameCounter = (this.visibilityFrameCounter || 0) + 1;
     if (this.visibilityFrameCounter >= 6 || this.currentFloorId !== floorId) {
       this.visibilityFrameCounter = 0;
       for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
-          const dx = x - player.visualX;
-          const dy = y - player.visualY;
-          const distSq = dx * dx + dy * dy;
-          const isNear = distSq <= 132.25; // 11.5 cells radius
-          
           if (this.cellGroups[y] && this.cellGroups[y][x]) {
-            this.cellGroups[y][x].visible = state.devMode || isNear;
+            this.cellGroups[y][x].visible = true;
           }
         }
       }
@@ -2681,10 +2676,10 @@ export class CanvasRenderer {
             }
 
             // Move forward along the direction it was looking when it started running
-            // Snout points towards local +X, so dx = cos(angle), dz = -sin(angle)
+            // Snout points towards local +X, so dx = cos(angle), dz = sin(angle)
             const distTraveled = elapsed * 0.65; // speed of 0.65 units per second
             npcGroup.position.x = (x + 0.5) + distTraveled * Math.cos(cell.npc.facingAngle);
-            npcGroup.position.z = (y + 0.5) - distTraveled * Math.sin(cell.npc.facingAngle);
+            npcGroup.position.z = (y + 0.5) + distTraveled * Math.sin(cell.npc.facingAngle);
             npcGroup.rotation.y = cell.npc.facingAngle;
 
             // Running waddle (rapid bobbing on Y)

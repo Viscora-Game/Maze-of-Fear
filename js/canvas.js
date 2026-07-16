@@ -2843,7 +2843,15 @@ export class CanvasRenderer {
             const faceScale = 1.0 + Math.sin(time * 1.5) * 0.05;
             face.scale.set(faceScale, faceScale, faceScale);
             face.rotation.z = Math.sin(time * 2.0) * 0.06;
-            if (face.material) face.material.opacity = burnRatio;
+            
+            if (face.material) {
+              if (face.material.uniforms) {
+                if (face.material.uniforms.opacity) face.material.uniforms.opacity.value = burnRatio;
+                if (face.material.uniforms.time) face.material.uniforms.time.value = time;
+              } else {
+                face.material.opacity = burnRatio;
+              }
+            }
           }
           
           const shadowLight = mesh.getObjectByName("shadowLight");

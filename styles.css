@@ -218,7 +218,6 @@ h1, h2, h3, h4 {
   line-height: 1.1;
   position: relative;
   letter-spacing: 3px;
-  animation: shiver-title 0.12s infinite linear;
 }
 
 .loading-logo {
@@ -230,14 +229,6 @@ h1, h2, h3, h4 {
   -webkit-text-fill-color: transparent;
   filter: drop-shadow(0 0 6px rgba(185, 28, 28, 0.5)) drop-shadow(0 4px 10px rgba(0, 0, 0, 0.9));
   letter-spacing: 3px;
-  animation: shiver-title 0.15s infinite linear;
-}
-
-@keyframes shiver-title {
-  0%, 100% { transform: translate(0, 0) scale(1.0); }
-  25% { transform: translate(-1.2px, 0.8px) rotate(-0.3deg); }
-  50% { transform: translate(0.8px, -1.2px) rotate(0.3deg); }
-  75% { transform: translate(-0.8px, -0.8px) rotate(0deg); }
 }
 
 .game-subtitle {

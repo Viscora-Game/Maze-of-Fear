@@ -1289,6 +1289,10 @@ export class Game {
                           }
                         });
 
+                        if (this.renderer) {
+                          this.renderer.rebuildScene(this.state);
+                        }
+
                         this.audio.playUnlock();
                         this.state.gameState = "playing";
                         if (this.onStateChange) this.onStateChange();

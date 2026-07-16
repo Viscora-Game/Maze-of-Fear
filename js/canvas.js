@@ -116,7 +116,40 @@ export class CanvasRenderer {
     this.renderer.shadowMap.enabled = this.shadowsEnabled;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     
-    // 2. Load Photographic Textures from public CDN
+    // 2. Setup Loading Manager & Load Photographic Textures
+    const loadingScreen = document.getElementById("loading-screen");
+    const loadingBar = document.getElementById("loading-bar");
+    const loadingText = document.getElementById("loading-text");
+
+    THREE.DefaultLoadingManager.onStart = (url, itemsLoaded, itemsTotal) => {
+      if (loadingScreen) {
+        loadingScreen.classList.remove("hidden");
+      }
+    };
+
+    THREE.DefaultLoadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
+      const percentage = Math.round((itemsLoaded / itemsTotal) * 100);
+      if (loadingBar) loadingBar.style.width = `${percentage}%`;
+      if (loadingText) {
+        const isEn = localStorage.getItem("maze_lang") === "en";
+        loadingText.textContent = isEn
+          ? `Loading the darkness... ${percentage}%`
+          : `Karanlık yükleniyor... %${percentage}`;
+      }
+    };
+
+    THREE.DefaultLoadingManager.onLoad = () => {
+      if (loadingScreen) {
+        setTimeout(() => {
+          loadingScreen.classList.add("hidden");
+        }, 500);
+      }
+    };
+
+    THREE.DefaultLoadingManager.onError = (url) => {
+      console.warn("Loading manager encountered error:", url);
+    };
+
     const loader = new THREE.TextureLoader();
 
     this.brickTexture = loader.load("https://threejs.org/examples/textures/brick_diffuse.jpg");
@@ -161,13 +194,50 @@ export class CanvasRenderer {
 
     // Precompiled Shadow Monster Geometries and Materials (prevents WebGL compile-time lag spikes during gameplay)
     this.monsterFaceGeom = new THREE.PlaneGeometry(1.2, 1.2);
-    this.monsterFaceMat = new THREE.MeshBasicMaterial({
-      map: this.jumpscareTexture,
-      transparent: true,
-      opacity: 1.0,
-      side: THREE.DoubleSide,
-      depthWrite: false
-    });
+    this.createMonsterFaceMat = (opacity = 1.0) => {
+      return new THREE.ShaderMaterial({
+        uniforms: {
+          map: { value: this.jumpscareTexture },
+          opacity: { value: opacity },
+          time: { value: 0.0 }
+        },
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform sampler2D map;
+          uniform float opacity;
+          uniform float time;
+          varying vec2 vUv;
+          void main() {
+            vec2 uv = vUv;
+            // Spooky wavy distortion
+            uv.x += sin(vUv.y * 12.0 + time * 4.0) * 0.015;
+            uv.y += cos(vUv.x * 12.0 + time * 3.0) * 0.015;
+
+            vec4 texColor = texture2D(map, uv);
+
+            // Discard black background to remove the card edges
+            if (texColor.r < 0.12 && texColor.g < 0.12 && texColor.b < 0.12) {
+              discard;
+            }
+
+            // Smooth circular edge vignette fade
+            float dist = distance(vUv, vec2(0.5, 0.5));
+            float edgeFade = 1.0 - smoothstep(0.32, 0.50, dist);
+
+            gl_FragColor = vec4(texColor.rgb, texColor.a * opacity * edgeFade);
+          }
+        `,
+        transparent: true,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      });
+    };
 
     this.monsterSmokeGeom = new THREE.SphereGeometry(1.0, 8, 8); // shared unit sphere
     this.monsterSmokeMat = new THREE.MeshBasicMaterial({
@@ -2752,7 +2822,7 @@ export class CanvasRenderer {
             mesh = new THREE.Group();
             
             // 1. Billboard Jumpscare Face Plane
-            const faceMesh = new THREE.Mesh(this.monsterFaceGeom, this.monsterFaceMat.clone());
+            const faceMesh = new THREE.Mesh(this.monsterFaceGeom, this.createMonsterFaceMat());
             faceMesh.name = "face";
             faceMesh.position.set(0, 0.75, 0.25);
             mesh.add(faceMesh);

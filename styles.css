@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&family=Courier+Prime:wght@700&family=Special+Elite&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&family=Courier+Prime:wght@700&family=Special+Elite&family=Creepster&display=swap');
 
 /* --- Design Tokens & Variables --- */
 :root {
@@ -206,44 +206,38 @@ h1, h2, h3, h4 {
   position: relative;
 }
 
-/* Glitch Title Horror Effect */
+/* Bloody Horror Title Style */
 .game-logo {
-  font-size: 2.8rem;
-  font-weight: 800;
+  font-family: 'Creepster', cursive;
+  font-size: 4.2rem;
   text-transform: uppercase;
-  color: var(--white);
-  text-shadow: 0 0 15px rgba(139, 92, 246, 0.4), 0 0 30px rgba(139, 92, 246, 0.2);
+  background: linear-gradient(to bottom, #ef4444 20%, #7f1d1d 90%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 6px rgba(185, 28, 28, 0.5)) drop-shadow(0 4px 12px rgba(0, 0, 0, 0.95));
   line-height: 1.1;
   position: relative;
-  letter-spacing: 2px;
-  animation: text-pulse 3s infinite ease-in-out;
+  letter-spacing: 3px;
+  animation: shiver-title 0.12s infinite linear;
 }
 
-.game-logo::before,
-.game-logo::after {
-  content: "MAZE OF FEAR";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: transparent;
+.loading-logo {
+  font-family: 'Creepster', cursive;
+  font-size: 3.2rem;
+  text-transform: uppercase;
+  background: linear-gradient(to bottom, #ef4444 20%, #7f1d1d 90%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 6px rgba(185, 28, 28, 0.5)) drop-shadow(0 4px 10px rgba(0, 0, 0, 0.9));
+  letter-spacing: 3px;
+  animation: shiver-title 0.15s infinite linear;
 }
 
-.game-logo::before {
-  color: #ef4444;
-  left: 2px;
-  text-shadow: -1px 0 #ef4444;
-  clip-path: rect(24px, 550px, 90px, 0);
-  animation: glitch-anim-1 5s infinite linear alternate-reverse;
-}
-
-.game-logo::after {
-  color: #3b82f6;
-  left: -2px;
-  text-shadow: -1px 0 #3b82f6;
-  clip-path: rect(85px, 550px, 140px, 0);
-  animation: glitch-anim-2 5s infinite linear alternate-reverse;
+@keyframes shiver-title {
+  0%, 100% { transform: translate(0, 0) scale(1.0); }
+  25% { transform: translate(-1.2px, 0.8px) rotate(-0.3deg); }
+  50% { transform: translate(0.8px, -1.2px) rotate(0.3deg); }
+  75% { transform: translate(-0.8px, -0.8px) rotate(0deg); }
 }
 
 .game-subtitle {

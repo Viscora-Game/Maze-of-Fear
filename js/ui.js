@@ -96,9 +96,10 @@ function setupUI(game) {
     soundBtn.classList.toggle("btn-danger", game.audio.muted);
 
     // Difficulty buttons toggle
-    const difficulties = ["easy", "medium", "hard"];
+    const difficulties = ["easy", "medium", "hard", "nightmare"];
     difficulties.forEach(diff => {
-      document.getElementById(`btn-diff-${diff}`).classList.toggle("active", game.difficulty === diff);
+      const btn = document.getElementById(`btn-diff-${diff}`);
+      if (btn) btn.classList.toggle("active", game.difficulty === diff);
     });
   };
 
@@ -712,13 +713,20 @@ function setupUI(game) {
     });
   }
 
-  const difficulties = ["easy", "medium", "hard"];
+  const difficulties = ["easy", "medium", "hard", "nightmare"];
   difficulties.forEach(diff => {
-    document.getElementById(`btn-diff-${diff}`).addEventListener("click", () => {
-      game.difficulty = diff;
-      localStorage.setItem("maze_diff", diff);
-      translateUI();
-    });
+    const btn = document.getElementById(`btn-diff-${diff}`);
+    if (btn) {
+      btn.addEventListener("click", () => {
+        game.difficulty = diff;
+        localStorage.setItem("maze_diff", diff);
+        difficulties.forEach(d => {
+          const b = document.getElementById(`btn-diff-${d}`);
+          if (b) b.classList.toggle("active", d === diff);
+        });
+        translateUI();
+      });
+    }
   });
 
   // Analog Mode Toggles

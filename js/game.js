@@ -155,15 +155,11 @@ export class Game {
   }
 
   initNewGame() {
-    // 1. Calculate dimensions based on level and difficulty settings (increased by ~100% in area)
-    let baseSize = 29; // Easy starting size (14x14 rooms = 196 rooms)
-    if (this.difficulty === "medium") baseSize = 39; // Medium starting size (19x19 rooms = 361 rooms)
-    else if (this.difficulty === "hard") baseSize = 49; // Hard starting size (24x24 rooms = 576 rooms)
-
-    // Increment size based on level progression
-    const levelBonus = Math.floor((this.currentLevel - 1) / 5) * 2;
+    // 1. Calculate dimensions based on level progression only (difficulty determines tension/canavar/fuel/damage)
+    let baseSize = 29; // Standard starting size (14x14 rooms = 196 rooms)
+    const levelBonus = Math.floor((this.currentLevel - 1) / 3) * 2;
     let size = baseSize + levelBonus;
-    size = Math.min(61, size); // Cap size to prevent lag while keeping maps massive
+    size = Math.min(45, size); // Cap size at 45 (22x22 rooms) to prevent lag and mobile navigation fatigue
     if (size % 2 === 0) size += 1; // Ensure size is odd for DFS maze carver
 
     // Calculate floors based on level
@@ -248,16 +244,42 @@ export class Game {
       },
 
       lastCheckPoint: { x: 1.5, y: 1.5, floor: 0 },
-      shadowMonster: {
-        active: false,
-        x: 0,
-        y: 0,
-        floor: 0,
-        burnTime: 0,
-        spawnTimer: 30.0 + Math.random() * 15.0, // first spawn within 30-45 seconds (breathing room)
-        speed: 1.55, // balanced speed increased by 15% (was 1.35)
-        soundTimer: 0.5
-      },
+      shadowMonsters: (() => {
+        // Difficulty-based spawner parameters
+        let initialSpawn = 30.0 + Math.random() * 15.0; // Medium default
+        let baseSpeed = 1.55;
+        if (this.difficulty === "easy") {
+          initialSpawn = 50.0 + Math.random() * 20.0;
+          baseSpeed = 1.15;
+        } else if (this.difficulty === "hard") {
+          initialSpawn = 15.0 + Math.random() * 10.0;
+          baseSpeed = 1.85;
+        } else if (this.difficulty === "nightmare") {
+          initialSpawn = 10.0 + Math.random() * 10.0;
+          baseSpeed = 1.95;
+        }
+
+        const monsters = [];
+        const makeMonster = (spawnDelay) => ({
+          active: false,
+          x: 0,
+          y: 0,
+          floor: 0,
+          burnTime: 0,
+          spawnTimer: spawnDelay,
+          speed: baseSpeed * (0.95 + Math.random() * 0.1),
+          soundTimer: 0.5,
+          pathRecalcTimer: 0
+        });
+
+        if (this.difficulty === "nightmare") {
+          monsters.push(makeMonster(initialSpawn));
+          monsters.push(makeMonster(initialSpawn + 20.0 + Math.random() * 15.0)); // Staggered second monster
+        } else {
+          monsters.push(makeMonster(initialSpawn));
+        }
+        return monsters;
+      })(),
       tookMonsterDamage: false,
       solvedGatesCount: 0,
       readLore: []
@@ -527,7 +549,8 @@ export class Game {
       this.lastCellX = cellX;
       this.lastCellY = cellY;
       
-      if (this.state.gameState === "playing" && (!this.state.shadowMonster || !this.state.shadowMonster.active)) {
+      const anyActiveMonster = this.state.shadowMonsters && this.state.shadowMonsters.some(sm => sm.active);
+      if (this.state.gameState === "playing" && !anyActiveMonster) {
         if (Math.random() < 0.004) {
           this.state.gameState = "modal";
           this.audio.playJumpscare();
@@ -628,7 +651,11 @@ export class Game {
 
     // Fuel consumption when lantern is ON
     if (this.state.lanternOn && p.fuel > 0) {
-      p.fuel = Math.max(0, p.fuel - dt * (100 / 240)); // depletion in exactly 240 seconds
+      let decayMult = 1.0;
+      if (this.difficulty === "easy") decayMult = 0.7;
+      else if (this.difficulty === "hard") decayMult = 1.25;
+      else if (this.difficulty === "nightmare") decayMult = 1.4;
+      p.fuel = Math.max(0, p.fuel - dt * (100 / 240) * decayMult);
       if (p.fuel === 0) {
         this.state.lanternOn = false; // Turn off automatically when out of fuel
       }
@@ -1029,14 +1056,20 @@ export class Game {
           }, 1500);
         }
         
+        let trapDamage = 25;
+        if (this.difficulty === "easy") trapDamage = 10;
+        else if (this.difficulty === "medium") trapDamage = 20;
+        else if (this.difficulty === "hard") trapDamage = 35;
+        else if (this.difficulty === "nightmare") trapDamage = 45;
+
         if (content.type === "trap") {
           title = this.t("chest.trapTitle");
-          text = this.t("chest.trapText", { damage: content.damage });
-          detail = { type: "trap", value: content.damage };
+          text = this.t("chest.trapText", { damage: trapDamage });
+          detail = { type: "trap", value: trapDamage };
         } else {
           title = this.t("chest.mimicTitle");
-          text = this.t("chest.mimicText", { damage: content.damage });
-          detail = { type: "mimic", value: content.damage };
+          text = this.t("chest.mimicText", { damage: trapDamage });
+          detail = { type: "mimic", value: trapDamage };
         }
       }
 
@@ -1610,177 +1643,191 @@ export class Game {
 
   updateShadowMonster(dt) {
     const s = this.state;
-    if (!s || !s.shadowMonster) return;
+    if (!s || !s.shadowMonsters || s.shadowMonsters.length === 0) return;
     
-    const sm = s.shadowMonster;
     const p = s.player;
     if (!p) return;
-    
-    // Spawner logic
-    if (!sm.active) {
-      sm.spawnTimer -= dt;
-      if (sm.spawnTimer <= 0) {
-        sm.spawnTimer = 8.0 + Math.random() * 7.0; // Reset spawn timer (8-15 seconds)
-        
-        // Spawn shadow monster on a walkable path cell 2 to 8 units away from the player
-        const pCellX = Math.floor(p.x);
-        const pCellY = Math.floor(p.y);
-        const grid = s.floors[s.currentFloor];
-        
-        // Collect all candidate path cells within range
-        const candidates = [];
-        for (let dy = -10; dy <= 10; dy++) {
-          for (let dx = -10; dx <= 10; dx++) {
-            const cx = pCellX + dx;
-            const cy = pCellY + dy;
-            if (cx >= 0 && cx < s.width && cy >= 0 && cy < s.height) {
-              const dist = Math.hypot(dx, dy);
-              if (dist >= 2.0 && dist <= 8.0) {
-                const cell = grid[cy][cx];
-                if (cell && cell.type !== "wall" && !cell.isExit && !cell.npc) {
-                  candidates.push({ x: cx, y: cy, dist });
+
+    s.shadowMonsters.forEach((sm) => {
+      // Spawner logic
+      if (!sm.active) {
+        sm.spawnTimer -= dt;
+        if (sm.spawnTimer <= 0) {
+          // Define difficulty-based spawn rates
+          let minSpawn = 30.0;
+          let maxSpawn = 45.0;
+          if (this.difficulty === "easy") { minSpawn = 50.0; maxSpawn = 70.0; }
+          else if (this.difficulty === "hard") { minSpawn = 15.0; maxSpawn = 25.0; }
+          else if (this.difficulty === "nightmare") { minSpawn = 10.0; maxSpawn = 20.0; }
+          
+          sm.spawnTimer = minSpawn + Math.random() * (maxSpawn - minSpawn);
+
+          const pCellX = Math.floor(p.x);
+          const pCellY = Math.floor(p.y);
+          const grid = s.floors[s.currentFloor];
+
+          // Collect all candidate path cells within range (but NOT inside the 5x5 region around the player!)
+          const candidates = [];
+          for (let dy = -10; dy <= 10; dy++) {
+            for (let dx = -10; dx <= 10; dx++) {
+              // 5x5 clearance constraint: dx or dy must be >= 3 in absolute value
+              if (Math.abs(dx) < 3 && Math.abs(dy) < 3) continue;
+
+              const cx = pCellX + dx;
+              const cy = pCellY + dy;
+              if (cx >= 0 && cx < s.width && cy >= 0 && cy < s.height) {
+                const dist = Math.hypot(dx, dy);
+                if (dist >= 4.0 && dist <= 9.0) {
+                  const cell = grid[cy][cx];
+                  if (cell && cell.type !== "wall" && !cell.isExit && !cell.npc) {
+                    candidates.push({ x: cx, y: cy, dist });
+                  }
                 }
               }
             }
           }
+
+          if (candidates.length > 0) {
+            const pick = candidates[Math.floor(Math.random() * candidates.length)];
+            sm.active = true;
+            sm.x = pick.x + 0.5;
+            sm.y = pick.y + 0.5;
+            sm.floor = s.currentFloor;
+            sm.burnTime = 0;
+            
+            let baseSpeed = 1.55;
+            if (this.difficulty === "easy") baseSpeed = 1.15;
+            else if (this.difficulty === "hard") baseSpeed = 1.85;
+            else if (this.difficulty === "nightmare") baseSpeed = 1.95;
+            
+            sm.speed = baseSpeed * (0.95 + Math.random() * 0.1);
+            sm.soundTimer = 0.5; // Play sound immediately after spawn
+            this.audio.playShadowSpawn();
+          }
         }
-        
-        if (candidates.length > 0) {
-          // Pick a random candidate cell
-          const pick = candidates[Math.floor(Math.random() * candidates.length)];
-          sm.active = true;
-          sm.x = pick.x + 0.5;
-          sm.y = pick.y + 0.5;
-          sm.floor = s.currentFloor;
-          sm.burnTime = 0;
-          sm.speed = (1.25 + Math.random() * 0.15) * 1.15; // Increased by 15%
-          sm.soundTimer = 0.5; // Play sound immediately after spawn
-          this.audio.playShadowSpawn();
+        return;
+      }
+
+      // If active but player changed floors, auto-despawn
+      if (sm.floor !== s.currentFloor) {
+        sm.active = false;
+        sm.spawnTimer = 10.0;
+        return;
+      }
+
+      const dist = Math.hypot(sm.x - p.x, sm.y - p.y);
+
+      // Play periodic ambient groan sound relative to distance
+      if (sm.soundTimer !== undefined) {
+        sm.soundTimer -= dt;
+        if (sm.soundTimer <= 0) {
+          sm.soundTimer = 3.5 + Math.random() * 2.0;
+          this.audio.playShadowGroan(dist);
         }
       }
-      return;
-    }
-    
-    // If active but player changed floors, auto-despawn
-    if (sm.floor !== s.currentFloor) {
-      sm.active = false;
-      sm.spawnTimer = 10.0;
-      return;
-    }
-    
-    const dist = Math.hypot(sm.x - p.x, sm.y - p.y);
-    
-    // Play periodic ambient groan sound relative to distance
-    if (sm.soundTimer !== undefined) {
-      sm.soundTimer -= dt;
-      if (sm.soundTimer <= 0) {
-        sm.soundTimer = 3.5 + Math.random() * 2.0; // every 3.5-5.5 seconds
-        this.audio.playShadowGroan(dist);
-      }
-    }
-    
-    // Check if player's flashlight is shining on the shadow monster
-    let isBurned = false;
-    if (s.lanternOn) {
-      if (dist < 8.0) { // flashlight beam range limit
-        // Calculate angle between player look direction and monster direction
-        const lookX = Math.cos(p.angle);
-        const lookY = Math.sin(p.angle);
-        const dirX = (sm.x - p.x) / dist;
-        const dirY = (sm.y - p.y) / dist;
-        
-        const dot = lookX * dirX + lookY * dirY;
-        if (dot > 0.866) { // ~30 degrees cone
-          const grid = s.floors[s.currentFloor];
-          if (this.hasLineOfSight(p.x, p.y, sm.x, sm.y, grid, s.width, s.height)) {
-            isBurned = true;
-            sm.burnTime += dt;
-            
-            // Play burn sound effect
-            if (!this.lastBurnSoundTime || Date.now() - this.lastBurnSoundTime > 300) {
-              this.audio.playShadowBurn();
-              this.lastBurnSoundTime = Date.now();
-            }
-            
-            // If burned for 2 seconds, it dissolves
-            if (sm.burnTime >= 2.0) {
-              sm.active = false;
-              sm.spawnTimer = 30.0 + Math.random() * 15.0; // respawn after 30-45 seconds (was 12-20s)
-              this.audio.playShadowBurn();
-              this.unlockAchievement("burn_monster");
-              if (this.onStateChange) this.onStateChange();
-              return;
+
+      // Check if player's flashlight is shining on this shadow monster
+      let isBurned = false;
+      if (s.lanternOn) {
+        if (dist < 8.0) {
+          const lookX = Math.cos(p.angle);
+          const lookY = Math.sin(p.angle);
+          const dirX = (sm.x - p.x) / dist;
+          const dirY = (sm.y - p.y) / dist;
+
+          const dot = lookX * dirX + lookY * dirY;
+          if (dot > 0.866) {
+            const grid = s.floors[s.currentFloor];
+            if (this.hasLineOfSight(p.x, p.y, sm.x, sm.y, grid, s.width, s.height)) {
+              isBurned = true;
+              sm.burnTime += dt;
+
+              if (!this.lastBurnSoundTime || Date.now() - this.lastBurnSoundTime > 300) {
+                this.audio.playShadowBurn();
+                this.lastBurnSoundTime = Date.now();
+              }
+
+              if (sm.burnTime >= 2.0) {
+                sm.active = false;
+                
+                let minRespawn = 30.0;
+                let maxRespawn = 45.0;
+                if (this.difficulty === "easy") { minRespawn = 50.0; maxRespawn = 70.0; }
+                else if (this.difficulty === "hard") { minRespawn = 15.0; maxRespawn = 25.0; }
+                else if (this.difficulty === "nightmare") { minRespawn = 12.0; maxRespawn = 20.0; }
+                
+                sm.spawnTimer = minRespawn + Math.random() * (maxRespawn - minRespawn);
+                this.audio.playShadowBurn();
+                this.unlockAchievement("burn_monster");
+                if (this.onStateChange) this.onStateChange();
+                return;
+              }
             }
           }
         }
       }
-    }
-    
-    if (!isBurned) {
-      // Slowly cool down the burn timer if not in the beam
-      sm.burnTime = Math.max(0, sm.burnTime - dt * 0.5);
-    }
-    
-    // Movement logic
-    const grid = s.floors[s.currentFloor];
-    
-    if (sm.burnTime > 0) {
-      // Flee away from player
-      let runX = sm.x - p.x;
-      let runY = sm.y - p.y;
-      const len = Math.hypot(runX, runY);
-      if (len > 0.001) {
-        runX = (runX / len) * sm.speed * 1.35 * dt; // flee faster
-        runY = (runY / len) * sm.speed * 1.35 * dt;
+
+      if (!isBurned) {
+        sm.burnTime = Math.max(0, sm.burnTime - dt * 0.5);
       }
-      
-      let nextX = sm.x + runX;
-      let nextY = sm.y + runY;
-      
-      const canMoveTo = (tx, ty) => {
-        const gx = Math.floor(tx);
-        const gy = Math.floor(ty);
-        if (gx < 0 || gx >= s.width || gy < 0 || gy >= s.height) return false;
-        const cell = grid[gy][gx];
-        return cell.type !== "wall";
-      };
-      
-      if (canMoveTo(nextX, sm.y)) sm.x = nextX;
-      if (canMoveTo(sm.x, nextY)) sm.y = nextY;
-      
-    } else {
-      // Recalculate chase path only every 12 ticks (~200ms) to prevent high-frequency CPU/BFS overhead
-      sm.pathRecalcTimer = (sm.pathRecalcTimer || 0) - dt;
-      if (sm.pathRecalcTimer <= 0 || !sm.lastNextStep) {
-        sm.pathRecalcTimer = 0.20; // 200ms cooldown
-        sm.lastNextStep = this.findPathToPlayer(sm.x, sm.y, p.x, p.y, grid, s.width, s.height);
-      }
-      
-      const nextStep = sm.lastNextStep;
-      if (nextStep) {
-        let chaseX = nextStep.x - sm.x;
-        let chaseY = nextStep.y - sm.y;
-        const len = Math.hypot(chaseX, chaseY);
+
+      const grid = s.floors[s.currentFloor];
+
+      if (sm.burnTime > 0) {
+        // Flee away from player
+        let runX = sm.x - p.x;
+        let runY = sm.y - p.y;
+        const len = Math.hypot(runX, runY);
         if (len > 0.001) {
-          sm.x += (chaseX / len) * sm.speed * dt;
-          sm.y += (chaseY / len) * sm.speed * dt;
+          runX = (runX / len) * sm.speed * 1.35 * dt;
+          runY = (runY / len) * sm.speed * 1.35 * dt;
         }
+
+        let nextX = sm.x + runX;
+        let nextY = sm.y + runY;
+
+        const canMoveTo = (tx, ty) => {
+          const gx = Math.floor(tx);
+          const gy = Math.floor(ty);
+          if (gx < 0 || gx >= s.width || gy < 0 || gy >= s.height) return false;
+          return grid[gy][gx].type !== "wall";
+        };
+
+        if (canMoveTo(nextX, sm.y)) sm.x = nextX;
+        if (canMoveTo(sm.x, nextY)) sm.y = nextY;
       } else {
-        // Fallback: move directly towards player coordinates
-        let chaseX = p.x - sm.x;
-        let chaseY = p.y - sm.y;
-        const len = Math.hypot(chaseX, chaseY);
-        if (len > 0.001) {
-          sm.x += (chaseX / len) * sm.speed * dt;
-          sm.y += (chaseY / len) * sm.speed * dt;
+        // Chase player
+        sm.pathRecalcTimer = (sm.pathRecalcTimer || 0) - dt;
+        if (sm.pathRecalcTimer <= 0 || !sm.lastNextStep) {
+          sm.pathRecalcTimer = 0.20;
+          sm.lastNextStep = this.findPathToPlayer(sm.x, sm.y, p.x, p.y, grid, s.width, s.height);
+        }
+
+        const nextStep = sm.lastNextStep;
+        if (nextStep) {
+          let chaseX = nextStep.x - sm.x;
+          let chaseY = nextStep.y - sm.y;
+          const len = Math.hypot(chaseX, chaseY);
+          if (len > 0.001) {
+            sm.x += (chaseX / len) * sm.speed * dt;
+            sm.y += (chaseY / len) * sm.speed * dt;
+          }
+        } else {
+          let chaseX = p.x - sm.x;
+          let chaseY = p.y - sm.y;
+          const len = Math.hypot(chaseX, chaseY);
+          if (len > 0.001) {
+            sm.x += (chaseX / len) * sm.speed * dt;
+            sm.y += (chaseY / len) * sm.speed * dt;
+          }
         }
       }
-    }
-    
-    // Check Jumpscare range
-    if (dist < 0.65) {
-      this.triggerJumpscare();
-    }
+
+      // Check Jumpscare range
+      if (dist < 0.65) {
+        this.triggerJumpscare();
+      }
+    });
   }
 
   triggerJumpscare() {
@@ -1788,8 +1835,12 @@ export class Game {
     if (!s || s.gameState !== "playing") return;
     
     s.gameState = "modal";
-    s.shadowMonster.active = false;
-    s.shadowMonster.spawnTimer = 15.0 + Math.random() * 10.0;
+    if (s.shadowMonsters && s.shadowMonsters.length > 0) {
+      s.shadowMonsters.forEach((sm) => {
+        sm.active = false;
+        sm.spawnTimer = 15.0 + Math.random() * 10.0;
+      });
+    }
     
     this.audio.playJumpscare();
     

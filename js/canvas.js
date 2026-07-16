@@ -801,7 +801,12 @@ export class CanvasRenderer {
     this.npcGroups = {}; // reset NPC groups
     this.exitPortals = [];
     this.torches = []; // reset torches array
-    this.shadowMonsterMesh = null;
+    if (this.shadowMonsterMeshes) {
+      this.shadowMonsterMeshes.forEach(mesh => {
+        if (mesh) this.scene.remove(mesh);
+      });
+    }
+    this.shadowMonsterMeshes = [];
     if (this.smokeTrailParticles) {
       this.smokeTrailParticles.forEach(p => {
         try { p.mesh.geometry.dispose(); } catch(e){}
@@ -2764,205 +2769,189 @@ export class CanvasRenderer {
       this.lantern.target.updateMatrixWorld(true);
     }
 
-    // Update Shadow Monster visual mesh
-    if (state.shadowMonster) {
-      const sm = state.shadowMonster;
-      if (sm.active) {
-        if (!this.shadowMonsterMesh) {
-          this.shadowMonsterMesh = new THREE.Group();
-          
-          // 1. Billboard Jumpscare Face Plane
-          const faceMesh = new THREE.Mesh(this.monsterFaceGeom, this.monsterFaceMat);
-          faceMesh.name = "face";
-          faceMesh.position.set(0, 0.75, 0.25); // Lowered to player eye level (y=0.75) and shifted slightly forward (z=0.25)
-          this.shadowMonsterMesh.add(faceMesh);
-          
-          // 3. Volumetric Smoke Body (15 overlapping black/dark spheres)
-          const smokeGroup = new THREE.Group();
-          smokeGroup.name = "smokeGroup";
-          this.shadowMonsterMesh.add(smokeGroup);
-          
-          for (let i = 0; i < 15; i++) {
-            const size = 0.25 + Math.random() * 0.25; // Smaller, more compact smoke body spheres (0.25m to 0.50m)
-            const mesh = new THREE.Mesh(this.monsterSmokeGeom, this.monsterSmokeMat);
-            mesh.scale.set(size, size, size); // scale the shared unit sphere geometry
-            mesh.position.set(
-              (Math.random() - 0.5) * 0.45,
-              0.75 + (Math.random() - 0.5) * 0.45, // Lowered center height to y=0.75
-              -0.10 + (Math.random() - 0.5) * 0.3 // offset backward so it acts as background/body
-            );
-            mesh.userData = {
-              initialPos: new THREE.Vector3(mesh.position.x, mesh.position.y, mesh.position.z),
-              speedX: 0.5 + Math.random() * 1.5,
-              speedY: 0.5 + Math.random() * 1.5,
-              speedZ: 0.5 + Math.random() * 1.5,
-              phase: Math.random() * Math.PI * 2,
-              pulseSpeed: 1.0 + Math.random() * 2.0
-            };
-            smokeGroup.add(mesh);
-          }
-          
-          // 4. Red Point Light casting eerie glow on walls
-          const shadowLight = new THREE.PointLight(0xff0000, 1.2, 5.0);
-          shadowLight.name = "shadowLight";
-          shadowLight.position.set(0, 0.75, 0.2); // Lowered center height to y=0.75
-          this.shadowMonsterMesh.add(shadowLight);
-          
-          this.scene.add(this.shadowMonsterMesh);
-        }
-        
-        const time = Date.now() * 0.005;
-        const burnRatio = Math.max(0.15, 1.0 - (sm.burnTime / 2.0));
-        
-        // Floating/bobbing height offset to y position (around 0.15 height with 0.08 amplitude)
-        this.shadowMonsterMesh.position.set(sm.x, 0.15 + Math.sin(time) * 0.08, sm.y);
-        
-        // Face player camera
-        const dx = this.camera.position.x - sm.x;
-        const dz = this.camera.position.z - sm.y;
-        this.shadowMonsterMesh.rotation.y = Math.atan2(dx, dz);
-        
-        // Update eye pulse and opacity
-        const eyeL = this.shadowMonsterMesh.getObjectByName("eyeL");
-        const eyeR = this.shadowMonsterMesh.getObjectByName("eyeR");
-        const eyePulse = 1.0 + Math.sin(Date.now() * 0.025) * 0.15;
-        if (eyeL) {
-          eyeL.scale.set(eyePulse, eyePulse, eyePulse);
-          if (eyeL.material) eyeL.material.opacity = burnRatio;
-        }
-        if (eyeR) {
-          eyeR.scale.set(eyePulse, eyePulse, eyePulse);
-          if (eyeR.material) eyeR.material.opacity = burnRatio;
-        }
-        
-        // Update face animations and shader uniforms (supporting both ShaderMaterial uniforms and MeshBasicMaterial fallback)
-        const face = this.shadowMonsterMesh.getObjectByName("face");
-        if (face) {
-          // 1. Subtle breathing scale pulse and side-to-side rotation sway
-          const faceScale = 1.0 + Math.sin(time * 1.5) * 0.05;
-          face.scale.set(faceScale, faceScale, faceScale);
-          face.rotation.z = Math.sin(time * 2.0) * 0.06;
-          
-          if (face.material) {
-            if (face.material.uniforms) {
-              if (face.material.uniforms.opacity) face.material.uniforms.opacity.value = burnRatio;
-              if (face.material.uniforms.time) face.material.uniforms.time.value = time;
-            } else {
-              face.material.opacity = burnRatio;
+    // Update Shadow Monsters visual meshes
+    if (state.shadowMonsters && state.shadowMonsters.length > 0) {
+      if (!this.shadowMonsterMeshes) {
+        this.shadowMonsterMeshes = [];
+      }
+      
+      // Ensure we have correct number of slots
+      while (this.shadowMonsterMeshes.length < state.shadowMonsters.length) {
+        this.shadowMonsterMeshes.push(null);
+      }
+      
+      state.shadowMonsters.forEach((sm, index) => {
+        if (sm.active) {
+          let mesh = this.shadowMonsterMeshes[index];
+          if (!mesh) {
+            mesh = new THREE.Group();
+            
+            // 1. Billboard Jumpscare Face Plane
+            const faceMesh = new THREE.Mesh(this.monsterFaceGeom, this.monsterFaceMat.clone());
+            faceMesh.name = "face";
+            faceMesh.position.set(0, 0.75, 0.25);
+            mesh.add(faceMesh);
+            
+            // 3. Volumetric Smoke Body (15 overlapping black/dark spheres)
+            const smokeGroup = new THREE.Group();
+            smokeGroup.name = "smokeGroup";
+            mesh.add(smokeGroup);
+            
+            for (let i = 0; i < 15; i++) {
+              const size = 0.25 + Math.random() * 0.25;
+              const smokeMesh = new THREE.Mesh(this.monsterSmokeGeom, this.monsterSmokeMat.clone());
+              smokeMesh.scale.set(size, size, size);
+              smokeMesh.position.set(
+                (Math.random() - 0.5) * 0.45,
+                0.75 + (Math.random() - 0.5) * 0.45,
+                -0.10 + (Math.random() - 0.5) * 0.3
+              );
+              smokeMesh.userData = {
+                initialPos: new THREE.Vector3(smokeMesh.position.x, smokeMesh.position.y, smokeMesh.position.z),
+                speedX: 0.5 + Math.random() * 1.5,
+                speedY: 0.5 + Math.random() * 1.5,
+                speedZ: 0.5 + Math.random() * 1.5,
+                phase: Math.random() * Math.PI * 2,
+                pulseSpeed: 1.0 + Math.random() * 2.0
+              };
+              smokeGroup.add(smokeMesh);
             }
+            
+            // 4. Red Point Light casting eerie glow on walls
+            const shadowLight = new THREE.PointLight(0xff0000, 1.2, 5.0);
+            shadowLight.name = "shadowLight";
+            shadowLight.position.set(0, 0.75, 0.2);
+            mesh.add(shadowLight);
+            
+            this.scene.add(mesh);
+            this.shadowMonsterMeshes[index] = mesh;
           }
-        }
-        
-        // Update point light intensity
-        const shadowLight = this.shadowMonsterMesh.getObjectByName("shadowLight");
-        if (shadowLight) {
-          shadowLight.intensity = 1.2 * burnRatio;
-        }
-        
-        // Animate individual smoke spheres for boiling/turbulent effect
-        const smokeGroup = this.shadowMonsterMesh.getObjectByName("smokeGroup");
-        if (smokeGroup) {
-          smokeGroup.rotation.y = time * 0.2;
-          smokeGroup.rotation.x = time * 0.1;
-          smokeGroup.children.forEach((sphere) => {
-            const ud = sphere.userData;
-            if (ud && ud.initialPos) {
-              const pulse = 1.0 + Math.sin(time * ud.pulseSpeed + ud.phase) * 0.12;
-              sphere.scale.set(pulse, pulse, pulse);
-              
-              sphere.position.x = ud.initialPos.x + Math.sin(time * ud.speedX + ud.phase) * 0.05;
-              sphere.position.y = ud.initialPos.y + Math.cos(time * ud.speedY + ud.phase) * 0.05;
-              sphere.position.z = ud.initialPos.z + Math.sin(time * ud.speedZ + ud.phase) * 0.05;
-              
-              if (sphere.material) {
-                sphere.material.opacity = 0.25 * burnRatio;
+          
+          const time = Date.now() * 0.005 + index * 10.0;
+          const burnRatio = Math.max(0.15, 1.0 - (sm.burnTime / 2.0));
+          
+          mesh.position.set(sm.x, 0.15 + Math.sin(time) * 0.08, sm.y);
+          
+          // Face player camera
+          const dx = this.camera.position.x - sm.x;
+          const dz = this.camera.position.z - sm.y;
+          mesh.rotation.y = Math.atan2(dx, dz);
+          
+          // Update face and light
+          const face = mesh.getObjectByName("face");
+          if (face) {
+            const faceScale = 1.0 + Math.sin(time * 1.5) * 0.05;
+            face.scale.set(faceScale, faceScale, faceScale);
+            face.rotation.z = Math.sin(time * 2.0) * 0.06;
+            if (face.material) face.material.opacity = burnRatio;
+          }
+          
+          const shadowLight = mesh.getObjectByName("shadowLight");
+          if (shadowLight) {
+            shadowLight.intensity = 1.2 * burnRatio;
+          }
+          
+          // Animate individual smoke spheres
+          const smokeGroup = mesh.getObjectByName("smokeGroup");
+          if (smokeGroup) {
+            smokeGroup.rotation.y = time * 0.2;
+            smokeGroup.rotation.x = time * 0.1;
+            smokeGroup.children.forEach((sphere) => {
+              const ud = sphere.userData;
+              if (ud && ud.initialPos) {
+                const pulse = 1.0 + Math.sin(time * ud.pulseSpeed + ud.phase) * 0.12;
+                sphere.scale.set(pulse, pulse, pulse);
+                sphere.position.x = ud.initialPos.x + Math.sin(time * ud.speedX + ud.phase) * 0.05;
+                sphere.position.y = ud.initialPos.y + Math.cos(time * ud.speedY + ud.phase) * 0.05;
+                sphere.position.z = ud.initialPos.z + Math.sin(time * ud.speedZ + ud.phase) * 0.05;
+                if (sphere.material) sphere.material.opacity = 0.25 * burnRatio;
               }
-            }
-          });
-        }
-        
-        // Spawning and fading out trail particles (volumetric smoke trail)
-        if (!this.smokeTrailParticles) {
-          this.smokeTrailParticles = [];
-        }
-        
-        const now = Date.now();
-        if (!this.lastTrailSpawnTime) this.lastTrailSpawnTime = 0;
-        if (now - this.lastTrailSpawnTime > 60) { // Spawns every 60ms (faster rate)
-          this.lastTrailSpawnTime = now;
-          
-          const count = 2 + Math.floor(Math.random() * 2); // 2-3 particles per tick
-          for (let tIdx = 0; tIdx < count; tIdx++) {
-            const trailGeom = new THREE.SphereGeometry(0.35 + Math.random() * 0.35, 8, 8); // Slightly larger
-            const trailMat = new THREE.MeshBasicMaterial({
-              color: 0x050505,
-              transparent: true,
-              opacity: 0.22, // Higher initial opacity
-              depthWrite: false
-            });
-            const trailMesh = new THREE.Mesh(trailGeom, trailMat);
-            
-            // Align spawn position with the monster's actual eye level height (y=0.75)
-            trailMesh.position.set(
-              sm.x + (Math.random() - 0.5) * 0.4,
-              this.shadowMonsterMesh.position.y + 0.75 + (Math.random() - 0.5) * 0.4,
-              sm.y + (Math.random() - 0.5) * 0.4
-            );
-            this.scene.add(trailMesh);
-            
-            this.smokeTrailParticles.push({
-              mesh: trailMesh,
-              spawnTime: now,
-              lifeTime: 1500 + Math.random() * 500, // Longer lifetime for longer trailing tail
-              initialScale: 1.0,
-              initialOpacity: 0.22
             });
           }
-        }
-        
-        // Update trail particles
-        if (this.smokeTrailParticles) {
-          const currentTime = Date.now();
-          for (let i = this.smokeTrailParticles.length - 1; i >= 0; i--) {
-            const p = this.smokeTrailParticles[i];
-            const elapsed = currentTime - p.spawnTime;
-            if (elapsed >= p.lifeTime) {
-              this.scene.remove(p.mesh);
-              if (p.mesh.geometry) {
-                try { p.mesh.geometry.dispose(); } catch(e) {}
-              }
-              if (p.mesh.material) {
-                try { p.mesh.material.dispose(); } catch(e) {}
-              }
-              this.smokeTrailParticles.splice(i, 1);
-            } else {
-              const ratio = elapsed / p.lifeTime;
-              const scale = 1.0 + ratio * 1.5;
-              p.mesh.scale.set(scale, scale, scale);
-              if (p.mesh.material) {
-                p.mesh.material.opacity = p.initialOpacity * (1.0 - ratio) * burnRatio;
-              }
-            }
+          
+          mesh.visible = true;
+        } else {
+          // Hide / remove if not active
+          const mesh = this.shadowMonsterMeshes[index];
+          if (mesh) {
+            this.scene.remove(mesh);
+            this.shadowMonsterMeshes[index] = null;
           }
         }
-        
-        this.shadowMonsterMesh.visible = true;
-      } else {
-        if (this.shadowMonsterMesh) {
-          this.scene.remove(this.shadowMonsterMesh);
-          this.shadowMonsterMesh = null;
-        }
-        if (this.smokeTrailParticles) {
-          this.smokeTrailParticles.forEach(p => {
-            this.scene.remove(p.mesh);
-            if (p.mesh.geometry) {
-              try { p.mesh.geometry.dispose(); } catch(e) {}
+      });
+    }
+
+    // Spawning and fading out trail particles (volumetric smoke trail)
+    if (!this.smokeTrailParticles) {
+      this.smokeTrailParticles = [];
+    }
+    
+    const now = Date.now();
+    if (!this.lastTrailSpawnTime) this.lastTrailSpawnTime = 0;
+    if (now - this.lastTrailSpawnTime > 60) {
+      this.lastTrailSpawnTime = now;
+      
+      if (state.shadowMonsters) {
+        state.shadowMonsters.forEach((sm, index) => {
+          if (sm.active) {
+            const mesh = this.shadowMonsterMeshes[index];
+            if (!mesh) return;
+            
+            const count = 1 + Math.floor(Math.random() * 2);
+            for (let tIdx = 0; tIdx < count; tIdx++) {
+              const trailGeom = new THREE.SphereGeometry(0.35 + Math.random() * 0.35, 8, 8);
+              const trailMat = new THREE.MeshBasicMaterial({
+                color: 0x050505,
+                transparent: true,
+                opacity: 0.22,
+                depthWrite: false
+              });
+              const trailMesh = new THREE.Mesh(trailGeom, trailMat);
+              
+              trailMesh.position.set(
+                sm.x + (Math.random() - 0.5) * 0.4,
+                mesh.position.y + 0.75 + (Math.random() - 0.5) * 0.4,
+                sm.y + (Math.random() - 0.5) * 0.4
+              );
+              this.scene.add(trailMesh);
+              
+              const burnRatio = Math.max(0.15, 1.0 - (sm.burnTime / 2.0));
+              this.smokeTrailParticles.push({
+                mesh: trailMesh,
+                spawnTime: now,
+                lifeTime: 1200 + Math.random() * 400,
+                initialScale: 1.0,
+                initialOpacity: 0.22,
+                burnRatio: burnRatio
+              });
             }
-            if (p.mesh.material) {
-              try { p.mesh.material.dispose(); } catch(e) {}
-            }
-          });
-          this.smokeTrailParticles = [];
+          }
+        });
+      }
+    }
+    
+    // Update trail particles
+    if (this.smokeTrailParticles) {
+      const currentTime = Date.now();
+      for (let i = this.smokeTrailParticles.length - 1; i >= 0; i--) {
+        const p = this.smokeTrailParticles[i];
+        const elapsed = currentTime - p.spawnTime;
+        if (elapsed >= p.lifeTime) {
+          this.scene.remove(p.mesh);
+          if (p.mesh.geometry) {
+            try { p.mesh.geometry.dispose(); } catch(e) {}
+          }
+          if (p.mesh.material) {
+            try { p.mesh.material.dispose(); } catch(e) {}
+          }
+          this.smokeTrailParticles.splice(i, 1);
+        } else {
+          const ratio = elapsed / p.lifeTime;
+          const scale = 1.0 + ratio * 1.5;
+          p.mesh.scale.set(scale, scale, scale);
+          if (p.mesh.material) {
+            p.mesh.material.opacity = p.initialOpacity * (1.0 - ratio) * (p.burnRatio || 1.0);
+          }
         }
       }
     }

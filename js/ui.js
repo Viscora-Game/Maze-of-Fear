@@ -91,9 +91,29 @@ function setupUI(game) {
     // Re-render settings buttons check
     document.getElementById("btn-lang-tr").classList.toggle("active", game.lang === "tr");
     document.getElementById("btn-lang-en").classList.toggle("active", game.lang === "en");
+    
     const soundBtn = document.getElementById("btn-sound");
-    soundBtn.textContent = game.audio.muted ? game.t("soundOff") : game.t("soundOn");
-    soundBtn.classList.toggle("btn-danger", game.audio.muted);
+    if (soundBtn) {
+      soundBtn.textContent = game.audio.muted ? game.t("soundOff") : game.t("soundOn");
+      soundBtn.classList.toggle("btn-danger", game.audio.muted);
+    }
+
+    // Dynamic settings translations
+    const btnVib = document.getElementById("btn-settings-vibration");
+    if (btnVib) {
+      btnVib.classList.toggle("active", game.vibrationEnabled);
+      btnVib.textContent = game.lang === "tr"
+        ? (game.vibrationEnabled ? "Titreşim: AÇIK / ON" : "Titreşim: KAPALI / OFF")
+        : (game.vibrationEnabled ? "Vibration: ON" : "Vibration: OFF");
+    }
+
+    const btnShad = document.getElementById("btn-settings-shadows");
+    if (btnShad) {
+      btnShad.classList.toggle("active", game.shadowsEnabled);
+      btnShad.textContent = game.lang === "tr"
+        ? (game.shadowsEnabled ? "Gölgeler: AÇIK / ON" : "Gölgeler: KAPALI / OFF")
+        : (game.shadowsEnabled ? "Shadows: ON" : "Shadows: OFF");
+    }
 
     // Difficulty buttons toggle
     const difficulties = ["easy", "medium", "hard", "nightmare"];
@@ -459,22 +479,7 @@ function setupUI(game) {
     applySavedHUDLayout();
     clampButtonsToScreen();
 
-    // Initialize vibration & shadows toggle button styles
-    const btnVib = document.getElementById("btn-settings-vibration");
-    if (btnVib) {
-      btnVib.classList.toggle("active", game.vibrationEnabled);
-      btnVib.textContent = game.lang === "tr"
-        ? (game.vibrationEnabled ? "Titreşim: AÇIK / ON" : "Titreşim: KAPALI / OFF")
-        : (game.vibrationEnabled ? "Vibration: ON" : "Vibration: OFF");
-    }
-
-    const btnShad = document.getElementById("btn-settings-shadows");
-    if (btnShad) {
-      btnShad.classList.toggle("active", game.shadowsEnabled);
-      btnShad.textContent = game.lang === "tr"
-        ? (game.shadowsEnabled ? "Gölgeler: AÇIK / ON" : "Gölgeler: KAPALI / OFF")
-        : (game.shadowsEnabled ? "Shadows: ON" : "Shadows: OFF");
-    }
+    translateUI();
 
     // Initialize audio volume slider and percentage label from saved state
     const volSlider = document.getElementById("settings-volume-slider");
@@ -789,10 +794,7 @@ function setupUI(game) {
     btnSettingsVib.addEventListener("click", () => {
       game.vibrationEnabled = !game.vibrationEnabled;
       localStorage.setItem("maze_vibration", game.vibrationEnabled.toString());
-      btnSettingsVib.classList.toggle("active", game.vibrationEnabled);
-      btnSettingsVib.textContent = game.lang === "tr"
-        ? (game.vibrationEnabled ? "Titreşim: AÇIK / ON" : "Titreşim: KAPALI / OFF")
-        : (game.vibrationEnabled ? "Vibration: ON" : "Vibration: OFF");
+      translateUI();
       game.vibrateDevice("light");
     });
   }
@@ -803,10 +805,7 @@ function setupUI(game) {
     btnSettingsShad.addEventListener("click", () => {
       game.shadowsEnabled = !game.shadowsEnabled;
       localStorage.setItem("maze_shadows", game.shadowsEnabled.toString());
-      btnSettingsShad.classList.toggle("active", game.shadowsEnabled);
-      btnSettingsShad.textContent = game.lang === "tr"
-        ? (game.shadowsEnabled ? "Gölgeler: AÇIK / ON" : "Gölgeler: KAPALI / OFF")
-        : (game.shadowsEnabled ? "Shadows: ON" : "Shadows: OFF");
+      translateUI();
       
       // If the renderer is active, immediately update shadows!
       if (game.renderer) {

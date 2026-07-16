@@ -52,10 +52,11 @@
         <p class="game-subtitle" data-t="subtitle">A Procedural Adventure of Risk & Decisions</p>
       </div>
 
-      <div class="menu-buttons">
+      <div class="menu-buttons" style="width: 100%; max-width: 300px; display: flex; flex-direction: column; gap: 15px; margin: 0 auto;">
         <button class="btn btn-primary glow-box" id="btn-play" data-t="play">Play Game</button>
         <button class="btn" id="btn-settings" data-t="settings">Settings</button>
         <button class="btn" id="btn-howtoplay" data-t="howToPlay">How to Play</button>
+        <button class="btn" id="btn-achievements" data-t="achievements">Başarımlar</button>
       </div>
     </div>
 
@@ -93,12 +94,20 @@
             <div class="settings-label" data-t="sound">Ses Efektleri</div>
             <button class="btn w-full" id="btn-sound">AÇIK / ON</button>
           </div>
-          <div class="settings-group" style="margin-bottom: 0;">
+          <div class="settings-group">
             <div class="settings-label" data-t="soundVolume">Ses Seviyesi</div>
-            <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
               <input type="range" id="settings-volume-slider" min="0" max="100" value="100" style="flex: 1; accent-color: var(--violet); cursor: pointer; height: 6px; border-radius: 3px;">
               <span id="settings-volume-val" style="font-size: 0.85rem; color: var(--cyan); font-weight: bold; width: 40px; text-align: right;">100%</span>
             </div>
+          </div>
+          <div class="settings-group">
+            <div class="settings-label" data-t="vibration">Titreşim Desteği</div>
+            <button class="btn w-full btn-toggle active" id="btn-settings-vibration">Titreşim: AÇIK / ON</button>
+          </div>
+          <div class="settings-group" style="margin-bottom: 0;">
+            <div class="settings-label" data-t="shadows">Performans (Gölgeler)</div>
+            <button class="btn w-full btn-toggle active" id="btn-settings-shadows">Gölgeler: AÇIK / ON</button>
           </div>
           <div id="creepy-sound-warning" class="creepy-warning hidden" data-t="creepyWarning">
             Sesi Kapatarak Kaçabileceğini mi sandın?
@@ -184,6 +193,15 @@
 
       </div>
 
+      <button class="btn btn-primary btn-back" data-t="back" style="width: 100%; max-width: 200px; padding: 12px; margin-top: 15px;">Back</button>
+    </div>
+
+    <!-- 3B. ACHIEVEMENTS SCREEN -->
+    <div id="screen-achievements" class="screen hidden" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box;">
+      <h2 class="glow-text text-violet text-3xl mb-8" data-t="achievements" style="margin-top: 0;">Achievements</h2>
+      <div id="achievements-list" class="settings-grid" style="overflow-y: auto; max-height: 60vh; padding: 5px; width: 100%; box-sizing: border-box;">
+        <!-- Populated dynamically in UI.js -->
+      </div>
       <button class="btn btn-primary btn-back" data-t="back" style="width: 100%; max-width: 200px; padding: 12px; margin-top: 15px;">Back</button>
     </div>
 

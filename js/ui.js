@@ -17,6 +17,7 @@ function setupUI(game) {
     menu: document.getElementById("screen-menu"),
     settings: document.getElementById("screen-settings"),
     howtoplay: document.getElementById("screen-howtoplay"),
+    achievements: document.getElementById("screen-achievements"),
     game: document.getElementById("screen-game"),
     pause: document.getElementById("screen-pause"),
   };
@@ -456,6 +457,23 @@ function setupUI(game) {
     updateAnalogModeUI();
     applySavedHUDLayout();
 
+    // Initialize vibration & shadows toggle button styles
+    const btnVib = document.getElementById("btn-settings-vibration");
+    if (btnVib) {
+      btnVib.classList.toggle("active", game.vibrationEnabled);
+      btnVib.textContent = game.lang === "tr"
+        ? (game.vibrationEnabled ? "Titreşim: AÇIK / ON" : "Titreşim: KAPALI / OFF")
+        : (game.vibrationEnabled ? "Vibration: ON" : "Vibration: OFF");
+    }
+
+    const btnShad = document.getElementById("btn-settings-shadows");
+    if (btnShad) {
+      btnShad.classList.toggle("active", game.shadowsEnabled);
+      btnShad.textContent = game.lang === "tr"
+        ? (game.shadowsEnabled ? "Gölgeler: AÇIK / ON" : "Gölgeler: KAPALI / OFF")
+        : (game.shadowsEnabled ? "Shadows: ON" : "Shadows: OFF");
+    }
+
     // Initialize audio volume slider and percentage label from saved state
     const volSlider = document.getElementById("settings-volume-slider");
     const volVal = document.getElementById("settings-volume-val");
@@ -721,6 +739,84 @@ function setupUI(game) {
     screens.settings.classList.add("hidden");
     customizeHUD();
   });
+
+  // Vibration settings toggle
+  const btnSettingsVib = document.getElementById("btn-settings-vibration");
+  if (btnSettingsVib) {
+    btnSettingsVib.addEventListener("click", () => {
+      game.vibrationEnabled = !game.vibrationEnabled;
+      localStorage.setItem("maze_vibration", game.vibrationEnabled.toString());
+      btnSettingsVib.classList.toggle("active", game.vibrationEnabled);
+      btnSettingsVib.textContent = game.lang === "tr"
+        ? (game.vibrationEnabled ? "Titreşim: AÇIK / ON" : "Titreşim: KAPALI / OFF")
+        : (game.vibrationEnabled ? "Vibration: ON" : "Vibration: OFF");
+      game.vibrateDevice("light");
+    });
+  }
+
+  // Shadows settings toggle
+  const btnSettingsShad = document.getElementById("btn-settings-shadows");
+  if (btnSettingsShad) {
+    btnSettingsShad.addEventListener("click", () => {
+      game.shadowsEnabled = !game.shadowsEnabled;
+      localStorage.setItem("maze_shadows", game.shadowsEnabled.toString());
+      btnSettingsShad.classList.toggle("active", game.shadowsEnabled);
+      btnSettingsShad.textContent = game.lang === "tr"
+        ? (game.shadowsEnabled ? "Gölgeler: AÇIK / ON" : "Gölgeler: KAPALI / OFF")
+        : (game.shadowsEnabled ? "Shadows: ON" : "Shadows: OFF");
+      
+      // If the renderer is active, immediately update shadows!
+      if (game.renderer) {
+        game.renderer.shadowsEnabled = game.shadowsEnabled;
+        game.renderer.renderer.shadowMap.enabled = game.shadowsEnabled;
+        if (game.renderer.dirLight) {
+          game.renderer.dirLight.castShadow = game.shadowsEnabled;
+        }
+        // Force scene update
+        game.draw();
+      }
+    });
+  }
+
+  // Achievements Screen Trigger
+  const btnAchievements = document.getElementById("btn-achievements");
+  if (btnAchievements) {
+    btnAchievements.addEventListener("click", () => {
+      renderAchievementsList();
+      showScreen("achievements");
+    });
+  }
+
+  const renderAchievementsList = () => {
+    const listContainer = document.getElementById("achievements-list");
+    if (!listContainer) return;
+    listContainer.innerHTML = "";
+
+    const unlockedIds = JSON.parse(localStorage.getItem("maze_achievements") || "[]");
+
+    game.achievements.forEach(ach => {
+      const isUnlocked = unlockedIds.includes(ach.id);
+      const name = game.lang === "tr" ? ach.nameTr : ach.nameEn;
+      const desc = game.lang === "tr" ? ach.descTr : ach.descEn;
+
+      const card = document.createElement("div");
+      card.className = `achievement-card ${isUnlocked ? "unlocked" : "locked"}`;
+      card.innerHTML = `
+        <div class="achievement-icon">${isUnlocked ? ach.icon : "🔒"}</div>
+        <div class="achievement-details">
+          <div class="achievement-title">${name}</div>
+          <div class="achievement-desc">${desc}</div>
+        </div>
+        <div class="achievement-status ${isUnlocked ? "unlocked-lbl" : "locked-lbl"}">
+          ${isUnlocked 
+            ? (game.lang === "tr" ? "Açıldı" : "Unlocked")
+            : (game.lang === "tr" ? "Kilitli" : "Locked")
+          }
+        </div>
+      `;
+      listContainer.appendChild(card);
+    });
+  };
 
   // Back Buttons
   document.querySelectorAll(".btn-back").forEach(btn => {

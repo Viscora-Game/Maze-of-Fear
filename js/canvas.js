@@ -111,8 +111,9 @@ export class CanvasRenderer {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(canvas.width, canvas.height);
     
-    // Enable soft shadow mapping for premium depth
-    this.renderer.shadowMap.enabled = true;
+    // Dynamic shadow mapping switch (opt-in/opt-out for mobile performance boost)
+    this.shadowsEnabled = localStorage.getItem("maze_shadows") !== "false";
+    this.renderer.shadowMap.enabled = this.shadowsEnabled;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     
     // 2. Load Photographic Textures from public CDN
@@ -434,8 +435,8 @@ export class CanvasRenderer {
             child.material.map.magFilter = THREE.NearestFilter;
             child.material.map.minFilter = THREE.NearestFilter;
           }
-          child.castShadow = true;
-          child.receiveShadow = true;
+          child.castShadow = this.shadowsEnabled;
+          child.receiveShadow = this.shadowsEnabled;
         }
       });
       
@@ -571,8 +572,8 @@ export class CanvasRenderer {
               roughness: 0.85,
               metalness: 0.15
             });
-            child.castShadow = true;
-            child.receiveShadow = true;
+            child.castShadow = this.shadowsEnabled;
+            child.receiveShadow = this.shadowsEnabled;
           }
         });
         
@@ -624,8 +625,8 @@ export class CanvasRenderer {
             if (child.isLight || child.isCamera) {
               toRemove.push(child);
             } else if (child.isMesh) {
-              child.castShadow = true;
-              child.receiveShadow = true;
+              child.castShadow = this.shadowsEnabled;
+              child.receiveShadow = this.shadowsEnabled;
               if (name === "monster") {
                 // Scarier, darker transparent shadow look
                 child.material = new THREE.MeshStandardMaterial({
@@ -822,7 +823,7 @@ export class CanvasRenderer {
 
     this.dirLight = new THREE.DirectionalLight("#1e293b", 0.04); // Very weak moonlight fill to prevent total pure pitch black
     this.dirLight.position.set(10, 30, 10);
-    this.dirLight.castShadow = true;
+    this.dirLight.castShadow = this.shadowsEnabled;
     this.dirLight.shadow.mapSize.width = 1024;
     this.dirLight.shadow.mapSize.height = 1024;
     this.dirLight.shadow.camera.near = 0.5;
@@ -1329,8 +1330,8 @@ export class CanvasRenderer {
               // Enable shadows and configure materials
               chestClone.traverse((child) => {
                 if (child.isMesh) {
-                  child.castShadow = true;
-                  child.receiveShadow = true;
+                  child.castShadow = this.shadowsEnabled;
+                  child.receiveShadow = this.shadowsEnabled;
                   if (child.material) {
                     child.material.roughness = 0.8;
                   }
@@ -2246,8 +2247,8 @@ export class CanvasRenderer {
     // Enable shadow casting and receiving for all meshes in the scene graph
     this.scene.traverse((node) => {
       if (node.isMesh) {
-        node.castShadow = true;
-        node.receiveShadow = true;
+        node.castShadow = this.shadowsEnabled;
+        node.receiveShadow = this.shadowsEnabled;
       }
     });
   }

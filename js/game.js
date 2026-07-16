@@ -41,7 +41,21 @@ export class Game {
   constructor() {
     this.lang = localStorage.getItem("maze_lang") || "tr";
     this.audioEnabled = localStorage.getItem("maze_audio") !== "false";
+    this.vibrationEnabled = localStorage.getItem("maze_vibration") !== "false";
+    this.shadowsEnabled = localStorage.getItem("maze_shadows") !== "false";
     this.difficulty = localStorage.getItem("maze_diff") || "medium";
+
+    // Achievements definitions
+    this.achievements = [
+      { id: "first_escape", nameTr: "İlk Kaçış", nameEn: "First Escape", descTr: "Maze of Fear'dan ilk kez başarıyla kaç.", descEn: "Escape the Maze of Fear for the first time.", icon: "🏆" },
+      { id: "burn_monster", nameTr: "Karanlığın Avcısı", nameEn: "Shadow Burner", descTr: "Fenerinle canavarı ilk kez yakarak geri püskürt.", descEn: "Repel the shadow monster for the first time by burning it with your light.", icon: "🔥" },
+      { id: "read_all_lore", nameTr: "Kayıp Parşömenler", nameEn: "Lore Keeper", descTr: "Labirentteki 3 hikaye parşömeninin tamamını bul ve oku.", descEn: "Find and read all 3 lore papers scattered in the maze.", icon: "📜" },
+      { id: "solve_all_quests", nameTr: "İyilik Meleği", nameEn: "Soul Liberator", descTr: "Çocuk ve Fare yan görevlerinin ikisini de aynı oyunda tamamla.", descEn: "Complete both the Child and Mouse side quests in a single game.", icon: "💖" },
+      { id: "gold_collector", nameTr: "Altın Avcısı", nameEn: "Gold Digger", descTr: "Bir oyunda en az 30 altın biriktir.", descEn: "Accumulate at least 30 gold in a single game.", icon: "💰" },
+      { id: "hard_victory", nameTr: "Bitmeyen Kabus", nameEn: "Hardcore Survivor", descTr: "Zor (Hard) modda labirenti başarıyla bitir.", descEn: "Successfully escape the maze on Hard difficulty.", icon: "💀" },
+      { id: "solve_all_gates", nameTr: "Zırhlı Kapılar", nameEn: "Keymaster", descTr: "3 kilitli kapının/şifrenin tamamını çözerek aç.", descEn: "Resolve and open all 3 locked doors/puzzles in the maze.", icon: "🔑" },
+      { id: "no_damage_victory", nameTr: "Hayatta Kalan", nameEn: "Fearless", descTr: "Canavara hiç yakalanmadan (hasar almadan) seviyeyi tamamla.", descEn: "Successfully escape the maze without taking any damage from the monster.", icon: "🛡️" }
+    ];
 
     // Level progression
     this.currentLevel = parseInt(localStorage.getItem("maze_level")) || 1;
@@ -243,7 +257,10 @@ export class Game {
         spawnTimer: 30.0 + Math.random() * 15.0, // first spawn within 30-45 seconds (breathing room)
         speed: 1.55, // balanced speed increased by 15% (was 1.35)
         soundTimer: 0.5
-      }
+      },
+      tookMonsterDamage: false,
+      solvedGatesCount: 0,
+      readLore: []
     };
 
     this.lastCellX = undefined;
@@ -656,8 +673,69 @@ export class Game {
     }
   }
 
+  vibrateDevice(type) {
+    if (!this.vibrationEnabled || typeof navigator === "undefined" || !navigator.vibrate) return;
+    
+    if (type === "heavy") {
+      navigator.vibrate([100, 50, 100, 50, 300]);
+    } else if (type === "medium") {
+      navigator.vibrate([150, 80, 150]);
+    } else if (type === "light") {
+      navigator.vibrate([50, 30, 50]);
+    }
+  }
+
+  unlockAchievement(id) {
+    const unlocked = JSON.parse(localStorage.getItem("maze_achievements") || "[]");
+    if (unlocked.includes(id)) return; // Already unlocked
+
+    unlocked.push(id);
+    localStorage.setItem("maze_achievements", JSON.stringify(unlocked));
+
+    // Vibrate device on unlock
+    this.vibrateDevice("light");
+
+    // Play a level-up/unlock sound effect
+    if (this.audioEnabled && this.audio) {
+      this.audio.playPickup();
+    }
+
+    // Display Toast notification
+    const ach = this.achievements.find(a => a.id === id);
+    if (ach) {
+      const name = this.lang === "tr" ? ach.nameTr : ach.nameEn;
+      this.showAchievementToast(ach.icon, name);
+    }
+  }
+
+  showAchievementToast(icon, name) {
+    if (typeof document === "undefined") return;
+    const toast = document.createElement("div");
+    toast.className = "achievement-toast animate-toast-in";
+    toast.innerHTML = `
+      <div style="font-size: 1.5rem; margin-right: 12px;">${icon}</div>
+      <div>
+        <div style="font-size: 0.65rem; color: #a78bfa; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; margin-bottom: 2px;">
+          ${this.lang === "tr" ? "BAŞARIM AÇILDI" : "ACHIEVEMENT UNLOCKED"}
+        </div>
+        <div style="font-size: 0.85rem; font-weight: bold; color: #ffffff; text-shadow: 0 0 8px rgba(139,92,246,0.5);">${name}</div>
+      </div>
+    `;
+    document.body.appendChild(toast);
+    
+    // Auto-remove toast after 4 seconds
+    setTimeout(() => {
+      toast.classList.remove("animate-toast-in");
+      toast.classList.add("animate-toast-out");
+      setTimeout(() => {
+        toast.remove();
+      }, 500);
+    }, 4000);
+  }
+
   damagePlayer(amount) {
     this.state.player.health = Math.max(0, this.state.player.health - amount);
+    this.vibrateDevice("medium");
     if (this.state.player.health <= 0) {
       this.triggerDeathChoice();
     } else {
@@ -677,6 +755,14 @@ export class Game {
     }
   }
 
+  resolveObstacle(obstacle) {
+    obstacle.resolved = true;
+    this.state.solvedGatesCount = (this.state.solvedGatesCount || 0) + 1;
+    if (this.state.solvedGatesCount >= 3) {
+      this.unlockAchievement("solve_all_gates");
+    }
+  }
+
   // Interacting with Obstacles
   triggerObstacleInteraction(cell) {
     const type = cell.obstacle.type;
@@ -693,9 +779,10 @@ export class Game {
           text: `${this.t("useItem")}: ${this.t("items.key.name")} (x${inv.key})`,
           action: () => {
              inv.key--;
-             cell.obstacle.resolved = true;
+             this.resolveObstacle(cell.obstacle);
              this.audio.playChainGate();
              this.state.gameState = "playing";
+             if (this.onStateChange) this.onStateChange();
           }
         });
       }
@@ -705,9 +792,10 @@ export class Game {
           text: `${this.t("useItem")}: ${this.t("items.shears.name")} (x${inv.shears})`,
           action: () => {
             inv.shears--;
-            cell.obstacle.resolved = true;
+            this.resolveObstacle(cell.obstacle);
             this.audio.playSlash();
             this.state.gameState = "playing";
+            if (this.onStateChange) this.onStateChange();
           }
         });
       }
@@ -717,9 +805,10 @@ export class Game {
           text: `${this.t("useItem")}: ${this.t("items.axe.name")} (x${inv.axe})`,
           action: () => {
             inv.axe--;
-            cell.obstacle.resolved = true;
+            this.resolveObstacle(cell.obstacle);
             this.audio.playSlash();
             this.state.gameState = "playing";
+            if (this.onStateChange) this.onStateChange();
           }
         });
       }
@@ -729,9 +818,10 @@ export class Game {
           text: `${this.t("useItem")}: ${this.t("items.rope.name")} (x${inv.rope})`,
           action: () => {
             inv.rope--;
-            cell.obstacle.resolved = true;
+            this.resolveObstacle(cell.obstacle);
             this.audio.playUnlock();
             this.state.gameState = "playing";
+            if (this.onStateChange) this.onStateChange();
           }
         });
       }
@@ -743,7 +833,7 @@ export class Game {
           if (this.onKeypad) {
             this.onKeypad(cell.obstacle.code, (correct) => {
               if (correct) {
-                cell.obstacle.resolved = true;
+                this.resolveObstacle(cell.obstacle);
                 this.audio.playUnlock();
                 this.state.gameState = "playing";
                 if (this.onStateChange) this.onStateChange();
@@ -1021,6 +1111,16 @@ export class Game {
     const loreId = cell.loreParchment;
     const title = this.lang === "tr" ? "Yırtık Bir Günlük Sayfası" : "A Torn Journal Page";
     const text = this.t(`lore.${loreId}`);
+
+    // Track read lore for achievements
+    if (this.state && this.state.readLore) {
+      if (!this.state.readLore.includes(loreId)) {
+        this.state.readLore.push(loreId);
+        if (this.state.readLore.length >= 3) {
+          this.unlockAchievement("read_all_lore");
+        }
+      }
+    }
 
     const choices = [{
       text: this.lang === "tr" ? "Parşömeni Bırak" : "Put Down Scroll",
@@ -1607,6 +1707,7 @@ export class Game {
               sm.active = false;
               sm.spawnTimer = 30.0 + Math.random() * 15.0; // respawn after 30-45 seconds (was 12-20s)
               this.audio.playShadowBurn();
+              this.unlockAchievement("burn_monster");
               if (this.onStateChange) this.onStateChange();
               return;
             }
@@ -1702,6 +1803,7 @@ export class Game {
         
         const p = s.player;
         p.health = 0; // Instant death when caught by the shadow monster
+        s.tookMonsterDamage = true;
         
         this.triggerDeathChoice();
         
@@ -1770,6 +1872,21 @@ export class Game {
     this.stopLoop();
     this.state.gameState = "victory";
     
+    // Check and unlock end-level achievements
+    this.unlockAchievement("first_escape");
+    if (this.difficulty === "hard") {
+      this.unlockAchievement("hard_victory");
+    }
+    if (this.state.quests.childState === "solved" && this.state.quests.mouseState === "solved") {
+      this.unlockAchievement("solve_all_quests");
+    }
+    if (this.state.player.gold >= 30) {
+      this.unlockAchievement("gold_collector");
+    }
+    if (!this.state.tookMonsterDamage) {
+      this.unlockAchievement("no_damage_victory");
+    }
+
     // Level progress increments
     this.currentLevel = Math.min(50, this.currentLevel + 1);
     localStorage.setItem("maze_level", this.currentLevel.toString());

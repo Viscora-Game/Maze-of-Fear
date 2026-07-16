@@ -604,6 +604,28 @@ function setupUI(game) {
     showScreen("howtoplay");
   });
 
+  // --- Page Visibility / Background Auto-Pause Event Listeners ---
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      // 1. If playing, pause game state and show pause screen
+      if (game.state && game.state.gameState === "playing") {
+        game.state.gameState = "paused";
+        showScreen("pause");
+      }
+      // 2. Suspend AudioContext to stop all sounds immediately
+      if (game.audio && game.audio.ctx && game.audio.ctx.state === "running") {
+        game.audio.ctx.suspend();
+      }
+    } else {
+      // 1. Resume AudioContext when returning to the game
+      if (game.audio && game.audio.ctx && game.audio.ctx.state === "suspended") {
+        game.audio.ctx.resume().catch(err => {
+          console.warn("AudioContext resume failed on visibility change:", err);
+        });
+      }
+    }
+  });
+
   // --- Dynamic Main Menu Animations (Flashlight Sway / Mouse Track & Dust Particles) ---
   const menuScreen = document.getElementById("screen-menu");
   const menuFlashlight = document.getElementById("menu-flashlight");

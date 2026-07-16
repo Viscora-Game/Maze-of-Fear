@@ -457,6 +457,7 @@ function setupUI(game) {
   setTimeout(() => {
     updateAnalogModeUI();
     applySavedHUDLayout();
+    clampButtonsToScreen();
 
     // Initialize vibration & shadows toggle button styles
     const btnVib = document.getElementById("btn-settings-vibration");

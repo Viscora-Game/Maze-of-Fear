@@ -1,8 +1,13 @@
-[{
-      "relation": ["delegate_permission/common.handle_all_urls"],
-      "target": {
-        "namespace": "android_app",
-        "package_name": "com.mazeoffear.game",
-        "sha256_cert_fingerprints": ["28:BA:72:51:29:D2:E5:F3:75:6B:35:51:D7:85:B5:34:8D:70:9B:71:7E:77:9A:8C:15:94:25:58:3E:11:B2:98"]
-      }
-    }]
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.mazeoffear.game",
+      "sha256_cert_fingerprints": [
+        "28:BA:72:51:29:D2:E5:F3:75:6B:35:51:D7:85:B5:34:8D:70:9B:71:7E:77:9A:8C:15:94:25:58:3E:11:B2:98",
+        "87:49:57:A1:25:D3:4A:AE:EC:EB:CD:B6:F2:59:F7:BE:FD:53:33:3B:17:11:74:D0:43:39:FA:52:CE:C4:14:D3"
+      ]
+    }
+  }
+]

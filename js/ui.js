@@ -2036,6 +2036,62 @@ function setupUI(game) {
           ctx.strokeStyle = "#14532d";
           ctx.lineWidth = 1;
           ctx.strokeRect(cx, cy, cellSize, cellSize);
+        } else if (cell.obstacle && !cell.obstacle.resolved) {
+          // Draw unresolved obstacle block
+          const type = cell.obstacle.type;
+          if (type === "ivy") {
+            ctx.fillStyle = "#15803d"; // Ivy green matching walls
+            ctx.fillRect(cx, cy, cellSize, cellSize);
+            ctx.strokeStyle = "#ef4444"; // Red warning border
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(cx, cy, cellSize, cellSize);
+            
+            ctx.fillStyle = "#ffffff";
+            ctx.font = `${Math.floor(cellSize * 0.55)}px Arial`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("🌿", cx + cellSize/2, cy + cellSize/2);
+          } else if (type === "gate" || type === "codeLock") {
+            ctx.fillStyle = "#4b5563"; // Metal gray gate
+            ctx.fillRect(cx, cy, cellSize, cellSize);
+            ctx.strokeStyle = "#ef4444"; // Red warning border
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(cx, cy, cellSize, cellSize);
+            
+            ctx.fillStyle = "#ffffff";
+            ctx.font = `${Math.floor(cellSize * 0.55)}px Arial`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("🚪", cx + cellSize/2, cy + cellSize/2);
+          } else if (type === "barricade") {
+            ctx.fillStyle = "#78350f"; // Wood brown barricade
+            ctx.fillRect(cx, cy, cellSize, cellSize);
+            ctx.strokeStyle = "#ef4444"; // Red warning border
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(cx, cy, cellSize, cellSize);
+            
+            ctx.fillStyle = "#ffffff";
+            ctx.font = `${Math.floor(cellSize * 0.55)}px Arial`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("🚧", cx + cellSize/2, cy + cellSize/2);
+          } else if (type === "chasm") {
+            ctx.fillStyle = "#0f172a"; // Deep void chasm
+            ctx.fillRect(cx, cy, cellSize, cellSize);
+            ctx.strokeStyle = "#ef4444"; // Red warning border
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(cx, cy, cellSize, cellSize);
+            
+            ctx.fillStyle = "#ffffff";
+            ctx.font = `${Math.floor(cellSize * 0.55)}px Arial`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("🕳️", cx + cellSize/2, cy + cellSize/2);
+          } else {
+            // General fallback obstacle
+            ctx.fillStyle = "#ef4444";
+            ctx.fillRect(cx, cy, cellSize, cellSize);
+          }
         } else {
           // Draw floor paths (clean path beige)
           ctx.fillStyle = "#f5ebd6";

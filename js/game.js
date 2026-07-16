@@ -1613,7 +1613,9 @@ export class Game {
         
         if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
           const key = `${nx},${ny}`;
-          if (!visited[key] && grid[ny][nx].type !== "wall") {
+          const cell = grid[ny][nx];
+          const isBlocked = cell.type === "wall" || (cell.obstacle && !cell.obstacle.resolved);
+          if (!visited[key] && !isBlocked) {
             visited[key] = true;
             parent[key] = `${cx},${cy}`;
             queue.push([nx, ny]);

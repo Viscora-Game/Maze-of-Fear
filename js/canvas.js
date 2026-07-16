@@ -160,43 +160,8 @@ export class CanvasRenderer {
     this.jumpscareTexture = loader.load(jumpscareUrl);
 
     // Precompiled Shadow Monster Geometries and Materials (prevents WebGL compile-time lag spikes during gameplay)
-    const ShaderMatClass = THREE.ShaderMaterial || THREE.MeshBasicMaterial;
     this.monsterFaceGeom = new THREE.PlaneGeometry(1.2, 1.2);
-    this.monsterFaceMat = new ShaderMatClass({
-      uniforms: {
-        map: { value: this.jumpscareTexture },
-        opacity: { value: 1.0 },
-        time: { value: 0.0 }
-      },
-      vertexShader: `
-        varying vec2 vUv;
-        void main() {
-          vUv = uv;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        uniform sampler2D map;
-        uniform float opacity;
-        uniform float time;
-        varying vec2 vUv;
-        void main() {
-          vec2 distortedUv = vUv;
-          distortedUv.x += sin(vUv.y * 8.0 + time * 3.5) * 0.012;
-          distortedUv.y += cos(vUv.x * 8.0 + time * 2.8) * 0.012;
-          
-          vec4 texColor = texture2D(map, distortedUv);
-          
-          if (texColor.r < 0.14 && texColor.g < 0.14 && texColor.b < 0.14) {
-            discard;
-          }
-          
-          float dist = distance(vUv, vec2(0.5, 0.5));
-          float edgeFade = 1.0 - smoothstep(0.32, 0.50, dist);
-          
-          gl_FragColor = vec4(texColor.rgb, texColor.a * opacity * edgeFade);
-        }
-      `,
+    this.monsterFaceMat = new THREE.MeshBasicMaterial({
       map: this.jumpscareTexture,
       transparent: true,
       opacity: 1.0,

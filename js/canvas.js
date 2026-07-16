@@ -184,55 +184,63 @@ export class CanvasRenderer {
     // Precompiled Shadow Monster Geometries and Materials (prevents WebGL compile-time lag spikes during gameplay)
     this.monsterFaceGeom = new THREE.PlaneGeometry(1.2, 1.2);
     this.createMonsterFaceMat = (opacity = 1.0) => {
-      return new THREE.ShaderMaterial({
-        uniforms: {
-          map: { value: this.jumpscareTexture },
-          opacity: { value: opacity },
-          time: { value: 0.0 }
-        },
-        vertexShader: `
-          varying vec2 vUv;
-          void main() {
-            vUv = uv;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-          }
-        `,
-        fragmentShader: `
-          uniform sampler2D map;
-          uniform float opacity;
+      const mat = new THREE.MeshBasicMaterial({
+        map: this.jumpscareTexture,
+        transparent: true,
+        opacity: opacity,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      });
+      
+      // Store time uniform in userData to update it dynamically in the loop
+      mat.userData = {
+        time: { value: 0.0 }
+      };
+
+      mat.onBeforeCompile = (shader) => {
+        shader.uniforms.time = mat.userData.time;
+        
+        // Inject custom time uniform at the top of the fragment shader
+        shader.fragmentShader = `
           uniform float time;
-          varying vec2 vUv;
-          void main() {
+        ` + shader.fragmentShader;
+
+        // Modify map sampling logic to include the wavy effect and custom pixel discard
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <map_fragment>',
+          `
+          #ifdef USE_MAP
             vec2 uv = vUv;
             // Spooky wavy distortion
             uv.x += sin(vUv.y * 12.0 + time * 4.0) * 0.015;
             uv.y += cos(vUv.x * 12.0 + time * 3.0) * 0.015;
 
-            vec4 texColor = texture2D(map, uv);
+            vec4 texelColor = texture2D( map, uv );
+            texelColor = mapTexelToLinear( texelColor );
+            diffuseColor *= texelColor;
 
-            // Discard black background to remove the card edges
-            if (texColor.r < 0.12 && texColor.g < 0.12 && texColor.b < 0.12) {
+            // Discard black background to remove the card edges (same logic as before)
+            if (diffuseColor.r < 0.12 && diffuseColor.g < 0.12 && diffuseColor.b < 0.12) {
               discard;
             }
 
             // Smooth circular edge vignette fade
             float dist = distance(vUv, vec2(0.5, 0.5));
             float edgeFade = 1.0 - smoothstep(0.32, 0.50, dist);
-
-            gl_FragColor = vec4(texColor.rgb, texColor.a * opacity * edgeFade);
-          }
-        `,
-        transparent: true,
-        side: THREE.DoubleSide,
-        depthWrite: false
-      });
+            diffuseColor.a *= edgeFade;
+          #endif
+          `
+        );
+      };
+      
+      return mat;
     };
 
     this.monsterSmokeGeom = new THREE.SphereGeometry(1.0, 8, 8); // shared unit sphere
     this.monsterSmokeMat = new THREE.MeshBasicMaterial({
-      color: 0x080808,
+      color: 0x1a0707, // Eerie dark red smoke body for better visibility in dense grey fog
       transparent: true,
-      opacity: 0.25,
+      opacity: 0.40,   // Slightly increased opacity to ensure visibility on mobile screens
       depthWrite: false
     });
 
@@ -2869,11 +2877,13 @@ export class CanvasRenderer {
             face.rotation.z = Math.sin(time * 2.0) * 0.06;
             
             if (face.material) {
+              face.material.opacity = burnRatio;
+              if (face.material.userData && face.material.userData.time) {
+                face.material.userData.time.value = time;
+              }
               if (face.material.uniforms) {
                 if (face.material.uniforms.opacity) face.material.uniforms.opacity.value = burnRatio;
                 if (face.material.uniforms.time) face.material.uniforms.time.value = time;
-              } else {
-                face.material.opacity = burnRatio;
               }
             }
           }
@@ -2931,14 +2941,15 @@ export class CanvasRenderer {
             
             const count = 1 + Math.floor(Math.random() * 2);
             for (let tIdx = 0; tIdx < count; tIdx++) {
-              const trailGeom = new THREE.SphereGeometry(0.35 + Math.random() * 0.35, 8, 8);
+              const trailScale = 0.35 + Math.random() * 0.35;
               const trailMat = new THREE.MeshBasicMaterial({
-                color: 0x050505,
+                color: 0x1a0707, // Eerie dark red/crimson shadow particle matching the smoke body
                 transparent: true,
-                opacity: 0.22,
+                opacity: 0.30,   // Slightly increased visibility in gloomy fog
                 depthWrite: false
               });
-              const trailMesh = new THREE.Mesh(trailGeom, trailMat);
+              const trailMesh = new THREE.Mesh(this.monsterSmokeGeom, trailMat);
+              trailMesh.scale.set(trailScale, trailScale, trailScale);
               
               trailMesh.position.set(
                 sm.x + (Math.random() - 0.5) * 0.4,
@@ -2952,8 +2963,8 @@ export class CanvasRenderer {
                 mesh: trailMesh,
                 spawnTime: now,
                 lifeTime: 1200 + Math.random() * 400,
-                initialScale: 1.0,
-                initialOpacity: 0.22,
+                initialScale: trailScale,
+                initialOpacity: 0.30,
                 burnRatio: burnRatio
               });
             }
@@ -2970,16 +2981,14 @@ export class CanvasRenderer {
         const elapsed = currentTime - p.spawnTime;
         if (elapsed >= p.lifeTime) {
           this.scene.remove(p.mesh);
-          if (p.mesh.geometry) {
-            try { p.mesh.geometry.dispose(); } catch(e) {}
-          }
+          // Do NOT dispose geometry as it is shared (this.monsterSmokeGeom)
           if (p.mesh.material) {
             try { p.mesh.material.dispose(); } catch(e) {}
           }
           this.smokeTrailParticles.splice(i, 1);
         } else {
           const ratio = elapsed / p.lifeTime;
-          const scale = 1.0 + ratio * 1.5;
+          const scale = p.initialScale * (1.0 + ratio * 1.5);
           p.mesh.scale.set(scale, scale, scale);
           if (p.mesh.material) {
             p.mesh.material.opacity = p.initialOpacity * (1.0 - ratio) * (p.burnRatio || 1.0);

@@ -1787,14 +1787,47 @@ h1, h2, h3, h4 {
     padding: 8px 18px !important;
   }
 
-  /* 7. Dialog choices layout wrapping */
+  /* 7. Dialog choices layout wrapping & mobile compactness */
+  #modal-dialog {
+    padding: 12px 16px 45px 16px !important; /* Reduced bottom padding from 80px to 45px to fit landscape screens */
+    gap: 12px !important;
+  }
+  .dialog-container {
+    gap: 12px !important;
+  }
+  .dialog-portrait-wrapper {
+    margin-bottom: 4px !important;
+    padding: 4px 10px !important;
+    gap: 6px !important;
+  }
+  .dialog-avatar-box {
+    width: 32px !important; /* Smaller avatar on mobile */
+    height: 32px !important;
+  }
+  .dialog-bubble {
+    padding: 10px 14px !important; /* More compact speech bubble */
+    border-radius: 12px !important;
+  }
+  .dialog-bubble .dialog-text {
+    font-size: 0.78rem !important;
+    line-height: 1.35 !important;
+  }
+  .dialog-typewriter-prompt {
+    font-size: 0.65rem !important;
+    margin-top: 4px !important;
+  }
+  .dialog-bubble-player {
+    gap: 4px !important;
+  }
   .modal-buttons {
     flex-direction: column !important;
-    gap: 8px !important;
+    gap: 4px !important; /* Compact button stack */
   }
   .btn-modal {
-    padding: 10px !important;
-    font-size: 0.82rem !important;
+    padding: 6px 10px !important; /* Narrower, less tall buttons */
+    font-size: 0.74rem !important;
+    margin-bottom: 0 !important;
+    border-radius: 6px !important;
   }
 }
 
@@ -1987,37 +2020,46 @@ h1, h2, h3, h4 {
   }
 
   /* 3. Pause & Modal Overlay Screens (Game Over, Victory, Code Lock) */
+  .overlay {
+    padding: 8px !important; /* Maximizes available vertical area on mobile landscape */
+  }
   .modal-content {
     padding: 10px 16px !important;
     border-radius: 12px !important;
-    max-width: 440px !important;
+    max-width: 420px !important;
+    max-height: 92vh !important; /* Prevents button clipping on short landscape viewports */
+    overflow-y: auto !important; /* Enables vertical scrolling fallback if needed */
   }
   .end-emoji {
-    font-size: 2.2rem !important;
-    margin-bottom: 4px !important;
+    font-size: 1.8rem !important; /* Smaller icon size */
+    margin-bottom: 2px !important;
   }
   .modal-title {
-    font-size: 1.15rem !important;
-    margin-bottom: 4px !important;
+    font-size: 1.1rem !important;
+    margin-bottom: 2px !important;
   }
   .modal-text {
-    font-size: 0.7rem !important;
-    margin: 4px 0 8px 0 !important;
-    line-height: 1.35 !important;
+    font-size: 0.68rem !important;
+    margin: 2px 0 6px 0 !important;
+    line-height: 1.3 !important;
   }
   .stats-panel {
-    padding: 8px 12px !important;
-    margin-bottom: 8px !important;
-    font-size: 0.74rem !important;
-    gap: 4px !important;
+    padding: 6px 10px !important;
+    margin-bottom: 6px !important;
+    font-size: 0.7rem !important;
+    gap: 3px !important;
+  }
+  .stats-panel div {
+    padding-bottom: 3px !important; /* More compact stats rows */
   }
   .btn-modal {
-    padding: 8px !important;
-    font-size: 0.72rem !important;
-    margin-bottom: 4px !important;
+    padding: 6px !important; /* Narrower height for overlay buttons */
+    font-size: 0.7rem !important;
+    margin-bottom: 2px !important;
+    margin-top: 0 !important; /* Remove any hardcoded margins */
   }
   .modal-buttons {
-    gap: 6px !important;
+    gap: 4px !important;
   }
 }
 

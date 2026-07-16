@@ -212,7 +212,8 @@ export function generateMaze(width, height, numFloors = 1) {
 
   // Helper to search for the nearest straight corridor node along the critical path to place obstacles cleanly
   const findBestObstacleNode = (targetIndex) => {
-    for (let offset = 0; offset < 15; offset++) {
+    let offset = 0;
+    while (targetIndex + offset < critPath.length || targetIndex - offset >= 0) {
       const idx1 = targetIndex + offset;
       const idx2 = targetIndex - offset;
       if (idx1 < critPath.length && isStraightCorridor(critPath[idx1])) {
@@ -221,8 +222,9 @@ export function generateMaze(width, height, numFloors = 1) {
       if (idx2 >= 0 && isStraightCorridor(critPath[idx2])) {
         return critPath[idx2];
       }
+      offset++;
     }
-    return critPath[targetIndex]; // fallback
+    return critPath[targetIndex]; // absolute fallback
   };
 
   // 5. Place Gates / Obstacles along the 3D Critical Path

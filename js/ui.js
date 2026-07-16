@@ -1,4 +1,4 @@
-import { Game } from "./game.js?v=17";
+import { Game } from "./game.js?v=18";
 
 const init = () => {
   const game = new Game();

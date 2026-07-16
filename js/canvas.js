@@ -106,8 +106,9 @@ export class CanvasRenderer {
   constructor(canvas) {
     this.canvas = canvas;
     
-    // 1. Initialize WebGL Renderer
-    this.renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
+    // 1. Initialize WebGL Renderer (disable antialias on mobile for major GPU perf boost)
+    const isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    this.renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: !isMobileDevice, alpha: false });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(canvas.width, canvas.height);
     
@@ -1814,9 +1815,7 @@ export class CanvasRenderer {
               clueSubGroup.add(noteGroup);
             }
 
-            const clueLight = new THREE.PointLight("#fbbf24", 1.2, 1.6);
-            clueLight.position.set(offsetX, 0.64, offsetZ);
-            clueSubGroup.add(clueLight);
+            // PointLight removed for performance — emissive materials provide sufficient glow
 
             cellGroup.add(clueSubGroup);
           }
@@ -1875,12 +1874,7 @@ export class CanvasRenderer {
               loreSubGroup.add(noteGroup);
             }
 
-            // Pull the light slightly away from the wall (by 0.15 units) so it illuminates the paper instead of overexposing it
-            const lightX = offsetX * 0.70;
-            const lightZ = offsetZ * 0.70;
-            const loreLight = new THREE.PointLight("#22d3ee", 1.2, 1.8); // Rich cyan point light
-            loreLight.position.set(lightX, 0.64, lightZ);
-            loreSubGroup.add(loreLight);
+            // PointLight removed for performance — emissive materials provide sufficient glow
 
             cellGroup.add(loreSubGroup);
           }
@@ -2097,10 +2091,7 @@ export class CanvasRenderer {
               warningLight.position.set(0, 0.80, 0.03);
               obsSubGroup.add(warningLight);
               
-              // Small glow from the panel
-              const panelGlow = new THREE.PointLight("#10b981", 0.5, 1.5);
-              panelGlow.position.set(0, 0.58, 0.15);
-              obsSubGroup.add(panelGlow);
+              // PointLight removed for performance — emissive screen material provides sufficient glow
             } else {
               // Unknown obstacle type fallback
               const keyPlate = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.26, 0.04), new THREE.MeshStandardMaterial({ color: "#ef4444" }));
@@ -2376,11 +2367,15 @@ export class CanvasRenderer {
       }
     }
 
-    // Enable shadow casting and receiving for all meshes in the scene graph
+    // Enable shadow receiving for all meshes, but only castShadow for non-decoration meshes
+    // (decorations already have castShadow=false set in processFBX for performance)
     this.scene.traverse((node) => {
       if (node.isMesh) {
-        node.castShadow = this.shadowsEnabled;
         node.receiveShadow = this.shadowsEnabled;
+        // Only enable castShadow if it wasn't explicitly disabled (e.g., decorations)
+        if (node.castShadow !== false) {
+          node.castShadow = this.shadowsEnabled;
+        }
       }
     });
   }
@@ -2523,7 +2518,7 @@ export class CanvasRenderer {
     // 1. Optimized Distance-Based Cell Culling (Runs every frame for zero latency, only writes on state change)
     const px = player.visualX;
     const py = player.visualY;
-    const cullRadiusSq = 144.0; // 12 cells radius (safe and far enough, since fog ends at 6.0)
+    const cullRadiusSq = 56.25; // 7.5 cells radius (fog completely obscures beyond 6.0, so 7.5 is safe with margin)
 
     for (let y = 0; y < height; y++) {
       const row = this.cellGroups[y];

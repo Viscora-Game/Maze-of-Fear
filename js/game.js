@@ -1,8 +1,8 @@
-import { generateMaze } from "./maze.js?v=17";
-import { AudioEngine } from "./audio.js?v=17";
-import { CanvasRenderer } from "./canvas.js?v=17";
-import { translations } from "./translations.js?v=17";
-import { randomEvents, deathEvents } from "./events.js?v=17";
+import { generateMaze } from "./maze.js?v=18";
+import { AudioEngine } from "./audio.js?v=18";
+import { CanvasRenderer } from "./canvas.js?v=18";
+import { translations } from "./translations.js?v=18";
+import { randomEvents, deathEvents } from "./events.js?v=18";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -1831,8 +1831,8 @@ export class Game {
         }
       }
 
-      // Check Jumpscare range
-      if (dist < 0.65) {
+      // Check Jumpscare range — monster must have line of sight to player (can't kill through walls)
+      if (dist < 0.65 && this.hasLineOfSight(p.x, p.y, sm.x, sm.y, grid, s.width, s.height)) {
         this.triggerJumpscare();
       }
     });

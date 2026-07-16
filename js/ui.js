@@ -1,8 +1,19 @@
-import { Game } from "./game.js?v=16";
+import { Game } from "./game.js?v=17";
 
 const init = () => {
   const game = new Game();
   setupUI(game);
+
+  // Initialize Web Audio context and start sound preloading on first user interaction in the menu
+  const initAudioOnGesture = () => {
+    if (game.audio) {
+      game.audio.init();
+    }
+    document.removeEventListener("click", initAudioOnGesture);
+    document.removeEventListener("touchstart", initAudioOnGesture);
+  };
+  document.addEventListener("click", initAudioOnGesture);
+  document.addEventListener("touchstart", initAudioOnGesture);
 };
 
 if (document.readyState === "loading") {

@@ -473,6 +473,9 @@ export class CanvasRenderer {
       });
       
       console.log("PSX First-Person Arms loaded successfully!");
+      if (this.renderer) {
+        this.renderer.compile(gltf.scene, this.camera);
+      }
       if (this.lastState) {
         this.rebuildScene(this.lastState);
       }
@@ -527,6 +530,9 @@ export class CanvasRenderer {
         if (obj.parent) obj.parent.remove(obj);
       });
       fbx.scale.set(scaleVal, scaleVal, scaleVal);
+      if (this.renderer) {
+        this.renderer.compile(fbx, this.camera);
+      }
       return fbx;
     };
 
@@ -611,6 +617,9 @@ export class CanvasRenderer {
         
         this.flashlightModel = model;
         console.log("PSX Flashlight 001 (BLACK) loaded successfully!");
+        if (this.renderer) {
+          this.renderer.compile(model, this.camera);
+        }
         if (this.lastState) {
           this.rebuildScene(this.lastState);
         }
@@ -629,6 +638,9 @@ export class CanvasRenderer {
     loader.load('assets/models/chest_simple.glb', (gltf) => {
       this.chestModel = gltf.scene;
       console.log("Low-poly GLTF chest model loaded successfully!");
+      if (this.renderer) {
+        this.renderer.compile(gltf.scene, this.camera);
+      }
       if (this.lastState) {
         this.rebuildScene(this.lastState);
       }
@@ -705,6 +717,9 @@ export class CanvasRenderer {
           
           this[modelProp] = fbx;
           console.log(`FBX Character ${name} loaded, scaled to ${targetHeight}m, and foot-aligned successfully!`);
+          if (this.renderer) {
+            this.renderer.compile(fbx, this.camera);
+          }
           if (this.lastState) {
             this.rebuildScene(this.lastState);
           }
@@ -2281,6 +2296,86 @@ export class CanvasRenderer {
     this.playerMesh.add(flashlightGroup);
     this.camera.add(this.playerMesh);
 
+    // 5. Pre-create and compile shadow monsters to prevent runtime allocation/compile stutters
+    this.shadowMonsterMeshes = [];
+    const maxMonsters = 2; // Nightmare mode can have at most 2 active monsters
+    for (let i = 0; i < maxMonsters; i++) {
+      const mesh = new THREE.Group();
+      mesh.visible = false; // Start hidden
+
+      // 1. Billboard Jumpscare Face Plane
+      const faceMesh = new THREE.Mesh(this.monsterFaceGeom, this.createMonsterFaceMat());
+      faceMesh.name = "face";
+      faceMesh.position.set(0, 0.75, 0.25);
+      mesh.add(faceMesh);
+
+      // 3. Volumetric Smoke Body (15 overlapping black/dark spheres)
+      const smokeGroup = new THREE.Group();
+      smokeGroup.name = "smokeGroup";
+      mesh.add(smokeGroup);
+
+      for (let j = 0; j < 15; j++) {
+        const size = 0.25 + Math.random() * 0.25;
+        const smokeMesh = new THREE.Mesh(this.monsterSmokeGeom, this.monsterSmokeMat.clone());
+        smokeMesh.scale.set(size, size, size);
+        smokeMesh.position.set(
+          (Math.random() - 0.5) * 0.45,
+          0.75 + (Math.random() - 0.5) * 0.45,
+          -0.10 + (Math.random() - 0.5) * 0.3
+        );
+        smokeMesh.userData = {
+          initialPos: new THREE.Vector3(smokeMesh.position.x, smokeMesh.position.y, smokeMesh.position.z),
+          speedX: 0.5 + Math.random() * 1.5,
+          speedY: 0.5 + Math.random() * 1.5,
+          speedZ: 0.5 + Math.random() * 1.5,
+          phase: Math.random() * Math.PI * 2,
+          pulseSpeed: 1.0 + Math.random() * 2.0
+        };
+        smokeGroup.add(smokeMesh);
+      }
+
+      // 4. Red Point Light casting eerie glow on walls
+      const shadowLight = new THREE.PointLight(0xff0000, 1.2, 5.0);
+      shadowLight.name = "shadowLight";
+      shadowLight.position.set(0, 0.75, 0.2);
+      mesh.add(shadowLight);
+
+      this.scene.add(mesh);
+      this.shadowMonsterMeshes.push(mesh);
+
+      // Pre-compile the shadow monster mesh
+      if (this.renderer) {
+        this.renderer.compile(mesh, this.camera);
+      }
+    }
+
+    // 6. Pre-create and compile smoke trail particles pool
+    this.smokeTrailPool = [];
+    const poolSize = 40;
+    for (let i = 0; i < poolSize; i++) {
+      const trailMat = new THREE.MeshBasicMaterial({
+        color: 0x1a0707,
+        transparent: true,
+        opacity: 0.15,
+        depthWrite: false
+      });
+      const trailMesh = new THREE.Mesh(this.monsterSmokeGeom, trailMat);
+      trailMesh.visible = false;
+      this.scene.add(trailMesh);
+      this.smokeTrailPool.push({
+        mesh: trailMesh,
+        material: trailMat,
+        active: false,
+        startTime: 0,
+        duration: 0
+      });
+
+      // Pre-compile each trail particle
+      if (this.renderer) {
+        this.renderer.compile(trailMesh, this.camera);
+      }
+    }
+
     // Enable shadow casting and receiving for all meshes in the scene graph
     this.scene.traverse((node) => {
       if (node.isMesh) {
@@ -2942,8 +3037,9 @@ export class CanvasRenderer {
       }
       
       state.shadowMonsters.forEach((sm, index) => {
+        let mesh = this.shadowMonsterMeshes[index];
         if (sm.active) {
-          let mesh = this.shadowMonsterMeshes[index];
+          // If the mesh doesn't exist, create it once (fallback, though pre-created in rebuildScene)
           if (!mesh) {
             mesh = new THREE.Group();
             
@@ -3042,27 +3138,21 @@ export class CanvasRenderer {
           
           mesh.visible = true;
         } else {
-          // Hide / remove if not active
-          const mesh = this.shadowMonsterMeshes[index];
+          // Hide if not active (keep in pool)
           if (mesh) {
-            this.scene.remove(mesh);
-            this.shadowMonsterMeshes[index] = null;
+            mesh.visible = false;
           }
         }
       });
     }
 
-    // Spawning and fading out trail particles (volumetric smoke trail)
-    if (!this.smokeTrailParticles) {
-      this.smokeTrailParticles = [];
-    }
-    
+    // Spawning and fading out trail particles (volumetric smoke trail) - Pooled System
     const now = Date.now();
     if (!this.lastTrailSpawnTime) this.lastTrailSpawnTime = 0;
     if (now - this.lastTrailSpawnTime > 60) {
       this.lastTrailSpawnTime = now;
       
-      if (state.shadowMonsters) {
+      if (state.shadowMonsters && this.smokeTrailPool) {
         state.shadowMonsters.forEach((sm, index) => {
           if (sm.active) {
             const mesh = this.shadowMonsterMeshes[index];
@@ -3070,60 +3160,53 @@ export class CanvasRenderer {
             
             const count = 1 + Math.floor(Math.random() * 2);
             for (let tIdx = 0; tIdx < count; tIdx++) {
-              const trailScale = 0.35 + Math.random() * 0.35;
-              const trailMat = new THREE.MeshBasicMaterial({
-                color: 0x1a0707, // Eerie dark red/crimson shadow particle matching the smoke body
-                transparent: true,
-                opacity: 0.30,   // Slightly increased visibility in gloomy fog
-                depthWrite: false
-              });
-              const trailMesh = new THREE.Mesh(this.monsterSmokeGeom, trailMat);
-              trailMesh.scale.set(trailScale, trailScale, trailScale);
-              
-              trailMesh.position.set(
-                sm.x + (Math.random() - 0.5) * 0.4,
-                mesh.position.y + 0.75 + (Math.random() - 0.5) * 0.4,
-                sm.y + (Math.random() - 0.5) * 0.4
-              );
-              this.scene.add(trailMesh);
-              
-              const burnRatio = Math.max(0.15, 1.0 - (sm.burnTime / 2.0));
-              this.smokeTrailParticles.push({
-                mesh: trailMesh,
-                spawnTime: now,
-                lifeTime: 1200 + Math.random() * 400,
-                initialScale: trailScale,
-                initialOpacity: 0.30,
-                burnRatio: burnRatio
-              });
+              // Find an inactive trail particle from pool
+              const p = this.smokeTrailPool.find(item => !item.active);
+              if (p) {
+                const trailScale = 0.35 + Math.random() * 0.35;
+                p.active = true;
+                p.spawnTime = now;
+                p.lifeTime = 1200 + Math.random() * 400;
+                p.initialScale = trailScale;
+                p.initialOpacity = 0.30;
+                p.burnRatio = Math.max(0.15, 1.0 - (sm.burnTime / 2.0));
+                
+                p.mesh.position.set(
+                  sm.x + (Math.random() - 0.5) * 0.4,
+                  mesh.position.y + 0.75 + (Math.random() - 0.5) * 0.4,
+                  sm.y + (Math.random() - 0.5) * 0.4
+                );
+                p.mesh.scale.set(trailScale, trailScale, trailScale);
+                p.material.opacity = 0.30;
+                p.mesh.visible = true;
+              }
             }
           }
         });
       }
     }
     
-    // Update trail particles
-    if (this.smokeTrailParticles) {
+    // Update and fade active smoke trail particles from pool
+    if (this.smokeTrailPool) {
       const currentTime = Date.now();
-      for (let i = this.smokeTrailParticles.length - 1; i >= 0; i--) {
-        const p = this.smokeTrailParticles[i];
-        const elapsed = currentTime - p.spawnTime;
-        if (elapsed >= p.lifeTime) {
-          this.scene.remove(p.mesh);
-          // Do NOT dispose geometry as it is shared (this.monsterSmokeGeom)
-          if (p.mesh.material) {
-            try { p.mesh.material.dispose(); } catch(e) {}
-          }
-          this.smokeTrailParticles.splice(i, 1);
-        } else {
-          const ratio = elapsed / p.lifeTime;
-          const scale = p.initialScale * (1.0 + ratio * 1.5);
-          p.mesh.scale.set(scale, scale, scale);
-          if (p.mesh.material) {
-            p.mesh.material.opacity = p.initialOpacity * (1.0 - ratio) * (p.burnRatio || 1.0);
+      this.smokeTrailPool.forEach(p => {
+        if (p.active) {
+          const elapsed = currentTime - p.spawnTime;
+          if (elapsed >= p.lifeTime) {
+            // Expire
+            p.active = false;
+            p.mesh.visible = false;
+          } else {
+            // Fade and expand particle size
+            const ratio = elapsed / p.lifeTime;
+            const scale = p.initialScale * (1.0 + ratio * 1.5);
+            p.mesh.scale.set(scale, scale, scale);
+            p.material.opacity = p.initialOpacity * (1.0 - ratio) * (p.burnRatio || 1.0);
+            // Slowly drift upwards
+            p.mesh.position.y += 0.005;
           }
         }
-      }
+      });
     }
 
     // Update rain particles (highly optimized direct typed array manipulation to prevent FPS drops)

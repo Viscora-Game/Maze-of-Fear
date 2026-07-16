@@ -2540,62 +2540,185 @@ export class CanvasRenderer {
         const item = player.equippedItem;
         this.equippedAccessory = new THREE.Group();
 
-        // Left Sleeve & Hand
-        const sleeveMat = new THREE.MeshStandardMaterial({ color: "#5c3a21", roughness: 0.85 });
-        const armGeo = new THREE.CylinderGeometry(0.016, 0.02, 0.22, 8);
+        // Left Sleeve & Hand (Matches the right tactical sleeve and black glove)
+        const sleeveMat = new THREE.MeshStandardMaterial({ color: "#1e293b", roughness: 0.85 });
+        const gloveMat = new THREE.MeshStandardMaterial({ color: "#0f172a", roughness: 0.9, metalness: 0.1 });
+
+        // Left Sleeve (Forearm extending from bottom-left)
+        const armGeo = new THREE.CylinderGeometry(0.016, 0.02, 0.20, 8);
         const arm = new THREE.Mesh(armGeo, sleeveMat);
         arm.rotation.x = Math.PI / 2.2;
-        arm.position.set(0, 0, 0.11);
+        arm.position.set(0, 0, 0.10);
         this.equippedAccessory.add(arm);
 
-        const skinMat = new THREE.MeshStandardMaterial({ color: "#fbcfe8", roughness: 0.8 });
-        const hand = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 8), skinMat);
-        hand.position.set(0, 0.015, -0.01);
+        // Glove Palm (Main body of the left hand)
+        const hand = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.022, 0.028), gloveMat);
+        hand.position.set(0, 0.012, -0.01);
         this.equippedAccessory.add(hand);
+
+        // Procedural fingers wrapping around the item
+        const lf1 = new THREE.Mesh(new THREE.BoxGeometry(0.020, 0.006, 0.006), gloveMat);
+        lf1.position.set(-0.004, 0.016, -0.022);
+        lf1.rotation.y = Math.PI / 8;
+        
+        const lf2 = new THREE.Mesh(new THREE.BoxGeometry(0.020, 0.006, 0.006), gloveMat);
+        lf2.position.set(-0.004, 0.016, -0.034);
+        lf2.rotation.y = Math.PI / 8;
+        
+        const lthumb = new THREE.Mesh(new THREE.BoxGeometry(0.010, 0.006, 0.012), gloveMat);
+        lthumb.position.set(0.008, 0.020, -0.022);
+        
+        this.equippedAccessory.add(lf1, lf2, lthumb);
 
         let mesh;
         if (item === "key") {
-          mesh = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.015, 0.015, 0.14, 8),
-            new THREE.MeshPhongMaterial({ color: "#fbbf24", shininess: 50 })
+          const keyGroup = new THREE.Group();
+          const keyMat = new THREE.MeshPhongMaterial({ color: "#eab308", shininess: 60, specular: "#fef08a" }); // metallic gold
+          
+          // Key shaft (central cylinder)
+          const shaft = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.004, 0.004, 0.13, 8),
+            keyMat
           );
-          mesh.rotation.x = Math.PI / 2;
-          mesh.position.set(0, 0.02, -0.06);
+          shaft.rotation.x = Math.PI / 2;
+          shaft.position.set(0, 0.015, -0.06);
+          keyGroup.add(shaft);
+
+          // Key head (torus ring)
+          const headGeo = new THREE.TorusGeometry(0.012, 0.0035, 8, 16);
+          const head = new THREE.Mesh(headGeo, keyMat);
+          head.position.set(0, 0.015, -0.005);
+          keyGroup.add(head);
+
+          // Key teeth (two small boxes at the end of the shaft)
+          const tooth1 = new THREE.Mesh(
+            new THREE.BoxGeometry(0.01, 0.008, 0.004),
+            keyMat
+          );
+          tooth1.position.set(0.008, 0.015, -0.11);
+          
+          const tooth2 = new THREE.Mesh(
+            new THREE.BoxGeometry(0.006, 0.008, 0.004),
+            keyMat
+          );
+          tooth2.position.set(0.006, 0.015, -0.118);
+          
+          keyGroup.add(tooth1, tooth2);
+          mesh = keyGroup;
         } else if (item === "shears") {
-          mesh = new THREE.Mesh(
-            new THREE.BoxGeometry(0.03, 0.10, 0.06),
-            new THREE.MeshPhongMaterial({ color: "#9ca3af" })
+          const shearsGroup = new THREE.Group();
+          const ironMat = new THREE.MeshStandardMaterial({ color: "#64748b", metalness: 0.8, roughness: 0.2 }); // steel iron
+          const handleMat = new THREE.MeshStandardMaterial({ color: "#dc2626", roughness: 0.6 }); // red handles
+
+          // Blades (two angled metal wedges extending forward)
+          const blade1 = new THREE.Mesh(
+            new THREE.BoxGeometry(0.004, 0.012, 0.09),
+            ironMat
           );
-          mesh.position.set(0, 0.02, -0.04);
+          blade1.rotation.y = 0.12;
+          blade1.position.set(-0.004, 0.015, -0.06);
+
+          const blade2 = new THREE.Mesh(
+            new THREE.BoxGeometry(0.004, 0.012, 0.09),
+            ironMat
+          );
+          blade2.rotation.y = -0.12;
+          blade2.position.set(0.004, 0.015, -0.06);
+
+          // Pivot bolt in the center
+          const bolt = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.003, 0.003, 0.016, 6),
+            ironMat
+          );
+          bolt.rotation.x = Math.PI / 2;
+          bolt.position.set(0, 0.015, -0.03);
+
+          // Handles (rings for fingers at the back)
+          const hRing1 = new THREE.Mesh(
+            new THREE.TorusGeometry(0.008, 0.002, 6, 12),
+            handleMat
+          );
+          hRing1.position.set(-0.01, 0.015, -0.005);
+          hRing1.rotation.y = Math.PI / 12;
+
+          const hRing2 = new THREE.Mesh(
+            new THREE.TorusGeometry(0.008, 0.002, 6, 12),
+            handleMat
+          );
+          hRing2.position.set(0.01, 0.015, -0.005);
+          hRing2.rotation.y = -Math.PI / 12;
+
+          shearsGroup.add(blade1, blade2, bolt, hRing1, hRing2);
+          mesh = shearsGroup;
         } else if (item === "axe") {
           const axeGroup = new THREE.Group();
+          
+          // Wooden Handle
           const handle = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.008, 0.008, 0.22, 8),
-            new THREE.MeshPhongMaterial({ color: "#78350f" })
+            new THREE.CylinderGeometry(0.006, 0.006, 0.22, 8),
+            new THREE.MeshStandardMaterial({ color: "#78350f", roughness: 0.85 }) // dark brown wood
           );
           handle.rotation.x = Math.PI / 2;
-          handle.position.set(0, 0.02, -0.06);
+          handle.position.set(0, 0.015, -0.05);
+
+          // Steel Axe Blade (tapered box shape)
           const blade = new THREE.Mesh(
-            new THREE.BoxGeometry(0.08, 0.04, 0.015),
-            new THREE.MeshPhongMaterial({ color: "#ef4444" })
+            new THREE.BoxGeometry(0.06, 0.035, 0.008),
+            new THREE.MeshStandardMaterial({ color: "#94a3b8", metalness: 0.85, roughness: 0.25 }) // steel color
           );
-          blade.position.set(0, 0.04, -0.14);
-          axeGroup.add(handle);
-          axeGroup.add(blade);
+          blade.position.set(0.02, 0.015, -0.12);
+          blade.rotation.y = -Math.PI / 16;
+
+          // Connection socket (metal bracket holding the blade to the shaft)
+          const socket = new THREE.Mesh(
+            new THREE.BoxGeometry(0.016, 0.018, 0.02),
+            new THREE.MeshStandardMaterial({ color: "#475569", metalness: 0.8 })
+          );
+          socket.position.set(0, 0.015, -0.12);
+
+          axeGroup.add(handle, blade, socket);
           mesh = axeGroup;
         } else if (item === "compass") {
-          mesh = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.05, 0.05, 0.02, 12),
-            new THREE.MeshPhongMaterial({ color: "#06b6d4" })
+          const compassGroup = new THREE.Group();
+          const brassMat = new THREE.MeshStandardMaterial({ color: "#d97706", metalness: 0.8, roughness: 0.2 }); // brass
+          const dialMat = new THREE.MeshBasicMaterial({ color: "#f8fafc" }); // white face
+          const needleMat = new THREE.MeshBasicMaterial({ color: "#ef4444" }); // red needle
+
+          // Outer case
+          const caseMesh = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.024, 0.024, 0.008, 12),
+            brassMat
           );
-          mesh.rotation.x = Math.PI / 3;
-          mesh.position.set(0, 0.03, -0.03);
+          caseMesh.rotation.x = Math.PI / 2.5;
+          caseMesh.position.set(0, 0.015, -0.04);
+          compassGroup.add(caseMesh);
+
+          // Dial face
+          const dial = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.020, 0.020, 0.001, 12),
+            dialMat
+          );
+          dial.rotation.x = Math.PI / 2.5;
+          dial.position.set(0, 0.018, -0.04);
+          compassGroup.add(dial);
+
+          // Needle pointer
+          const needle = new THREE.Mesh(
+            new THREE.BoxGeometry(0.003, 0.001, 0.030),
+            needleMat
+          );
+          needle.rotation.x = Math.PI / 2.5;
+          needle.position.set(0, 0.019, -0.04);
+          compassGroup.add(needle);
+
+          mesh = compassGroup;
         } else if (item === "rope") {
           mesh = new THREE.Mesh(
-            new THREE.TorusGeometry(0.04, 0.014, 8, 16),
-            new THREE.MeshPhongMaterial({ color: "#b45309" })
+            new THREE.TorusGeometry(0.025, 0.008, 8, 24),
+            new THREE.MeshStandardMaterial({ color: "#b45309", roughness: 0.95 }) // rope brown/tan
           );
-          mesh.position.set(0, 0.02, -0.04);
+          mesh.rotation.x = Math.PI / 2.2;
+          mesh.position.set(0, 0.015, -0.04);
         } else if (item === "bucket" || item === "bucket_full") {
           mesh = new THREE.Mesh(
             new THREE.CylinderGeometry(0.05, 0.04, 0.08, 10),

@@ -123,9 +123,13 @@ function setupUI(game) {
     });
   };
 
-  // Initialize Canvas
+  // Initialize Canvas (Safe Try/Catch to prevent WebGL startup failures from blocking main menu touch events)
   const canvas = document.getElementById("game-canvas");
-  game.setCanvas(canvas);
+  try {
+    game.setCanvas(canvas);
+  } catch (err) {
+    console.error("WebGL / Canvas Renderer initialization failed on startup:", err);
+  }
 
   // Translate initial UI
   translateUI();
@@ -498,6 +502,21 @@ function setupUI(game) {
   }, 100);
 
   document.getElementById("btn-play").addEventListener("click", () => {
+    // If WebGL context failed to initialize previously, try to initialize it now
+    if (!game.renderer) {
+      try {
+        const canvas = document.getElementById("game-canvas");
+        game.setCanvas(canvas);
+      } catch (err) {
+        console.error("Critical: Canvas re-initialization failed on Play click:", err);
+        const isEn = localStorage.getItem("maze_lang") === "en";
+        alert(isEn 
+          ? "WebGL / 3D initialization failed. Please restart your device or ensure WebGL is enabled in your browser settings."
+          : "WebGL / 3D başlatılamadı. Lütfen cihazınızı yeniden başlatın veya tarayıcı ayarlarında WebGL'nin açık olduğundan emin olun."
+        );
+        return;
+      }
+    }
     // Show loading screen immediately
     const loadingScreen = document.getElementById("loading-screen");
     const loadingBar = document.getElementById("loading-bar");

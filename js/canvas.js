@@ -121,28 +121,17 @@ export class CanvasRenderer {
     const loadingBar = document.getElementById("loading-bar");
     const loadingText = document.getElementById("loading-text");
 
-    THREE.DefaultLoadingManager.onStart = (url, itemsLoaded, itemsTotal) => {
-      if (loadingScreen) {
-        loadingScreen.classList.remove("hidden");
-      }
-    };
-
     THREE.DefaultLoadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
-      const percentage = Math.round((itemsLoaded / itemsTotal) * 100);
-      if (loadingBar) loadingBar.style.width = `${percentage}%`;
-      if (loadingText) {
-        const isEn = localStorage.getItem("maze_lang") === "en";
-        loadingText.textContent = isEn
-          ? `Loading the darkness... ${percentage}%`
-          : `Karanlık yükleniyor... %${percentage}`;
-      }
-    };
-
-    THREE.DefaultLoadingManager.onLoad = () => {
-      if (loadingScreen) {
-        setTimeout(() => {
-          loadingScreen.classList.add("hidden");
-        }, 500);
+      // Only update if loading screen is already visible (shown by Play button)
+      if (loadingScreen && !loadingScreen.classList.contains("hidden")) {
+        const percentage = Math.round((itemsLoaded / itemsTotal) * 100);
+        if (loadingBar) loadingBar.style.width = `${percentage}%`;
+        if (loadingText) {
+          const isEn = localStorage.getItem("maze_lang") === "en";
+          loadingText.textContent = isEn
+            ? `Loading the darkness... ${percentage}%`
+            : `Karanlık yükleniyor... %${percentage}`;
+        }
       }
     };
 

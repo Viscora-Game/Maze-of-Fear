@@ -492,39 +492,73 @@ function setupUI(game) {
   }, 100);
 
   document.getElementById("btn-play").addEventListener("click", () => {
+    // Show loading screen immediately
+    const loadingScreen = document.getElementById("loading-screen");
+    const loadingBar = document.getElementById("loading-bar");
+    const loadingText = document.getElementById("loading-text");
+    if (loadingScreen) {
+      loadingScreen.classList.remove("hidden");
+      if (loadingBar) loadingBar.style.width = "0%";
+      const isEn = localStorage.getItem("maze_lang") === "en";
+      if (loadingText) loadingText.textContent = isEn ? "Generating the dungeon..." : "Zindan oluşturuluyor...";
+    }
+
     // Show game screen instantly with no animation delay so the DOM layout bounds are computed
     showScreen("game");
     
-    // Wait for the browser to paint the game screen (reflow + repaint) before running heavy initialization
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        game.initNewGame();
-        game.state.gameState = "playing";
-        game.resizeCanvas();
+    // Use setTimeout to let the loading screen paint before blocking init
+    setTimeout(() => {
+      // Update progress text
+      if (loadingText) {
+        const isEn = localStorage.getItem("maze_lang") === "en";
+        loadingText.textContent = isEn ? "Building the labyrinth..." : "Labirent inşa ediliyor...";
+      }
+      if (loadingBar) loadingBar.style.width = "30%";
 
-        // Show the introductory tip only once per new game session
-        const introTip = document.getElementById("intro-tip-overlay");
-        if (introTip) {
-          introTip.style.display = "block";
+      game.initNewGame();
+      game.state.gameState = "playing";
+
+      if (loadingBar) loadingBar.style.width = "70%";
+      if (loadingText) {
+        const isEn = localStorage.getItem("maze_lang") === "en";
+        loadingText.textContent = isEn ? "Lighting the lantern..." : "Fener yakılıyor...";
+      }
+
+      game.resizeCanvas();
+
+      if (loadingBar) loadingBar.style.width = "100%";
+      if (loadingText) {
+        const isEn = localStorage.getItem("maze_lang") === "en";
+        loadingText.textContent = isEn ? "Entering the darkness..." : "Karanlığa adım atılıyor...";
+      }
+
+      // Hide loading screen after a short delay so the user sees 100%
+      setTimeout(() => {
+        if (loadingScreen) loadingScreen.classList.add("hidden");
+      }, 400);
+
+      // Show the introductory tip only once per new game session
+      const introTip = document.getElementById("intro-tip-overlay");
+      if (introTip) {
+        introTip.style.display = "block";
+        introTip.style.opacity = "0";
+        // Force reflow
+        void introTip.offsetWidth;
+        introTip.style.opacity = "1";
+        
+        // Clear any existing timeouts if any
+        if (game._introTipTimeout) clearTimeout(game._introTipTimeout);
+        if (game._introTipFadeTimeout) clearTimeout(game._introTipFadeTimeout);
+
+        // Hide it after 4 seconds
+        game._introTipTimeout = setTimeout(() => {
           introTip.style.opacity = "0";
-          // Force reflow
-          void introTip.offsetWidth;
-          introTip.style.opacity = "1";
-          
-          // Clear any existing timeouts if any
-          if (game._introTipTimeout) clearTimeout(game._introTipTimeout);
-          if (game._introTipFadeTimeout) clearTimeout(game._introTipFadeTimeout);
-
-          // Hide it after 4 seconds
-          game._introTipTimeout = setTimeout(() => {
-            introTip.style.opacity = "0";
-            game._introTipFadeTimeout = setTimeout(() => {
-              introTip.style.display = "none";
-            }, 500);
-          }, 4000);
-        }
-      });
-    });
+          game._introTipFadeTimeout = setTimeout(() => {
+            introTip.style.display = "none";
+          }, 500);
+        }, 4000);
+      }
+    }, 50); // 50ms delay to let loading screen render
   });
 
   document.getElementById("btn-settings").addEventListener("click", () => {

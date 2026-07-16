@@ -2425,15 +2425,26 @@ export class CanvasRenderer {
       this.rollAngle += (0 - this.rollAngle) * 0.15;
     }
 
-    // 1. Throttled Cell Visibility Culling (Disabled to resolve 3D wall gaps/invisible walls)
-    this.visibilityFrameCounter = (this.visibilityFrameCounter || 0) + 1;
-    if (this.visibilityFrameCounter >= 6 || this.currentFloorId !== floorId) {
-      this.visibilityFrameCounter = 0;
-      for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-          if (this.cellGroups[y] && this.cellGroups[y][x]) {
-            this.cellGroups[y][x].visible = true;
-          }
+    // 1. Optimized Distance-Based Cell Culling (Runs every frame for zero latency, only writes on state change)
+    const px = player.visualX;
+    const py = player.visualY;
+    const cullRadiusSq = 144.0; // 12 cells radius (safe and far enough, since fog ends at 6.0)
+
+    for (let y = 0; y < height; y++) {
+      const row = this.cellGroups[y];
+      if (!row) continue;
+      for (let x = 0; x < width; x++) {
+        const cellGroup = row[x];
+        if (!cellGroup) continue;
+
+        const dx = (x + 0.5) - px;
+        const dy = (y + 0.5) - py;
+        const distSq = dx * dx + dy * dy;
+        const isNear = distSq <= cullRadiusSq;
+
+        const targetVisible = !!(state.devMode || isNear);
+        if (cellGroup.visible !== targetVisible) {
+          cellGroup.visible = targetVisible;
         }
       }
     }

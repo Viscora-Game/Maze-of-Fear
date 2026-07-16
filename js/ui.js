@@ -802,27 +802,54 @@ function setupUI(game) {
 
     const unlockedIds = JSON.parse(localStorage.getItem("maze_achievements") || "[]");
 
-    game.achievements.forEach(ach => {
-      const isUnlocked = unlockedIds.includes(ach.id);
-      const name = game.lang === "tr" ? ach.nameTr : ach.nameEn;
-      const desc = game.lang === "tr" ? ach.descTr : ach.descEn;
+    const groups = [
+      { id: "easy", titleKey: "achGroupEasy" },
+      { id: "medium", titleKey: "achGroupMedium" },
+      { id: "hard", titleKey: "achGroupHard" },
+      { id: "nightmare", titleKey: "achGroupNightmare" },
+      { id: "general", titleKey: "achGroupGeneral" }
+    ];
 
-      const card = document.createElement("div");
-      card.className = `achievement-card ${isUnlocked ? "unlocked" : "locked"}`;
-      card.innerHTML = `
-        <div class="achievement-icon">${isUnlocked ? ach.icon : "🔒"}</div>
-        <div class="achievement-details">
-          <div class="achievement-title">${name}</div>
-          <div class="achievement-desc">${desc}</div>
-        </div>
-        <div class="achievement-status ${isUnlocked ? "unlocked-lbl" : "locked-lbl"}">
-          ${isUnlocked 
-            ? (game.lang === "tr" ? "Açıldı" : "Unlocked")
-            : (game.lang === "tr" ? "Kilitli" : "Locked")
-          }
-        </div>
-      `;
-      listContainer.appendChild(card);
+    groups.forEach(g => {
+      const gAchievements = game.achievements.filter(a => a.group === g.id);
+      if (gAchievements.length === 0) return;
+
+      // Group Header Element
+      const header = document.createElement("div");
+      header.className = "settings-card-title";
+      header.style.gridColumn = "1 / -1";
+      header.style.marginTop = "20px";
+      header.style.marginBottom = "10px";
+      header.style.textAlign = "left";
+      header.style.fontSize = "1.05rem";
+      header.style.color = "#c084fc";
+      header.style.borderBottom = "1px solid rgba(192, 132, 252, 0.25)";
+      header.style.paddingBottom = "4px";
+      header.textContent = game.t(g.titleKey);
+      listContainer.appendChild(header);
+
+      gAchievements.forEach(ach => {
+        const isUnlocked = unlockedIds.includes(ach.id);
+        const name = game.lang === "tr" ? ach.nameTr : ach.nameEn;
+        const desc = game.lang === "tr" ? ach.descTr : ach.descEn;
+
+        const card = document.createElement("div");
+        card.className = `achievement-card ${isUnlocked ? "unlocked" : "locked"}`;
+        card.innerHTML = `
+          <div class="achievement-icon">${isUnlocked ? ach.icon : "🔒"}</div>
+          <div class="achievement-details">
+            <div class="achievement-title">${name}</div>
+            <div class="achievement-desc">${desc}</div>
+          </div>
+          <div class="achievement-status ${isUnlocked ? "unlocked-lbl" : "locked-lbl"}">
+            ${isUnlocked 
+              ? (game.lang === "tr" ? "Açıldı" : "Unlocked")
+              : (game.lang === "tr" ? "Kilitli" : "Locked")
+            }
+          </div>
+        `;
+        listContainer.appendChild(card);
+      });
     });
   };
 

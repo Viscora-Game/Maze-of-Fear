@@ -47,14 +47,14 @@ export class Game {
 
     // Achievements definitions
     this.achievements = [
-      { id: "first_escape", nameTr: "İlk Kaçış", nameEn: "First Escape", descTr: "Maze of Fear'dan ilk kez başarıyla kaç.", descEn: "Escape the Maze of Fear for the first time.", icon: "🏆" },
-      { id: "burn_monster", nameTr: "Karanlığın Avcısı", nameEn: "Shadow Burner", descTr: "Fenerinle canavarı ilk kez yakarak geri püskürt.", descEn: "Repel the shadow monster for the first time by burning it with your light.", icon: "🔥" },
-      { id: "read_all_lore", nameTr: "Kayıp Parşömenler", nameEn: "Lore Keeper", descTr: "Labirentteki 3 hikaye parşömeninin tamamını bul ve oku.", descEn: "Find and read all 3 lore papers scattered in the maze.", icon: "📜" },
-      { id: "solve_all_quests", nameTr: "İyilik Meleği", nameEn: "Soul Liberator", descTr: "Çocuk ve Fare yan görevlerinin ikisini de aynı oyunda tamamla.", descEn: "Complete both the Child and Mouse side quests in a single game.", icon: "💖" },
-      { id: "gold_collector", nameTr: "Altın Avcısı", nameEn: "Gold Digger", descTr: "Bir oyunda en az 30 altın biriktir.", descEn: "Accumulate at least 30 gold in a single game.", icon: "💰" },
-      { id: "hard_victory", nameTr: "Bitmeyen Kabus", nameEn: "Hardcore Survivor", descTr: "Zor (Hard) modda labirenti başarıyla bitir.", descEn: "Successfully escape the maze on Hard difficulty.", icon: "💀" },
-      { id: "solve_all_gates", nameTr: "Zırhlı Kapılar", nameEn: "Keymaster", descTr: "3 kilitli kapının/şifrenin tamamını çözerek aç.", descEn: "Resolve and open all 3 locked doors/puzzles in the maze.", icon: "🔑" },
-      { id: "no_damage_victory", nameTr: "Hayatta Kalan", nameEn: "Fearless", descTr: "Canavara hiç yakalanmadan (hasar almadan) seviyeyi tamamla.", descEn: "Successfully escape the maze without taking any damage from the monster.", icon: "🛡️" }
+      { id: "first_escape", group: "easy", nameTr: "İlk Kaçış", nameEn: "First Escape", descTr: "Kolay veya daha üstü zorlukta labirentten ilk kez kaç.", descEn: "Escape the maze on Easy or higher difficulty for the first time.", icon: "🏆" },
+      { id: "burn_monster", group: "medium", nameTr: "Karanlığın Avcısı", nameEn: "Shadow Burner", descTr: "Orta veya daha üstü zorlukta canavarı ilk kez yakarak geri püskürt.", descEn: "Repel the shadow monster on Medium or higher difficulty by burning it.", icon: "🔥" },
+      { id: "no_damage_victory", group: "hard", nameTr: "Hayatta Kalan", nameEn: "Fearless", descTr: "Zor veya daha üstü zorlukta canavardan hiç hasar almadan kaç.", descEn: "Escape the maze on Hard or higher difficulty without taking damage from the monster.", icon: "🛡️" },
+      { id: "nightmare_victory", group: "nightmare", nameTr: "Kabusun Sonu", nameEn: "End of Nightmare", descTr: "Kabus (Nightmare) modunda labirentten başarıyla kaç.", descEn: "Successfully escape the maze on Nightmare difficulty.", icon: "💀" },
+      { id: "read_all_lore", group: "general", nameTr: "Kayıp Parşömenler", nameEn: "Lore Keeper", descTr: "Labirentteki 3 hikaye parşömeninin tamamını bul ve oku.", descEn: "Find and read all 3 lore papers scattered in the maze.", icon: "📜" },
+      { id: "solve_all_quests", group: "general", nameTr: "İyilik Meleği", nameEn: "Soul Liberator", descTr: "Çocuk ve Fare yan görevlerinin ikisini de aynı oyunda tamamla.", descEn: "Complete both the Child and Mouse side quests in a single game.", icon: "💖" },
+      { id: "gold_collector", group: "general", nameTr: "Altın Avcısı", nameEn: "Gold Digger", descTr: "Bir oyunda en az 30 altın biriktir.", descEn: "Accumulate at least 30 gold in a single game.", icon: "💰" },
+      { id: "solve_all_gates", group: "general", nameTr: "Zırhlı Kapılar", nameEn: "Keymaster", descTr: "3 kilitli kapının/şifrenin tamamını çözerek aç.", descEn: "Resolve and open all 3 locked doors/puzzles in the maze.", icon: "🔑" }
     ];
 
     // Level progression
@@ -1758,7 +1758,9 @@ export class Game {
                 
                 sm.spawnTimer = minRespawn + Math.random() * (maxRespawn - minRespawn);
                 this.audio.playShadowBurn();
-                this.unlockAchievement("burn_monster");
+                if (this.difficulty !== "easy") {
+                  this.unlockAchievement("burn_monster");
+                }
                 if (this.onStateChange) this.onStateChange();
                 return;
               }
@@ -1925,17 +1927,18 @@ export class Game {
     
     // Check and unlock end-level achievements
     this.unlockAchievement("first_escape");
-    if (this.difficulty === "hard") {
-      this.unlockAchievement("hard_victory");
+    
+    if (this.difficulty === "nightmare") {
+      this.unlockAchievement("nightmare_victory");
+    }
+    if ((this.difficulty === "hard" || this.difficulty === "nightmare") && !this.state.tookMonsterDamage) {
+      this.unlockAchievement("no_damage_victory");
     }
     if (this.state.quests.childState === "solved" && this.state.quests.mouseState === "solved") {
       this.unlockAchievement("solve_all_quests");
     }
     if (this.state.player.gold >= 30) {
       this.unlockAchievement("gold_collector");
-    }
-    if (!this.state.tookMonsterDamage) {
-      this.unlockAchievement("no_damage_victory");
     }
 
     // Level progress increments

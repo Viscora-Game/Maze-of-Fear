@@ -2402,6 +2402,28 @@ export class CanvasRenderer {
         }
       }
     });
+
+    // 7. GPU Warmup & Pre-compilation: Compile all materials/meshes to GPU memory before starting game
+    if (this.renderer) {
+      const visibilityState = [];
+      this.scene.traverse((node) => {
+        if (node.isMesh || node.isGroup || node.isLight) {
+          visibilityState.push({ node, visible: node.visible });
+          node.visible = true; // Force visible temporarily to allow compile
+        }
+      });
+      
+      try {
+        this.renderer.compile(this.scene, this.camera);
+      } catch (e) {
+        console.warn("GPU Warmup failed:", e);
+      }
+      
+      // Restore original visibility state
+      visibilityState.forEach(({ node, visible }) => {
+        node.visible = visible;
+      });
+    }
   }
 
   draw(state, interpolationFactor = 0.22) {

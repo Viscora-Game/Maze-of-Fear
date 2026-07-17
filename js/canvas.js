@@ -475,7 +475,7 @@ export class CanvasRenderer {
       
       console.log("PSX First-Person Arms loaded successfully!");
       if (this.renderer) {
-        this.renderer.compile(gltf.scene, this.camera);
+        try { this.renderer.compile(gltf.scene, this.camera); } catch (e) { console.warn("Warmup compile failed for arms:", e); }
       }
       if (this.lastState) {
         this.rebuildScene(this.lastState);
@@ -532,7 +532,7 @@ export class CanvasRenderer {
       });
       fbx.scale.set(scaleVal, scaleVal, scaleVal);
       if (this.renderer) {
-        this.renderer.compile(fbx, this.camera);
+        try { this.renderer.compile(fbx, this.camera); } catch (e) { console.warn("Warmup compile failed for fbx decoration:", e); }
       }
       return fbx;
     };
@@ -619,7 +619,7 @@ export class CanvasRenderer {
         this.flashlightModel = model;
         console.log("PSX Flashlight 001 (BLACK) loaded successfully!");
         if (this.renderer) {
-          this.renderer.compile(model, this.camera);
+          try { this.renderer.compile(model, this.camera); } catch (e) { console.warn("Warmup compile failed for flashlight:", e); }
         }
         if (this.lastState) {
           this.rebuildScene(this.lastState);
@@ -640,7 +640,7 @@ export class CanvasRenderer {
       this.chestModel = gltf.scene;
       console.log("Low-poly GLTF chest model loaded successfully!");
       if (this.renderer) {
-        this.renderer.compile(gltf.scene, this.camera);
+        try { this.renderer.compile(gltf.scene, this.camera); } catch (e) { console.warn("Warmup compile failed for chest:", e); }
       }
       if (this.lastState) {
         this.rebuildScene(this.lastState);
@@ -719,7 +719,7 @@ export class CanvasRenderer {
           this[modelProp] = fbx;
           console.log(`FBX Character ${name} loaded, scaled to ${targetHeight}m, and foot-aligned successfully!`);
           if (this.renderer) {
-            this.renderer.compile(fbx, this.camera);
+            try { this.renderer.compile(fbx, this.camera); } catch (e) { console.warn("Warmup compile failed for character:", e); }
           }
           if (this.lastState) {
             this.rebuildScene(this.lastState);
@@ -1057,6 +1057,7 @@ export class CanvasRenderer {
             const mush = new THREE.Group();
             const stem = new THREE.Mesh(stemMGeo, stemMMat);
             stem.position.y = 0.04;
+            stem.userData.isDecoration = true;
             
             const glowMushroomMat = new THREE.MeshStandardMaterial({
               color: "#1d4ed8", // deep rich blue
@@ -1066,6 +1067,7 @@ export class CanvasRenderer {
             });
             const cap = new THREE.Mesh(capMGeo, glowMushroomMat);
             cap.position.y = 0.08;
+            cap.userData.isDecoration = true;
             
             mush.add(stem, cap);
             mush.position.set((Math.random() - 0.5) * 0.35, 0, (Math.random() - 0.5) * 0.35);
@@ -1096,6 +1098,7 @@ export class CanvasRenderer {
                   leaf.scale.set(1.5, 0.2, 1.0);
                   leaf.position.set((Math.random() - 0.5) * 0.22, 0.005, (Math.random() - 0.5) * 0.22);
                   leaf.rotation.set(0, Math.random() * Math.PI, 0);
+                  leaf.userData.isDecoration = true;
                   vineGroup.add(leaf);
                 }
               }
@@ -2336,7 +2339,7 @@ export class CanvasRenderer {
 
       // Pre-compile the shadow monster mesh
       if (this.renderer) {
-        this.renderer.compile(mesh, this.camera);
+        try { this.renderer.compile(mesh, this.camera); } catch (e) { console.warn("Warmup compile failed for shadow monster:", e); }
       }
     }
 
@@ -2363,18 +2366,18 @@ export class CanvasRenderer {
 
       // Pre-compile each trail particle
       if (this.renderer) {
-        this.renderer.compile(trailMesh, this.camera);
+        try { this.renderer.compile(trailMesh, this.camera); } catch (e) { console.warn("Warmup compile failed for smoke trail:", e); }
       }
     }
 
-    // Enable shadow receiving for all meshes, but only castShadow for non-decoration meshes
-    // (decorations already have castShadow=false set in processFBX for performance)
+    // Enable shadow casting and receiving for all meshes in the scene graph (excluding decorations for performance)
     this.scene.traverse((node) => {
       if (node.isMesh) {
         node.receiveShadow = this.shadowsEnabled;
-        // Only enable castShadow if it wasn't explicitly disabled (e.g., decorations)
-        if (node.castShadow !== false) {
+        if (!node.userData.isDecoration) {
           node.castShadow = this.shadowsEnabled;
+        } else {
+          node.castShadow = false;
         }
       }
     });
@@ -2518,7 +2521,7 @@ export class CanvasRenderer {
     // 1. Optimized Distance-Based Cell Culling (Runs every frame for zero latency, only writes on state change)
     const px = player.visualX;
     const py = player.visualY;
-    const cullRadiusSq = 56.25; // 7.5 cells radius (fog completely obscures beyond 6.0, so 7.5 is safe with margin)
+    const cullRadiusSq = 144.0; // 12 cells radius (safe and far enough, since fog ends at 6.0)
 
     for (let y = 0; y < height; y++) {
       const row = this.cellGroups[y];

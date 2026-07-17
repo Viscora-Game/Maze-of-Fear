@@ -2,6 +2,8 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
   const Math = Object.create(globalThis.Math);
   Math.random = rng;
 
+  const occupiedCells = [{ x: 1, y: 1, floor: 0 }]; // Track occupied positions (start is occupied)
+
   // Ensure odd dimensions for tile-based carving
   if (width % 2 === 0) width += 1;
   if (height % 2 === 0) height += 1;
@@ -117,6 +119,8 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
     floors[f][r.y][r.x].staircase = "down";
     // Set staircase up on floor f+1
     floors[f+1][r.y][r.x].staircase = "up";
+    occupiedCells.push({ x: r.x, y: r.y, floor: f });
+    occupiedCells.push({ x: r.x, y: r.y, floor: f + 1 });
   }
 
   // 4. Find Critical Path on the 3D Graph (X, Y, Floor)
@@ -192,6 +196,7 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
   // Mark Entrance and Exit
   floors[0][1][1].isEntrance = true;
   floors[deepestNode.floor][deepestNode.y][deepestNode.x].isExit = true;
+  occupiedCells.push({ x: deepestNode.x, y: deepestNode.y, floor: deepestNode.floor });
 
   // Helper to determine if a cell is a straight corridor (has exactly 2 opposite walls)
   const isStraightCorridor = (cell) => {
@@ -248,6 +253,9 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
   
   const doorCode = Math.floor(1000 + Math.random() * 9000).toString();
   floors[barrierNodes.b3.floor][barrierNodes.b3.y][barrierNodes.b3.x].obstacle = { type: "codeLock", code: doorCode, resolved: false };
+  occupiedCells.push({ x: barrierNodes.b1.x, y: barrierNodes.b1.y, floor: barrierNodes.b1.floor });
+  occupiedCells.push({ x: barrierNodes.b2.x, y: barrierNodes.b2.y, floor: barrierNodes.b2.floor });
+  occupiedCells.push({ x: barrierNodes.b3.x, y: barrierNodes.b3.y, floor: barrierNodes.b3.floor });
 
   // 6. Partition the entire 3D maze into Regions 0, 1, 2, 3
   const assignRegions = () => {
@@ -410,33 +418,62 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
     });
   };
 
-  const placeItemInRegion = (rNum, itemConfig, avoidPositions = [], minDistance = 10) => {
-    let list = getDeadEndsInRegion(rNum);
-    if (list.length === 0) list = getFreeCellsInRegion(rNum);
+  const getFarFreeCells = (rNum, minDist = 3, requireWall = false) => {
+    let list = getFreeCellsInRegion(rNum);
+    
+    // Filter out cells that don't have adjacent walls if requested
+    if (requireWall) {
+      list = list.filter(c => {
+        return floors[c.floor][c.y-1][c.x].type === "wall" ||
+               floors[c.floor][c.y+1][c.x].type === "wall" ||
+               floors[c.floor][c.y][c.x-1].type === "wall" ||
+               floors[c.floor][c.y][c.x+1].type === "wall";
+      });
+    }
 
-    // Keep cells that are at least minDistance away from all avoid positions
-    let filteredList = list.filter(c => {
-      return avoidPositions.every(pos => {
+    // Filter by occupied cells distance
+    let filtered = list.filter(c => {
+      return occupiedCells.every(pos => {
         if (pos.floor !== c.floor) return true;
         const dist = Math.abs(pos.x - c.x) + Math.abs(pos.y - c.y);
-        return dist >= minDistance;
+        return dist >= minDist;
+      });
+    });
+    
+    // Fallback if no cells satisfy minDist
+    if (filtered.length === 0 && minDist > 1) {
+      return getFarFreeCells(rNum, minDist - 1, requireWall);
+    }
+    return filtered;
+  };
+
+  const placeItemInRegion = (rNum, itemConfig, minDist = 3, requireWall = false) => {
+    let list = getDeadEndsInRegion(rNum);
+    
+    // Filter dead ends to be far from occupied cells
+    let filteredList = list.filter(c => {
+      return occupiedCells.every(pos => {
+        if (pos.floor !== c.floor) return true;
+        const dist = Math.abs(pos.x - c.x) + Math.abs(pos.y - c.y);
+        return dist >= minDist;
       });
     });
 
-    if (filteredList.length === 0) filteredList = list; // fallback
+    if (filteredList.length === 0) {
+      filteredList = getFarFreeCells(rNum, minDist, requireWall);
+    }
 
     if (filteredList.length > 0) {
       const cell = filteredList[Math.floor(Math.random() * filteredList.length)];
       cell.chest = itemConfig;
+      occupiedCells.push({ x: cell.x, y: cell.y, floor: cell.floor });
       return cell;
     }
     return null;
   };
 
   // Region 0 setup
-  const avoidListReg0 = [{ x: 1, y: 1, floor: 0 }]; // start location
-
-  const reg0Free = getFreeCellsInRegion(0);
+  const reg0Free = getFarFreeCells(0, 3);
   let wellCell = null;
   if (reg0Free.length > 0) {
     // Pick a well cell far from start (distance >= 12)
@@ -444,80 +481,63 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
     if (filtered.length === 0) filtered = reg0Free;
     wellCell = filtered[Math.floor(Math.random() * filtered.length)];
     wellCell.npc = { id: "well", name: "Deep Well", spokenTo: false };
-    avoidListReg0.push({ x: wellCell.x, y: wellCell.y, floor: wellCell.floor });
+    occupiedCells.push({ x: wellCell.x, y: wellCell.y, floor: wellCell.floor });
   }
 
   // Place Bucket far from Well and Start
-  const bucketCell = placeItemInRegion(0, { id: "chest_bucket", opened: false, content: { type: "item", item: "bucket", gold: 10 } }, avoidListReg0, 15);
-  if (bucketCell) avoidListReg0.push({ x: bucketCell.x, y: bucketCell.y, floor: bucketCell.floor });
+  placeItemInRegion(0, { id: "chest_bucket", opened: false, content: { type: "item", item: "bucket", gold: 10 } }, 12);
 
   // Place Key far from Well, Start, and Bucket
-  placeItemInRegion(0, { id: "chest_key", opened: false, content: { type: "item", item: "key", gold: 5 } }, avoidListReg0, 12);
+  placeItemInRegion(0, { id: "chest_key", opened: false, content: { type: "item", item: "key", gold: 5 } }, 10);
 
   // Region 1 setup
-  const avoidListReg1 = [{ x: barrierNodes.b1.x, y: barrierNodes.b1.y, floor: barrierNodes.b1.floor }]; // barrier entrance
-
-  const reg1Free = getFreeCellsInRegion(1);
+  const reg1Free = getFarFreeCells(1, 3);
   let childCell = null;
   if (reg1Free.length > 0) {
     // Pick Lost Child location far from Region 1 entrance (distance >= 15)
-    let filtered = reg1Free.filter(c => Math.abs(c.x - barrierNodes.b1.x) + Math.abs(c.y - barrierNodes.b1.y) >= 15);
+    let filtered = reg1Free.filter(c => Math.abs(c.x - barrierNodes.b1.x) + Math.abs(c.y - barrierNodes.b1.y) >= 12);
     if (filtered.length === 0) filtered = reg1Free;
     childCell = filtered[Math.floor(Math.random() * filtered.length)];
     childCell.npc = { id: "child", name: "Lost Child", spokenTo: false };
-    avoidListReg1.push({ x: childCell.x, y: childCell.y, floor: childCell.floor });
+    occupiedCells.push({ x: childCell.x, y: childCell.y, floor: childCell.floor });
   }
 
   // Place Shears far from Child and Region 1 entrance
-  const shearsCell = placeItemInRegion(1, { id: "chest_shears", opened: false, content: { type: "item", item: "shears", gold: 5 } }, avoidListReg1, 15);
-  if (shearsCell) avoidListReg1.push({ x: shearsCell.x, y: shearsCell.y, floor: shearsCell.floor });
+  placeItemInRegion(1, { id: "chest_shears", opened: false, content: { type: "item", item: "shears", gold: 5 } }, 10);
 
   // Place Cheese far from Child, entrance, and Shears
-  const cheeseCell = placeItemInRegion(1, { id: "chest_cheese", opened: false, content: { type: "item", item: "cheese", gold: 5 } }, avoidListReg1, 12);
-  if (cheeseCell) avoidListReg1.push({ x: cheeseCell.x, y: cheeseCell.y, floor: cheeseCell.floor });
+  placeItemInRegion(1, { id: "chest_cheese", opened: false, content: { type: "item", item: "cheese", gold: 5 } }, 10);
 
   // Place Mouse far from other Region 1 elements
-  const reg1NpcFree = getFreeCellsInRegion(1);
+  const reg1NpcFree = getFarFreeCells(1, 8);
   if (reg1NpcFree.length > 0) {
-    let filtered = reg1NpcFree.filter(c => {
-      return avoidListReg1.every(pos => Math.abs(pos.x - c.x) + Math.abs(pos.y - c.y) >= 12);
-    });
-    if (filtered.length === 0) filtered = reg1NpcFree;
-    const mouseCell = filtered[Math.floor(Math.random() * filtered.length)];
+    const mouseCell = reg1NpcFree[Math.floor(Math.random() * reg1NpcFree.length)];
     mouseCell.npc = { id: "mouse", name: "Talking Mouse", spokenTo: false };
+    occupiedCells.push({ x: mouseCell.x, y: mouseCell.y, floor: mouseCell.floor });
   }
 
   // Region 2 setup
-  const avoidListReg2 = [{ x: barrierNodes.b2.x, y: barrierNodes.b2.y, floor: barrierNodes.b2.floor }]; // Region 2 entrance
-
-  // Placement of Code Lock Clue in Region 2 far from entrance (B2) AND far from the actual code lock gate (B3) to prevent spawning next to it!
-  const reg2Free = getFreeCellsInRegion(2);
+  // Placement of Code Lock Clue in Region 2 far from entrance (B2) AND far from the actual code lock gate (B3), strictly on walls!
+  const reg2Free = getFarFreeCells(2, 3, true);
   let clueCell = null;
   if (reg2Free.length > 0) {
     let filtered = reg2Free.filter(c => {
       const distToB2 = Math.abs(c.x - barrierNodes.b2.x) + Math.abs(c.y - barrierNodes.b2.y);
       const distToB3 = Math.abs(c.x - barrierNodes.b3.x) + Math.abs(c.y - barrierNodes.b3.y);
-      return distToB3 >= 12 && distToB2 >= 10;
+      return distToB3 >= 10 && distToB2 >= 10;
     });
-    // Fallback if region size is very restricted
-    if (filtered.length === 0) {
-      filtered = reg2Free.filter(c => Math.abs(c.x - barrierNodes.b3.x) + Math.abs(c.y - barrierNodes.b3.y) >= 8);
-    }
     if (filtered.length === 0) filtered = reg2Free;
     clueCell = filtered[Math.floor(Math.random() * filtered.length)];
     clueCell.puzzleClue = doorCode;
-    avoidListReg2.push({ x: clueCell.x, y: clueCell.y, floor: clueCell.floor });
+    occupiedCells.push({ x: clueCell.x, y: clueCell.y, floor: clueCell.floor });
   }
 
   // Place Merchant far from entrance and Code Lock Clue
-  const reg2NpcFree = getFreeCellsInRegion(2);
+  const reg2NpcFree = getFarFreeCells(2, 8);
   if (reg2NpcFree.length > 0) {
-    let filtered = reg2NpcFree.filter(c => {
-      return avoidListReg2.every(pos => Math.abs(pos.x - c.x) + Math.abs(pos.y - c.y) >= 12);
-    });
-    if (filtered.length === 0) filtered = reg2NpcFree;
-    const merchantCell = filtered[Math.floor(Math.random() * filtered.length)];
+    const merchantCell = reg2NpcFree[Math.floor(Math.random() * reg2NpcFree.length)];
     merchantCell.npc = { id: "merchant", name: "Lost Merchant", spokenTo: false };
+    occupiedCells.push({ x: merchantCell.x, y: merchantCell.y, floor: merchantCell.floor });
   }
 
   // Force the Old Sage to spawn at the start cell adjacent path on Floor 0
@@ -530,33 +550,38 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
   }
   if (sageCell) {
     sageCell.npc = { id: "traveler", name: "Old Sage", spokenTo: false };
+    occupiedCells.push({ x: sageCell.x, y: sageCell.y, floor: sageCell.floor });
   } else {
     // Fallback if somehow path is not adjacent
-    const travelerFree = getFreeCellsInRegion(0);
+    const travelerFree = getFarFreeCells(0, 3);
     if (travelerFree.length > 0) {
       const travelerCell = travelerFree[Math.floor(Math.random() * travelerFree.length)];
       travelerCell.npc = { id: "traveler", name: "Old Sage", spokenTo: false };
+      occupiedCells.push({ x: travelerCell.x, y: travelerCell.y, floor: travelerCell.floor });
     }
   }
 
-  // Scatter exactly 3 Lore Parchments across the regions
+  // Scatter exactly 3 Lore Parchments across the regions (strictly on walls!)
   // Lore 1 in Region 0 or 1
-  const lore1Free = getFreeCellsInRegion(Math.random() < 0.5 ? 0 : 1);
+  const lore1Free = getFarFreeCells(Math.random() < 0.5 ? 0 : 1, 4, true);
   if (lore1Free.length > 0) {
     const c = lore1Free[Math.floor(Math.random() * lore1Free.length)];
     c.loreParchment = "lore_1";
+    occupiedCells.push({ x: c.x, y: c.y, floor: c.floor });
   }
   // Lore 2 in Region 2
-  const lore2Free = getFreeCellsInRegion(2);
+  const lore2Free = getFarFreeCells(2, 4, true);
   if (lore2Free.length > 0) {
     const c = lore2Free[Math.floor(Math.random() * lore2Free.length)];
     c.loreParchment = "lore_2";
+    occupiedCells.push({ x: c.x, y: c.y, floor: c.floor });
   }
   // Lore 3 in Region 3
-  const lore3Free = getFreeCellsInRegion(3);
+  const lore3Free = getFarFreeCells(3, 4, true);
   if (lore3Free.length > 0) {
     const c = lore3Free[Math.floor(Math.random() * lore3Free.length)];
     c.loreParchment = "lore_3";
+    occupiedCells.push({ x: c.x, y: c.y, floor: c.floor });
   }
 
   // Scatter Standard Chests & Optional Roadblocks (Barricades & Chasms)
@@ -564,6 +589,15 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
   regions.forEach(rNum => {
     const deadEnds = getDeadEndsInRegion(rNum);
     deadEnds.forEach((c, idx) => {
+      // Skip if already occupied
+      if (c.npc || c.isEntrance || c.isExit || c.puzzleClue || c.loreParchment || c.chest) return;
+      
+      // Enforce at least 1 floor tile of separation (Manhattan distance >= 2) from any occupied cell
+      const isTooClose = occupiedCells.some(pos => {
+        return pos.floor === c.floor && Math.abs(pos.x - c.x) + Math.abs(pos.y - c.y) < 2;
+      });
+      if (isTooClose) return;
+
       const roll = Math.random();
       let chestContent = {};
       if (roll < 0.50) {
@@ -588,10 +622,11 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
         opened: false,
         content: chestContent
       };
+      occupiedCells.push({ x: c.x, y: c.y, floor: c.floor });
     });
 
     // Add optional roadblock to protect high-value chests
-    const freeCells = getFreeCellsInRegion(rNum);
+    const freeCells = getFarFreeCells(rNum, 3);
     if (freeCells.length > 3) {
       const targetDeadEnd = getDeadEndsInRegion(rNum).find(c => c.chest && c.chest.content.type === "gold");
       if (targetDeadEnd) {

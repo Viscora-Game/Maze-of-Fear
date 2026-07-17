@@ -2429,7 +2429,7 @@ export class CanvasRenderer {
   draw(state, interpolationFactor = 0.22) {
     this.lastState = state;
     if (this.clock && this.mixers) {
-      const dt = this.clock.getDelta();
+      const dt = Math.min(this.clock.getDelta(), 0.1); // Clamp delta time to 100ms max to prevent large loading spikes!
       this.mixers.forEach(mixer => {
         try { mixer.update(dt); } catch(e){}
       });
@@ -2442,12 +2442,34 @@ export class CanvasRenderer {
       document.exitPointerLock();
     }
 
-    // 0. Update HUD Compass Needle dynamically at 60fps (smooth relative rotation to exit)
+    // 0. Update HUD Compass Needle dynamically at 60fps (smooth relative rotation to exit or staircase)
     if (state.gameState === "playing") {
       const compassNeedle = document.getElementById("compass-needle");
       if (compassNeedle && compassNeedle.style && state.exitCell) {
-        const dx = state.exitCell.x - player.visualX;
-        const dy = state.exitCell.y - player.visualY;
+        let targetX = state.exitCell.x;
+        let targetY = state.exitCell.y;
+        
+        // If the exit is on a different floor, point the compass to the staircase leading to it!
+        if (state.exitCell.floor !== currentFloor) {
+          let foundStair = null;
+          for (let y = 0; y < height; y++) {
+            if (!grid[y]) continue;
+            for (let x = 0; x < width; x++) {
+              if (grid[y][x] && grid[y][x].staircase) {
+                foundStair = grid[y][x];
+                break;
+              }
+            }
+            if (foundStair) break;
+          }
+          if (foundStair) {
+            targetX = foundStair.x;
+            targetY = foundStair.y;
+          }
+        }
+
+        const dx = targetX - player.visualX;
+        const dy = targetY - player.visualY;
         const worldAngle = Math.atan2(dy, dx);
         const relativeAngle = (worldAngle - player.angle) * (180 / Math.PI);
         compassNeedle.style.transform = `rotate(${relativeAngle}deg)`;

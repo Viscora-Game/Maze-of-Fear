@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=21";
-import { AudioEngine } from "./audio.js?v=21";
-import { CanvasRenderer } from "./canvas.js?v=21";
-import { translations } from "./translations.js?v=21";
-import { randomEvents, deathEvents } from "./events.js?v=21";
-import { getSeededRandom } from "./prng.js?v=21";
+import { generateMaze } from "./maze.js?v=22";
+import { AudioEngine } from "./audio.js?v=22";
+import { CanvasRenderer } from "./canvas.js?v=22";
+import { translations } from "./translations.js?v=22";
+import { randomEvents, deathEvents } from "./events.js?v=22";
+import { getSeededRandom } from "./prng.js?v=22";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -156,12 +156,8 @@ export class Game {
   }
 
   initNewGame(isRetry = false) {
-    // Pick variation (0, 1, or 2) - Reuse same variation on retry so players can learn the layout!
-    if (!isRetry) {
-      this.currentVariation = Math.floor(Math.random() * 3);
-    } else if (this.currentVariation === undefined) {
-      this.currentVariation = 0;
-    }
+    // Always roll a random variation (0, 1, or 2) out of the 3 static level variations to keep it fresh and prevent simple memorization!
+    this.currentVariation = Math.floor(Math.random() * 3);
 
     // 1. Calculate dimensions and floors based on 20 levels progression
     let size = 21 + Math.floor((this.currentLevel - 1) / 2) * 2;

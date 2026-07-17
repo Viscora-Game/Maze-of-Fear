@@ -367,6 +367,7 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
   // 8. Place Items and Quest Actors
   const getFreeCellsInRegion = (rNum) => {
     const list = [];
+    const listWithWall = [];
     for (let f = 0; f < numFloors; f++) {
       for (let y = 1; y < height - 1; y++) {
         for (let x = 1; x < width - 1; x++) {
@@ -382,11 +383,19 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
               !c.puzzleClue &&
               !c.loreParchment) {
             list.push(c);
+            // Check if there is an adjacent wall
+            const hasWall = floors[f][y-1][x].type === "wall" ||
+                            floors[f][y+1][x].type === "wall" ||
+                            floors[f][y][x-1].type === "wall" ||
+                            floors[f][y][x+1].type === "wall";
+            if (hasWall) {
+              listWithWall.push(c);
+            }
           }
         }
       }
     }
-    return list;
+    return listWithWall.length > 0 ? listWithWall : list;
   };
 
   const getDeadEndsInRegion = (rNum) => {

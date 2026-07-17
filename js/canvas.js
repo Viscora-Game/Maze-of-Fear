@@ -1299,12 +1299,12 @@ export class CanvasRenderer {
               roughness: 0.95
             });
 
-            // 1. Gothic Stone Archway (left column, right column, top lintel)
-            const colL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.25, 0.12), stoneMat);
-            colL.position.set(-0.44, 0.625, 0);
-            const colR = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.25, 0.12), stoneMat);
-            colR.position.set(0.44, 0.625, 0);
-            const lintel = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.12, 0.14), stoneMat);
+            // 1. Gothic Stone Archway (wider and positioned to touch the side walls exactly at -0.5 and +0.5)
+            const colL = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.25, 0.14), stoneMat);
+            colL.position.set(-0.43, 0.625, 0);
+            const colR = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.25, 0.14), stoneMat);
+            colR.position.set(0.43, 0.625, 0);
+            const lintel = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.12, 0.16), stoneMat);
             lintel.position.set(0, 1.25, 0);
             portalGroup.add(colL, colR, lintel);
 
@@ -1349,19 +1349,17 @@ export class CanvasRenderer {
             portalLight.position.set(0, 0.58, -0.15); // Behind the door
             portalGroup.add(portalLight);
 
-            // Set portal orientation based on corridor direction (faces the hallway path, blocks width)
-            const isWall = (tx, ty) => {
-              if (tx < 0 || tx >= width || ty < 0 || ty >= height) return true;
-              return grid[ty][tx].type === "wall";
+            // Set portal orientation based on the entry path (always faces the player, blocks hallway width)
+            const isFloor = (tx, ty) => {
+              if (tx < 0 || tx >= width || ty < 0 || ty >= height) return false;
+              return grid[ty][tx].type === "floor";
             };
-            if (isWall(x - 1, y) && isWall(x + 1, y)) {
-              portalGroup.rotation.y = 0; // Spans East-West (faces North-South corridor)
-            } else if (isWall(x, y - 1) && isWall(x, y + 1)) {
-              portalGroup.rotation.y = Math.PI / 2; // Spans North-South (faces East-West corridor)
-            } else if (isWall(x - 1, y) || isWall(x + 1, y)) {
-              portalGroup.rotation.y = 0;
+            if (isFloor(x, y - 1) || isFloor(x, y + 1)) {
+              portalGroup.rotation.y = 0; // Spans East-West (blocks North-South corridor entry)
+            } else if (isFloor(x - 1, y) || isFloor(x + 1, y)) {
+              portalGroup.rotation.y = Math.PI / 2; // Spans North-South (blocks East-West corridor entry)
             } else {
-              portalGroup.rotation.y = Math.PI / 2;
+              portalGroup.rotation.y = 0;
             }
 
             cellGroup.add(portalGroup);
@@ -1791,12 +1789,25 @@ export class CanvasRenderer {
             }
 
             if (!mounted) {
-              // Fallback to floor paper note
-              const paperGeo = new THREE.BoxGeometry(0.24, 0.02, 0.32);
-              const paperMat = new THREE.MeshPhongMaterial({ color: "#fef08a", shininess: 5 });
+              // Beautiful wooden stand on the floor holding the textured clue
+              const standGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.60, 6);
+              const stand = new THREE.Mesh(standGeo, woodMat);
+              stand.position.set(0, 0.30, 0);
+              
+              const topPlank = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.02, 0.24), woodMat);
+              topPlank.position.set(0, 0.60, 0);
+              topPlank.rotation.x = Math.PI / 6; // slanted forward
+              
+              const paperGeo = new THREE.BoxGeometry(0.20, 0.20, 0.01);
+              const paperMat = new THREE.MeshStandardMaterial({ 
+                map: makeClueTexture(cell.puzzleClue),
+                roughness: 0.95
+              });
               const paperMesh = new THREE.Mesh(paperGeo, paperMat);
-              paperMesh.position.set(0, 0.01, 0);
-              clueSubGroup.add(paperMesh);
+              paperMesh.position.set(0, 0.012, 0);
+              topPlank.add(paperMesh);
+              
+              clueSubGroup.add(stand, topPlank);
             } else {
               // Detailed Wall Signboard backing board
               const boardGeo = new THREE.BoxGeometry(0.24, 0.32, 0.015);
@@ -1817,8 +1828,6 @@ export class CanvasRenderer {
               noteGroup.rotation.y = rotY;
               clueSubGroup.add(noteGroup);
             }
-
-            // PointLight removed for performance — emissive materials provide sufficient glow
 
             cellGroup.add(clueSubGroup);
           }
@@ -1853,11 +1862,25 @@ export class CanvasRenderer {
             }
 
             if (!mounted) {
-              const paperGeo = new THREE.BoxGeometry(0.24, 0.02, 0.32);
-              const paperMat = new THREE.MeshPhongMaterial({ color: "#fcd34d", shininess: 5 });
+              // Beautiful wooden stand on the floor holding the textured lore
+              const standGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.60, 6);
+              const stand = new THREE.Mesh(standGeo, woodMat);
+              stand.position.set(0, 0.30, 0);
+              
+              const topPlank = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.02, 0.24), woodMat);
+              topPlank.position.set(0, 0.60, 0);
+              topPlank.rotation.x = Math.PI / 6; // slanted forward
+              
+              const paperGeo = new THREE.BoxGeometry(0.20, 0.20, 0.01);
+              const paperMat = new THREE.MeshStandardMaterial({ 
+                map: makeLoreTexture(cell.loreParchment),
+                roughness: 0.95
+              });
               const paperMesh = new THREE.Mesh(paperGeo, paperMat);
-              paperMesh.position.set(0, 0.01, 0);
-              loreSubGroup.add(paperMesh);
+              paperMesh.position.set(0, 0.012, 0);
+              topPlank.add(paperMesh);
+              
+              loreSubGroup.add(stand, topPlank);
             } else {
               const boardGeo = new THREE.BoxGeometry(0.24, 0.32, 0.015);
               const boardMesh = new THREE.Mesh(boardGeo, woodMat);
@@ -1876,8 +1899,6 @@ export class CanvasRenderer {
               noteGroup.rotation.y = rotY;
               loreSubGroup.add(noteGroup);
             }
-
-            // PointLight removed for performance — emissive materials provide sufficient glow
 
             cellGroup.add(loreSubGroup);
           }
@@ -2411,10 +2432,19 @@ export class CanvasRenderer {
       }
     }
 
+    const px = player.visualX;
+    const py = player.visualY;
+
     // Update warm wall torches flickering effect (pulsing flame scales and PointLight intensities)
     if (this.torches && this.torches.length > 0) {
       const time = performance.now() * 0.005;
       let minTorchDist = 999.0;
+      const playerMoved = (this.lastTorchCullX === undefined || Math.abs(px - this.lastTorchCullX) > 0.08 || Math.abs(py - this.lastTorchCullY) > 0.08);
+      if (playerMoved) {
+        this.lastTorchCullX = px;
+        this.lastTorchCullY = py;
+      }
+
       this.torches.forEach((t, i) => {
         const flicker = Math.sin(time * 3.3 + i) * 0.18 + Math.cos(time * 6.7 + i * 2.1) * 0.12 + Math.sin(time * 19.3 + i * 3.4) * 0.06;
         t.light.intensity = t.baseIntensity + flicker;
@@ -2428,15 +2458,17 @@ export class CanvasRenderer {
           t.flame.rotation.z = Math.sin(time * 4.0 + i) * 0.05; // tilt sway
         }
 
-        // Calculate distance to nearest torch using stored world coordinates
+        // Throttled distance calculation for dynamic light culling
         if (typeof t.worldX === "number") {
-          const dist = Math.hypot(player.visualX - t.worldX, player.visualY - t.worldZ);
+          if (playerMoved) {
+            const dist = Math.hypot(px - t.worldX, py - t.worldZ);
+            t.lastDist = dist;
+            t.light.visible = (dist < 5.0);
+          }
+          const dist = t.lastDist !== undefined ? t.lastDist : 999.0;
           if (dist < minTorchDist) {
             minTorchDist = dist;
           }
-
-          // DYNAMIC LIGHT CULLING: Only enable heavy PointLight calculations if torch is within 5.0m of camera
-          t.light.visible = (dist < 5.0);
         }
       });
 
@@ -2518,26 +2550,31 @@ export class CanvasRenderer {
       this.rollAngle += (0 - this.rollAngle) * 0.15;
     }
 
-    // 1. Optimized Distance-Based Cell Culling (Runs every frame for zero latency, only writes on state change)
-    const px = player.visualX;
-    const py = player.visualY;
+    // 1. Optimized Throttled Cell Culling (Only loops grid when player moves significantly)
+    const cullPx = player.visualX;
+    const cullPy = player.visualY;
     const cullRadiusSq = 144.0; // 12 cells radius (safe and far enough, since fog ends at 6.0)
+    if (this.lastCullX === undefined || Math.abs(cullPx - this.lastCullX) > 0.08 || Math.abs(cullPy - this.lastCullY) > 0.08 || state.devMode !== this.lastCullDevMode) {
+      this.lastCullX = cullPx;
+      this.lastCullY = cullPy;
+      this.lastCullDevMode = state.devMode;
 
-    for (let y = 0; y < height; y++) {
-      const row = this.cellGroups[y];
-      if (!row) continue;
-      for (let x = 0; x < width; x++) {
-        const cellGroup = row[x];
-        if (!cellGroup) continue;
+      for (let y = 0; y < height; y++) {
+        const row = this.cellGroups[y];
+        if (!row) continue;
+        for (let x = 0; x < width; x++) {
+          const cellGroup = row[x];
+          if (!cellGroup) continue;
 
-        const dx = (x + 0.5) - px;
-        const dy = (y + 0.5) - py;
-        const distSq = dx * dx + dy * dy;
-        const isNear = distSq <= cullRadiusSq;
+          const dx = (x + 0.5) - cullPx;
+          const dy = (y + 0.5) - cullPy;
+          const distSq = dx * dx + dy * dy;
+          const isNear = distSq <= cullRadiusSq;
 
-        const targetVisible = !!(state.devMode || isNear);
-        if (cellGroup.visible !== targetVisible) {
-          cellGroup.visible = targetVisible;
+          const targetVisible = !!(state.devMode || isNear);
+          if (cellGroup.visible !== targetVisible) {
+            cellGroup.visible = targetVisible;
+          }
         }
       }
     }

@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=22";
-import { AudioEngine } from "./audio.js?v=22";
-import { CanvasRenderer } from "./canvas.js?v=22";
-import { translations } from "./translations.js?v=22";
-import { randomEvents, deathEvents } from "./events.js?v=22";
-import { getSeededRandom } from "./prng.js?v=22";
+import { generateMaze } from "./maze.js?v=23";
+import { AudioEngine } from "./audio.js?v=23";
+import { CanvasRenderer } from "./canvas.js?v=23";
+import { translations } from "./translations.js?v=23";
+import { randomEvents, deathEvents } from "./events.js?v=23";
+import { getSeededRandom } from "./prng.js?v=23";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -1212,7 +1212,7 @@ export class Game {
             // Quest reward processing
             inv.bucket_full--;
             inv.bucket++;
-            inv.key++;
+            this.state.player.fuel = Math.min(100, this.state.player.fuel + 15);
             this.state.quests.childState = "solved";
             this.audio.playPickup();
             if (this.onStateChange) this.onStateChange();

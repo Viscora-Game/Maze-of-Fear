@@ -151,7 +151,7 @@ export const translations = {
         hasWater: "You have fresh well water! Can I have a drink?",
         giveWater: "Give Water",
         declineWater: "Keep Water",
-        thanks: "Thank you! I feel much better. Here, I found this shiny thing on the floor. Take it! (Got a Key!)",
+        thanks: "Thank you! I feel much better. Here, take this half-used battery I found on the ground! (Flashlight battery restored +15%!)",
         finalQuote: "The spirits will never forget your kindness... But you should know, not every child you meet here is me. We are just the same lost souls, trapped in different bodies within this eternal loop..."
       },
       well: {
@@ -380,7 +380,7 @@ export const translations = {
         hasWater: "Taze kuyu suyun var! Bir yudum içebilir miyim?",
         giveWater: "Suyu Ver",
         declineWater: "Suyu Sakla",
-        thanks: "Teşekkürler! Çok daha iyi hissediyorum. Bunu yerde bulmuştum, al senin olsun! (Anahtar kazandın!)",
+        thanks: "Teşekkürler! Çok daha iyi hissediyorum. Yerde bulduğum bu yarım pili al, işine yarayabilir! (Fener şarjı %15 dolduruldu!)",
         finalQuote: "Ruhlar senin iyiliğini asla unutmayacak... Ama bilmelisin ki, bu labirentte karşılaştığın her çocuk ben değilim. Biz sadece bu lanetli döngüde farklı bedenlerde sıkışıp kalmış aynı kayıp ruhlarız..."
       },
       well: {

@@ -1,4 +1,4 @@
-import { Game } from "./game.js?v=25";
+import { Game } from "./game.js?v=26";
 
 const init = () => {
   const game = new Game();
@@ -23,6 +23,77 @@ if (document.readyState === "loading") {
 }
 
 function setupUI(game) {
+  const triggerLoadingAndStart = async (isRetry = false, showIntroTip = false) => {
+    const loadingScreen = document.getElementById("loading-screen");
+    const loadingBar = document.getElementById("loading-bar");
+    const loadingText = document.getElementById("loading-text");
+    
+    if (loadingScreen) {
+      loadingScreen.classList.remove("hidden");
+      if (loadingBar) loadingBar.style.width = "0%";
+    }
+    
+    showScreen("game");
+    
+    const isEn = localStorage.getItem("maze_lang") === "en";
+    const delay = ms => new Promise(r => setTimeout(r, ms));
+    
+    // Step 1: Blaupause (Blueprints)
+    if (loadingText) loadingText.textContent = isEn ? "Drawing dungeon blueprints..." : "Labirent planı çiziliyor...";
+    if (loadingBar) loadingBar.style.width = "15%";
+    await delay(350);
+    
+    // Step 2: Carve rooms
+    if (loadingText) loadingText.textContent = isEn ? "Carving passages and stone rooms..." : "Koridorlar ve odalar oyuluyor...";
+    if (loadingBar) loadingBar.style.width = "35%";
+    await delay(350);
+    
+    // Step 3: Initialize new game math (generate maze & rebuildScene)
+    game.initNewGame(isRetry);
+    
+    // Step 4: Spawning items and souls
+    if (loadingText) loadingText.textContent = isEn ? "Scattering items and lost souls..." : "Eşyalar ve kayıp ruhlar yerleştiriliyor...";
+    if (loadingBar) loadingBar.style.width = "60%";
+    await delay(350);
+    
+    // Step 5: Lighting torches and compile GPU
+    if (loadingText) loadingText.textContent = isEn ? "Lighting torches and pre-compiling shadows..." : "Gölgeler derleniyor ve meşaleler yakılıyor...";
+    if (loadingBar) loadingBar.style.width = "85%";
+    await delay(350);
+    
+    // Step 6: Finalize
+    game.state.gameState = "playing";
+    game.resizeCanvas();
+    
+    if (loadingBar) loadingBar.style.width = "100%";
+    if (loadingText) loadingText.textContent = isEn ? "Entering the darkness..." : "Karanlığa adım atılıyor...";
+    await delay(300);
+    
+    if (loadingScreen) loadingScreen.classList.add("hidden");
+    
+    game.draw();
+
+    if (showIntroTip) {
+      const introTip = document.getElementById("intro-tip-overlay");
+      if (introTip) {
+        introTip.style.display = "block";
+        introTip.style.opacity = "0";
+        void introTip.offsetWidth;
+        introTip.style.opacity = "1";
+        
+        if (game._introTipTimeout) clearTimeout(game._introTipTimeout);
+        if (game._introTipFadeTimeout) clearTimeout(game._introTipFadeTimeout);
+
+        game._introTipTimeout = setTimeout(() => {
+          introTip.style.opacity = "0";
+          game._introTipFadeTimeout = setTimeout(() => {
+            introTip.style.display = "none";
+          }, 500);
+        }, 4000);
+      }
+    }
+  };
+
   // 1. DOM Element Cache
   const screens = {
     menu: document.getElementById("screen-menu"),
@@ -533,73 +604,9 @@ function setupUI(game) {
         return;
       }
     }
-    // Show loading screen immediately
-    const loadingScreen = document.getElementById("loading-screen");
-    const loadingBar = document.getElementById("loading-bar");
-    const loadingText = document.getElementById("loading-text");
-    if (loadingScreen) {
-      loadingScreen.classList.remove("hidden");
-      if (loadingBar) loadingBar.style.width = "0%";
-      const isEn = localStorage.getItem("maze_lang") === "en";
-      if (loadingText) loadingText.textContent = isEn ? "Generating the dungeon..." : "Zindan oluşturuluyor...";
-    }
-
-    // Show game screen instantly with no animation delay so the DOM layout bounds are computed
-    showScreen("game");
     
-    // Use setTimeout to let the loading screen paint before blocking init
-    setTimeout(() => {
-      // Update progress text
-      if (loadingText) {
-        const isEn = localStorage.getItem("maze_lang") === "en";
-        loadingText.textContent = isEn ? "Building the labyrinth..." : "Labirent inşa ediliyor...";
-      }
-      if (loadingBar) loadingBar.style.width = "30%";
-
-      game.initNewGame(false);
-      game.state.gameState = "playing";
-
-      if (loadingBar) loadingBar.style.width = "70%";
-      if (loadingText) {
-        const isEn = localStorage.getItem("maze_lang") === "en";
-        loadingText.textContent = isEn ? "Lighting the lantern..." : "Fener yakılıyor...";
-      }
-
-      game.resizeCanvas();
-
-      if (loadingBar) loadingBar.style.width = "100%";
-      if (loadingText) {
-        const isEn = localStorage.getItem("maze_lang") === "en";
-        loadingText.textContent = isEn ? "Entering the darkness..." : "Karanlığa adım atılıyor...";
-      }
-
-      // Hide loading screen after a short delay so the user sees 100%
-      setTimeout(() => {
-        if (loadingScreen) loadingScreen.classList.add("hidden");
-      }, 400);
-
-      // Show the introductory tip only once per new game session
-      const introTip = document.getElementById("intro-tip-overlay");
-      if (introTip) {
-        introTip.style.display = "block";
-        introTip.style.opacity = "0";
-        // Force reflow
-        void introTip.offsetWidth;
-        introTip.style.opacity = "1";
-        
-        // Clear any existing timeouts if any
-        if (game._introTipTimeout) clearTimeout(game._introTipTimeout);
-        if (game._introTipFadeTimeout) clearTimeout(game._introTipFadeTimeout);
-
-        // Hide it after 4 seconds
-        game._introTipTimeout = setTimeout(() => {
-          introTip.style.opacity = "0";
-          game._introTipFadeTimeout = setTimeout(() => {
-            introTip.style.display = "none";
-          }, 500);
-        }, 4000);
-      }
-    }, 50); // 50ms delay to let loading screen render
+    // Call the beautiful async loading screen and start transition
+    triggerLoadingAndStart(false, true);
   });
 
   document.getElementById("btn-settings").addEventListener("click", () => {
@@ -623,10 +630,7 @@ function setupUI(game) {
   });
 
   document.getElementById("btn-pause-restart").addEventListener("click", () => {
-    game.initNewGame(true);
-    game.state.gameState = "playing";
-    showScreen("game");
-    game.resizeCanvas();
+    triggerLoadingAndStart(true);
   });
 
   document.getElementById("btn-pause-mainmenu").addEventListener("click", () => {
@@ -1723,9 +1727,7 @@ function setupUI(game) {
 
     content.querySelector("#btn-restart").addEventListener("click", () => {
       modals.end.classList.add("hidden");
-      game.initNewGame(!isVictory);
-      game.state.gameState = "playing";
-      game.draw();
+      triggerLoadingAndStart(!isVictory);
     });
 
     content.querySelector("#btn-main-menu").addEventListener("click", () => {

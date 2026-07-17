@@ -1,8 +1,8 @@
-import { generateMaze } from "./maze.js?v=18";
-import { AudioEngine } from "./audio.js?v=18";
-import { CanvasRenderer } from "./canvas.js?v=18";
-import { translations } from "./translations.js?v=18";
-import { randomEvents, deathEvents } from "./events.js?v=18";
+import { generateMaze } from "./maze.js?v=19";
+import { AudioEngine } from "./audio.js?v=19";
+import { CanvasRenderer } from "./canvas.js?v=19";
+import { translations } from "./translations.js?v=19";
+import { randomEvents, deathEvents } from "./events.js?v=19";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -1591,38 +1591,44 @@ export class Game {
       return null;
     }
     
-    const queue = [[startX, startY]];
-    const parent = {};
-    const visited = {};
-    visited[`${startX},${startY}`] = true;
+    const size = width * height;
+    const queue = [startX + startY * width];
+    let qHead = 0;
+    const visited = new Uint8Array(size);
+    const parent = new Int32Array(size).fill(-1);
+    
+    const startIdx = startX + startY * width;
+    visited[startIdx] = 1;
     
     let found = false;
-    const dirs = [
-      [0, 1],  // South
-      [0, -1], // North
-      [1, 0],  // East
-      [-1, 0]  // West
-    ];
+    const targetIdx = targetX + targetY * width;
+
+    const dirOffsets = [width, -width, 1, -1];
+    const dxs = [0, 0, 1, -1];
+    const dys = [1, -1, 0, 0];
     
-    while (queue.length > 0) {
-      const [cx, cy] = queue.shift();
-      if (cx === targetX && cy === targetY) {
+    while (qHead < queue.length) {
+      const currIdx = queue[qHead++];
+      if (currIdx === targetIdx) {
         found = true;
         break;
       }
       
-      for (const [dx, dy] of dirs) {
-        const nx = cx + dx;
-        const ny = cy + dy;
+      const cx = currIdx % width;
+      const cy = Math.floor(currIdx / width);
+      
+      for (let i = 0; i < 4; i++) {
+        const nx = cx + dxs[i];
+        const ny = cy + dys[i];
         
         if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-          const key = `${nx},${ny}`;
+          const nextIdx = currIdx + dirOffsets[i];
           const cell = grid[ny][nx];
           const isBlocked = cell.type === "wall" || (cell.obstacle && !cell.obstacle.resolved);
-          if (!visited[key] && !isBlocked) {
-            visited[key] = true;
-            parent[key] = `${cx},${cy}`;
-            queue.push([nx, ny]);
+          if (!visited[nextIdx] && !isBlocked) {
+            visited[nextIdx] = 1;
+            parent[nextIdx] = currIdx;
+            queue.push(nextIdx);
           }
         }
       }
@@ -1630,17 +1636,20 @@ export class Game {
     
     if (!found) return null;
     
-    // Backtrack to find path step
-    let curr = `${targetX},${targetY}`;
-    const path = [];
-    while (curr) {
-      path.push(curr);
-      curr = parent[curr];
+    let curr = targetIdx;
+    let nextStepIdx = -1;
+    while (curr !== -1) {
+      const prev = parent[curr];
+      if (prev === startIdx) {
+        nextStepIdx = curr;
+        break;
+      }
+      curr = prev;
     }
     
-    path.reverse();
-    if (path.length > 1) {
-      const [nx, ny] = path[1].split(",").map(Number);
+    if (nextStepIdx !== -1) {
+      const nx = nextStepIdx % width;
+      const ny = Math.floor(nextStepIdx / width);
       return { x: nx + 0.5, y: ny + 0.5 };
     }
     
@@ -1672,21 +1681,41 @@ export class Game {
           const pCellY = Math.floor(p.y);
           const grid = s.floors[s.currentFloor];
 
-          // Collect all candidate path cells within range (but NOT inside the 5x5 region around the player!)
-          const candidates = [];
-          for (let dy = -10; dy <= 10; dy++) {
-            for (let dx = -10; dx <= 10; dx++) {
-              // 5x5 clearance constraint: dx or dy must be >= 3 in absolute value
-              if (Math.abs(dx) < 3 && Math.abs(dy) < 3) continue;
+          // Collect all candidate path cells within range (but NOT inside the 8x8 region around the player!)
+          let candidates = [];
+          for (let dy = -15; dy <= 15; dy++) {
+            for (let dx = -15; dx <= 15; dx++) {
+              if (Math.abs(dx) < 6 && Math.abs(dy) < 6) continue;
 
               const cx = pCellX + dx;
               const cy = pCellY + dy;
               if (cx >= 0 && cx < s.width && cy >= 0 && cy < s.height) {
                 const dist = Math.hypot(dx, dy);
-                if (dist >= 4.0 && dist <= 9.0) {
+                if (dist >= 8.0 && dist <= 15.0) {
                   const cell = grid[cy][cx];
                   if (cell && cell.type !== "wall" && !cell.isExit && !cell.npc) {
                     candidates.push({ x: cx, y: cy, dist });
+                  }
+                }
+              }
+            }
+          }
+
+          // Fallback if no cells found in the safe range (e.g. at the edges of small floors)
+          if (candidates.length === 0) {
+            for (let dy = -10; dy <= 10; dy++) {
+              for (let dx = -10; dx <= 10; dx++) {
+                if (Math.abs(dx) < 3 && Math.abs(dy) < 3) continue;
+
+                const cx = pCellX + dx;
+                const cy = pCellY + dy;
+                if (cx >= 0 && cx < s.width && cy >= 0 && cy < s.height) {
+                  const dist = Math.hypot(dx, dy);
+                  if (dist >= 5.0 && dist <= 9.0) {
+                    const cell = grid[cy][cx];
+                    if (cell && cell.type !== "wall" && !cell.isExit && !cell.npc) {
+                      candidates.push({ x: cx, y: cy, dist });
+                    }
                   }
                 }
               }

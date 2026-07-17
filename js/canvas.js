@@ -2572,34 +2572,7 @@ export class CanvasRenderer {
       this.rollAngle += (0 - this.rollAngle) * 0.15;
     }
 
-    // 1. Optimized Throttled Cell Culling (Only loops grid when player moves significantly)
-    const cullPx = player.visualX;
-    const cullPy = player.visualY;
-    const cullRadiusSq = 144.0; // 12 cells radius (safe and far enough, since fog ends at 6.0)
-    if (this.lastCullX === undefined || Math.abs(cullPx - this.lastCullX) > 0.08 || Math.abs(cullPy - this.lastCullY) > 0.08 || state.devMode !== this.lastCullDevMode) {
-      this.lastCullX = cullPx;
-      this.lastCullY = cullPy;
-      this.lastCullDevMode = state.devMode;
 
-      for (let y = 0; y < height; y++) {
-        const row = this.cellGroups[y];
-        if (!row) continue;
-        for (let x = 0; x < width; x++) {
-          const cellGroup = row[x];
-          if (!cellGroup) continue;
-
-          const dx = (x + 0.5) - cullPx;
-          const dy = (y + 0.5) - cullPy;
-          const distSq = dx * dx + dy * dy;
-          const isNear = distSq <= cullRadiusSq;
-
-          const targetVisible = !!(state.devMode || isNear);
-          if (cellGroup.visible !== targetVisible) {
-            cellGroup.visible = targetVisible;
-          }
-        }
-      }
-    }
 
     // 2. Direct Chest lid animation & gold particle burst sync (only loops over actual chest meshes, no grid loops)
     for (const key in this.chestLidGroups) {

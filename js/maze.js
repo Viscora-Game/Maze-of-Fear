@@ -1,4 +1,7 @@
-export function generateMaze(width, height, numFloors = 1) {
+export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math.random) {
+  const Math = Object.create(globalThis.Math);
+  Math.random = rng;
+
   // Ensure odd dimensions for tile-based carving
   if (width % 2 === 0) width += 1;
   if (height % 2 === 0) height += 1;

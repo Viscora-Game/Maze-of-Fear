@@ -1,4 +1,4 @@
-import { Game } from "./game.js?v=20";
+import { Game } from "./game.js?v=21";
 
 const init = () => {
   const game = new Game();
@@ -556,7 +556,7 @@ function setupUI(game) {
       }
       if (loadingBar) loadingBar.style.width = "30%";
 
-      game.initNewGame();
+      game.initNewGame(false);
       game.state.gameState = "playing";
 
       if (loadingBar) loadingBar.style.width = "70%";
@@ -623,7 +623,7 @@ function setupUI(game) {
   });
 
   document.getElementById("btn-pause-restart").addEventListener("click", () => {
-    game.initNewGame();
+    game.initNewGame(true);
     game.state.gameState = "playing";
     showScreen("game");
     game.resizeCanvas();
@@ -1670,17 +1670,24 @@ function setupUI(game) {
   };
 
   // Game End Screens (Victory / Game Over)
-  game.onGameEnd = (isVictory) => {
+  game.onGameEnd = (isVictory, gameCompleted = false) => {
     modals.end.innerHTML = "";
     modals.end.classList.remove("hidden");
 
     const content = document.createElement("div");
     content.className = `modal-content glass text-center ${isVictory ? "border-success" : "border-danger"}`;
 
-    const title = isVictory ? game.t("victory") : game.t("gameOver");
-    const desc = isVictory ? game.t("victoryDesc") : game.t("gameOverDesc");
-    const emoji = isVictory ? "🏆" : "💀";
+    let title = isVictory ? game.t("victory") : game.t("gameOver");
+    let desc = isVictory ? game.t("victoryDesc") : game.t("gameOverDesc");
+    const emoji = isVictory ? (gameCompleted ? "👑" : "🏆") : "💀";
     const titleColor = isVictory ? "text-green" : "text-red";
+
+    if (isVictory && gameCompleted) {
+      title = game.lang === "en" ? "GRAND VICTORY!" : "BÜYÜK ZAFER!";
+      desc = game.lang === "en"
+        ? "Congratulations! You have successfully escaped all 20 levels of the Maze of Fear! You are a master explorer!"
+        : "Tebrikler! Korku Labirenti'nin tüm 20 bölümünü de başarıyla geçerek kaçtın! Artık usta bir kaşifsin!";
+    }
 
     let adReviveBtn = "";
     if (!isVictory) {
@@ -1716,7 +1723,7 @@ function setupUI(game) {
 
     content.querySelector("#btn-restart").addEventListener("click", () => {
       modals.end.classList.add("hidden");
-      game.initNewGame();
+      game.initNewGame(!isVictory);
       game.state.gameState = "playing";
       game.draw();
     });

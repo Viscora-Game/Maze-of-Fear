@@ -1,8 +1,9 @@
-import { generateMaze } from "./maze.js?v=20";
-import { AudioEngine } from "./audio.js?v=20";
-import { CanvasRenderer } from "./canvas.js?v=20";
-import { translations } from "./translations.js?v=20";
-import { randomEvents, deathEvents } from "./events.js?v=20";
+import { generateMaze } from "./maze.js?v=21";
+import { AudioEngine } from "./audio.js?v=21";
+import { CanvasRenderer } from "./canvas.js?v=21";
+import { translations } from "./translations.js?v=21";
+import { randomEvents, deathEvents } from "./events.js?v=21";
+import { getSeededRandom } from "./prng.js?v=21";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -154,19 +155,27 @@ export class Game {
     return val;
   }
 
-  initNewGame() {
-    // 1. Calculate dimensions based on level progression only (difficulty determines tension/canavar/fuel/damage)
-    let baseSize = 29; // Standard starting size (14x14 rooms = 196 rooms)
-    const levelBonus = Math.floor((this.currentLevel - 1) / 3) * 2;
-    let size = baseSize + levelBonus;
-    size = Math.min(45, size); // Cap size at 45 (22x22 rooms) to prevent lag and mobile navigation fatigue
-    if (size % 2 === 0) size += 1; // Ensure size is odd for DFS maze carver
+  initNewGame(isRetry = false) {
+    // Pick variation (0, 1, or 2) - Reuse same variation on retry so players can learn the layout!
+    if (!isRetry) {
+      this.currentVariation = Math.floor(Math.random() * 3);
+    } else if (this.currentVariation === undefined) {
+      this.currentVariation = 0;
+    }
 
-    // Calculate floors based on level
-    let numFloors = 1 + Math.floor((this.currentLevel - 1) / 10);
-    numFloors = Math.min(3, numFloors); // Cap at max 3 floors
+    // 1. Calculate dimensions and floors based on 20 levels progression
+    let size = 21 + Math.floor((this.currentLevel - 1) / 2) * 2;
+    size = Math.min(39, size); // Cap at 39x39 for excellent performance
+    if (size % 2 === 0) size += 1;
 
-    const mazeData = generateMaze(size, size, numFloors);
+    let numFloors = 1;
+    if (this.currentLevel >= 7 && this.currentLevel <= 13) numFloors = 2;
+    else if (this.currentLevel >= 14) numFloors = 3;
+
+    // Generate seeded deterministic maze
+    const seed = (this.currentLevel * 100) + this.currentVariation;
+    const rng = getSeededRandom(seed);
+    const mazeData = generateMaze(size, size, numFloors, rng);
     
     // Visited Map tracker (per floor)
     const visited = [];
@@ -1958,6 +1967,8 @@ export class Game {
 
   triggerLevelVictory() {
     this.stopLoop();
+    
+    const gameCompleted = this.currentLevel === 20;
     this.state.gameState = "victory";
     
     // Check and unlock end-level achievements
@@ -1976,11 +1987,15 @@ export class Game {
       this.unlockAchievement("gold_collector");
     }
 
-    // Level progress increments
-    this.currentLevel = Math.min(50, this.currentLevel + 1);
-    localStorage.setItem("maze_level", this.currentLevel.toString());
+    if (gameCompleted) {
+      this.currentLevel = 1;
+      localStorage.setItem("maze_level", "1");
+    } else {
+      this.currentLevel = Math.min(20, this.currentLevel + 1);
+      localStorage.setItem("maze_level", this.currentLevel.toString());
+    }
 
-    if (this.onGameEnd) this.onGameEnd(true);
+    if (this.onGameEnd) this.onGameEnd(true, gameCompleted);
   }
 
   triggerGameOver() {

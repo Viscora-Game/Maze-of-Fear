@@ -870,11 +870,13 @@ export class CanvasRenderer {
     }
     this.shadowMonsterMixer = null;
 
+    const isUnderground = (state.currentFloor > 0);
+
     // 1. Lighting Setup (Creepy night fog - flashlight is the absolute primary light source)
-    this.ambientLight = new THREE.AmbientLight("#0f172a", 0.04); // Extremely dark blue-grey ambient (barely visible outlines)
+    this.ambientLight = new THREE.AmbientLight("#0f172a", isUnderground ? 0.015 : 0.04); // Even darker ambient underground
     this.scene.add(this.ambientLight);
 
-    this.dirLight = new THREE.DirectionalLight("#1e293b", 0.04); // Very weak moonlight fill to prevent total pure pitch black
+    this.dirLight = new THREE.DirectionalLight("#1e293b", isUnderground ? 0.0 : 0.04); // No moonlight underground!
     this.dirLight.position.set(10, 30, 10);
     this.dirLight.castShadow = this.shadowsEnabled;
     this.dirLight.shadow.mapSize.width = 1024;
@@ -888,6 +890,23 @@ export class CanvasRenderer {
     this.dirLight.shadow.camera.bottom = -d;
     this.dirLight.shadow.bias = -0.0005;
     this.scene.add(this.dirLight);
+
+    // Configure Fog dynamically based on floor level (deep, dense pitch-black fog underground)
+    if (this.scene.fog) {
+      this.scene.fog.color.set(isUnderground ? "#020305" : "#080a0f");
+      this.scene.fog.near = isUnderground ? 1.0 : 1.5;
+      this.scene.fog.far = isUnderground ? 5.5 : 6.0;
+    }
+    // Update background color/texture
+    if (isUnderground) {
+      this.scene.background = new THREE.Color("#020305");
+    } else {
+      if (this.skyTexture) {
+        this.scene.background = this.skyTexture;
+      } else {
+        this.scene.background = new THREE.Color("#080a0f");
+      }
+    }
 
     // Flashlight SpotLight - PRIMARY neutral white light source with realistic flashlight properties (decay = 1.1, range = 11.0m)
     this.lantern = new THREE.SpotLight("#ffffff", 4.5, 11.0, Math.PI / 6.0, 0.85, 1.1);
@@ -928,6 +947,7 @@ export class CanvasRenderer {
     });
     
     this.rainParticles = new THREE.Points(rainGeo, rainMat);
+    this.rainParticles.visible = !isUnderground; // Hide rain particles underground!
     this.scene.add(this.rainParticles);
 
     // 1c. Low-Lying Ground Fog Particles System (Infinite player-locked drifting mist - dynamically scaled for mobile)
@@ -983,6 +1003,7 @@ export class CanvasRenderer {
     });
 
     this.groundFogParticles = new THREE.Points(fogGeo, fogMat);
+    this.groundFogParticles.visible = !isUnderground; // Hide ground fog particles underground!
     this.scene.add(this.groundFogParticles);
 
     // 2. Pre-allocate and reuse common geometries and materials to avoid GC stutters and GPU upload lag
@@ -1037,6 +1058,26 @@ export class CanvasRenderer {
     const { floors, width, height, currentFloor } = state;
     const grid = floors[currentFloor];
 
+    const activeWallMat = isUnderground
+      ? new THREE.MeshStandardMaterial({
+          map: this.brickTexture,
+          bumpMap: this.brickBump,
+          bumpScale: 0.08,
+          color: "#161920", // dark cold stone bricks
+          roughness: 0.85
+        })
+      : hedgeMat;
+
+    const activeFloorMat = isUnderground
+      ? new THREE.MeshStandardMaterial({
+          map: this.floorTexture,
+          bumpMap: this.brickBump,
+          bumpScale: 0.08,
+          color: "#111215", // extremely dark floor
+          roughness: 0.9
+        })
+      : floorMat;
+
     for (let y = 0; y < height; y++) {
       const row = [];
       for (let x = 0; x < width; x++) {
@@ -1044,11 +1085,19 @@ export class CanvasRenderer {
         const cellGroup = new THREE.Group();
 
         if (cell.type !== "wall") {
-          // A. Path Floor Panel (Vibrant Garden Grass Lawn style)
-          const floorMesh = new THREE.Mesh(floorGeo, floorMat);
+          // A. Path Floor Panel
+          const floorMesh = new THREE.Mesh(floorGeo, activeFloorMat);
           floorMesh.rotation.x = -Math.PI / 2;
           floorMesh.position.set(0, 0, 0);
           cellGroup.add(floorMesh);
+
+          // B. Ceilings (Only underground!)
+          if (isUnderground) {
+            const ceilingMesh = new THREE.Mesh(floorGeo, activeFloorMat);
+            ceilingMesh.rotation.x = Math.PI / 2; // Facing down
+            ceilingMesh.position.set(0, 1.25, 0); // At the top of the walls
+            cellGroup.add(ceilingMesh);
+          }
 
           // Random Floor Details (ONLY small grass-like pieces and mushrooms)
           const randVal = Math.random();
@@ -1258,29 +1307,59 @@ export class CanvasRenderer {
             }
           }
 
-          // C. Staircases
+          // C. Staircases (Rope Descent Pit or Rope Climb Point)
           if (cell.staircase) {
             const stairSubGroup = new THREE.Group();
-            const steps = 5;
-            const stepMat = new THREE.MeshStandardMaterial({ 
-              color: cell.staircase === "down" ? "#4c0519" : "#022c22", 
-              emissive: cell.staircase === "down" ? "#f43f5e" : "#10b981",
-              emissiveIntensity: 0.7,
-              roughness: 0.5 
-            });
-            for (let i = 0; i < steps; i++) {
-              const stepGeo = new THREE.BoxGeometry(1, 1.25 / steps, 1 / steps);
-              const stepMesh = new THREE.Mesh(stepGeo, stepMat);
-              stepMesh.position.set(0, (i + 0.5) * (1.25 / steps) - 0.625, (i + 0.5) / steps - 0.5);
-              stairSubGroup.add(stepMesh);
-            }
-            stairSubGroup.position.set(0, 0.625, 0);
+            
+            if (cell.staircase === "down") {
+              // 1. Dark Pit Hole on floor
+              const holeGeo = new THREE.PlaneGeometry(0.8, 0.8);
+              const holeMat = new THREE.MeshBasicMaterial({ color: "#000000" });
+              const holeMesh = new THREE.Mesh(holeGeo, holeMat);
+              holeMesh.rotation.x = -Math.PI / 2;
+              holeMesh.position.set(0, 0.005, 0); // slightly above floor to prevent Z-fighting
+              stairSubGroup.add(holeMesh);
 
-            // Add a glowing vertical point light above the stairs to serve as a beacon in the fog
-            const lightColor = cell.staircase === "down" ? "#f43f5e" : "#10b981";
-            const stairLight = new THREE.PointLight(lightColor, 2.5, 3.5);
-            stairLight.position.set(0, 0.40, 0); // positioned above the steps center
-            stairSubGroup.add(stairLight);
+              // 2. Wooden Frame (Support beams on sides and crossbeam on top)
+              const postMat = woodMat;
+              const postGeo = new THREE.BoxGeometry(0.06, 1.2, 0.06);
+              
+              const leftPost = new THREE.Mesh(postGeo, postMat);
+              leftPost.position.set(-0.35, 0.6, 0);
+              const rightPost = new THREE.Mesh(postGeo, postMat);
+              rightPost.position.set(0.35, 0.6, 0);
+              
+              const crossGeo = new THREE.BoxGeometry(0.76, 0.06, 0.06);
+              const crossbeam = new THREE.Mesh(crossGeo, postMat);
+              crossbeam.position.set(0, 1.15, 0);
+              
+              stairSubGroup.add(leftPost, rightPost, crossbeam);
+
+              // 3. Rope hanging into the pit
+              const ropeGeo = new THREE.CylinderGeometry(0.016, 0.016, 1.6, 6);
+              const ropeMat = new THREE.MeshStandardMaterial({ color: "#7a5c3e", roughness: 0.95 }); // thick brown rope
+              const ropeMesh = new THREE.Mesh(ropeGeo, ropeMat);
+              ropeMesh.position.set(0, 0.35, 0); // hangs from 1.15 down past the floor (-0.45)
+              stairSubGroup.add(ropeMesh);
+
+              // Eerie red light glowing from bottom of the pit
+              const pitLight = new THREE.PointLight("#ff1e1e", 3.0, 4.0);
+              pitLight.position.set(0, 0.3, 0);
+              stairSubGroup.add(pitLight);
+            } else {
+              // Staircase "up" (Rope Climb Point)
+              // 1. Rope hanging from ceiling
+              const ropeGeo = new THREE.CylinderGeometry(0.016, 0.016, 1.4, 6);
+              const ropeMat = new THREE.MeshStandardMaterial({ color: "#7a5c3e", roughness: 0.95 });
+              const ropeMesh = new THREE.Mesh(ropeGeo, ropeMat);
+              ropeMesh.position.set(0, 0.6, 0); // hangs from ceiling (1.25) down to floor (0.1)
+              stairSubGroup.add(ropeMesh);
+
+              // Eerie green light glowing from escape hatch above
+              const climbLight = new THREE.PointLight("#10b981", 3.0, 4.0);
+              climbLight.position.set(0, 1.1, 0);
+              stairSubGroup.add(climbLight);
+            }
 
             cellGroup.add(stairSubGroup);
           }
@@ -2182,18 +2261,20 @@ export class CanvasRenderer {
           }
 
         } else {
-          // H. Solid Wall (🌿 Overgrown Ruins style: continuous ivy hedges capped with stone)
+          // H. Solid Wall (🌿 Overgrown Ruins style on Floor 0, 🧱 Solid Stone Dungeon underground)
           const colGroup = new THREE.Group();
 
-          // 1. Thick ivy leaf block filling the cell to form continuous corridors
-          const wallBlock = new THREE.Mesh(wallGeo, hedgeMat);
+          // 1. Wall block
+          const wallBlock = new THREE.Mesh(wallGeo, activeWallMat);
           wallBlock.position.set(0, 0.64, 0);
           colGroup.add(wallBlock);
 
-          // 2. Stone brick cap on top of the hedge wall (placed at Y=1.305 to eliminate coplanar Z-fighting glitch)
-          const stoneCap = new THREE.Mesh(wallCapGeo, capMat);
-          stoneCap.position.set(0, 1.305, 0);
-          colGroup.add(stoneCap);
+          // 2. Cap (Only ruins floor needs the stone brick cap on top of the hedge wall)
+          if (!isUnderground) {
+            const stoneCap = new THREE.Mesh(wallCapGeo, capMat);
+            stoneCap.position.set(0, 1.305, 0);
+            colGroup.add(stoneCap);
+          }
 
           cellGroup.add(colGroup);
         }

@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=28";
-import { AudioEngine } from "./audio.js?v=28";
-import { CanvasRenderer } from "./canvas.js?v=28";
-import { translations } from "./translations.js?v=28";
-import { randomEvents, deathEvents } from "./events.js?v=28";
-import { getSeededRandom } from "./prng.js?v=28";
+import { generateMaze } from "./maze.js?v=29";
+import { AudioEngine } from "./audio.js?v=29";
+import { CanvasRenderer } from "./canvas.js?v=29";
+import { translations } from "./translations.js?v=29";
+import { randomEvents, deathEvents } from "./events.js?v=29";
+import { getSeededRandom } from "./prng.js?v=29";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -597,10 +597,15 @@ export class Game {
       const dist = Math.hypot(p.x - (cellX + 0.5), p.y - (cellY + 0.5));
       if (dist < 0.28) {
         const nextFloor = cell.staircase === "down" ? this.state.currentFloor + 1 : this.state.currentFloor - 1;
-        this.state.currentFloor = nextFloor;
-        this.state.staircaseCooldown = 1.6; // cooldown of 1.6 seconds
+        this.state.staircaseCooldown = 2.0; // cooldown of 2 seconds
         this.audio.playUnlock();
         this.revealArea(cellX, cellY);
+        
+        if (typeof this.onFloorTransition === "function") {
+          this.onFloorTransition(nextFloor, cell.staircase);
+        } else {
+          this.state.currentFloor = nextFloor;
+        }
       }
     }
 

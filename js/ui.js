@@ -1,4 +1,4 @@
-import { Game } from "./game.js?v=28";
+import { Game } from "./game.js?v=29";
 
 const init = () => {
   const game = new Game();
@@ -1671,6 +1671,51 @@ function setupUI(game) {
         onSkip();
       }
     });
+  };
+
+  // Asynchronous Floor Transition Screen (Rope climbing/descending)
+  game.onFloorTransition = async (nextFloor, direction) => {
+    const loadingScreen = document.getElementById("loading-screen");
+    const loadingBar = document.getElementById("loading-bar");
+    const loadingText = document.getElementById("loading-text");
+    
+    // Temporarily pause the game to prevent updates/movement during transition
+    const prevGameState = game.state.gameState;
+    game.state.gameState = "paused";
+    
+    if (loadingScreen) {
+      loadingScreen.classList.remove("hidden");
+      if (loadingBar) loadingBar.style.width = "0%";
+      const isEn = localStorage.getItem("maze_lang") === "en";
+      if (loadingText) {
+        if (direction === "down") {
+          loadingText.textContent = isEn ? "Descending to the lower floor..." : "Halatla alt kata iniliyor...";
+        } else {
+          loadingText.textContent = isEn ? "Climbing to the upper floor..." : "Halatla üst kata tırmanılıyor...";
+        }
+      }
+    }
+    
+    const delay = ms => new Promise(r => setTimeout(r, ms));
+    await delay(350);
+    
+    if (loadingBar) loadingBar.style.width = "50%";
+    
+    // Switch state floor
+    game.state.currentFloor = nextFloor;
+    
+    // Rebuild the scene immediately while loading screen is covering the freeze
+    game.renderer.rebuildScene(game.state);
+    
+    if (loadingBar) loadingBar.style.width = "100%";
+    await delay(350);
+    
+    if (loadingScreen) loadingScreen.classList.add("hidden");
+    
+    // Resume game state
+    game.state.gameState = prevGameState;
+    game.resizeCanvas();
+    game.draw();
   };
 
   // Game End Screens (Victory / Game Over)

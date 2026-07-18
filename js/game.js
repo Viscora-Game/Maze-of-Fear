@@ -523,9 +523,9 @@ export class Game {
       let nextX = p.x + inputX * speed * dt;
       let nextY = p.y + inputY * speed * dt;
 
-      // Boundary constraints
-      nextX = Math.max(0.1, Math.min(this.state.width - 1.1, nextX));
-      nextY = Math.max(0.1, Math.min(this.state.height - 1.1, nextY));
+      // Boundary constraints: Keep the player strictly within walkable cells (radius 0.22 from outer walls)
+      nextX = Math.max(1.22, Math.min(this.state.width - 1.22, nextX));
+      nextY = Math.max(1.22, Math.min(this.state.height - 1.22, nextY));
 
       // Update X and resolve
       let res = resolveCollisions(nextX, p.y);

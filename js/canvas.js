@@ -832,6 +832,41 @@ export class CanvasRenderer {
   }
 
   rebuildScene(state) {
+    // Traverse and dispose all geometry and material buffers to prevent WebGL VRAM memory leaks
+    this.scene.traverse((node) => {
+      if (node.isMesh) {
+        if (node.geometry) {
+          try { node.geometry.dispose(); } catch(e){}
+        }
+        if (node.material) {
+          if (Array.isArray(node.material)) {
+            node.material.forEach(mat => {
+              try { mat.dispose(); } catch(e){}
+            });
+          } else {
+            try { node.material.dispose(); } catch(e){}
+          }
+        }
+      }
+    });
+
+    this.camera.traverse((node) => {
+      if (node.isMesh) {
+        if (node.geometry) {
+          try { node.geometry.dispose(); } catch(e){}
+        }
+        if (node.material) {
+          if (Array.isArray(node.material)) {
+            node.material.forEach(mat => {
+              try { mat.dispose(); } catch(e){}
+            });
+          } else {
+            try { node.material.dispose(); } catch(e){}
+          }
+        }
+      }
+    });
+
     // Clear old children from the scene
     while (this.scene.children.length > 0) {
       this.scene.remove(this.scene.children[0]);

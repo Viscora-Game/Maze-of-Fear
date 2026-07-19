@@ -2192,23 +2192,66 @@ export class CanvasRenderer {
                  obsSubGroup.add(berry);
                }
             } else if (type === "barricade") {
-              // Crossed planks bound together (widened to 0.95 to block the corridor)
-              const plank1 = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.12, 0.04), woodMat);
-              plank1.position.y = 0.32;
-              plank1.rotation.z = Math.PI / 6;
-              
-              const plank2 = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.12, 0.04), woodMat);
-              plank2.position.y = 0.32;
-              plank2.rotation.z = -Math.PI / 6;
-              plank2.position.z = 0.02; // layer slightly in front
-              
-              obsSubGroup.add(plank1, plank2);
-              
-              // Center metal connection rivet
-              const bolt = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.06), new THREE.MeshStandardMaterial({ color: "#9ca3af", metalness: 0.8 }));
-              bolt.rotation.x = Math.PI / 2;
-              bolt.position.set(0, 0.32, 0.04);
-              obsSubGroup.add(bolt);
+              // Heavy Reinforced Medieval Wooden Barricade (Width: 1.05 for flush fit into corridor walls with ZERO side gaps)
+              const barGroup = new THREE.Group();
+
+              const darkWoodMat = new THREE.MeshStandardMaterial({ color: "#382010", roughness: 0.85, metalness: 0.05 });
+              const plankWoodMat = new THREE.MeshStandardMaterial({ color: "#4a2d18", roughness: 0.80, metalness: 0.05 });
+              const altWoodMat = new THREE.MeshStandardMaterial({ color: "#2f1b0c", roughness: 0.90, metalness: 0.05 });
+              const ironBandMat = new THREE.MeshStandardMaterial({ color: "#2a2d32", roughness: 0.40, metalness: 0.85 });
+              const rivetMat = new THREE.MeshStandardMaterial({ color: "#78818f", roughness: 0.30, metalness: 0.90 });
+
+              // 1. Two Heavy Vertical Anchor Posts (anchored directly to corridor side walls)
+              const leftPost = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.1, 0.12), darkWoodMat);
+              leftPost.position.set(-0.46, 0.55, 0);
+              const rightPost = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.1, 0.12), darkWoodMat);
+              rightPost.position.set(0.46, 0.55, 0);
+              barGroup.add(leftPost, rightPost);
+
+              // 2. 5 Horizontal Weathered Wooden Planks (Width: 1.05 to penetrate wall edges)
+              const plankHeights = [0.15, 0.35, 0.55, 0.75, 0.95];
+              plankHeights.forEach((yPos, i) => {
+                const mat = i % 2 === 0 ? plankWoodMat : altWoodMat;
+                const plank = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.18, 0.05), mat);
+                plank.position.set(0, yPos, (i % 2) * 0.01);
+                barGroup.add(plank);
+
+                // Iron reinforcement straps on edges
+                const leftStrap = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.19, 0.065), ironBandMat);
+                leftStrap.position.set(-0.42, yPos, 0.005);
+                const rightStrap = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.19, 0.065), ironBandMat);
+                rightStrap.position.set(0.42, yPos, 0.005);
+                barGroup.add(leftStrap, rightStrap);
+
+                // Metallic Rivet Bolts on straps
+                const leftRivet = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.08, 6), rivetMat);
+                leftRivet.rotation.x = Math.PI / 2;
+                leftRivet.position.set(-0.42, yPos, 0.01);
+
+                const rightRivet = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.08, 6), rivetMat);
+                rightRivet.rotation.x = Math.PI / 2;
+                rightRivet.position.set(0.42, yPos, 0.01);
+                barGroup.add(leftRivet, rightRivet);
+              });
+
+              // 3. Heavy Diagonal Cross Braces (Mounted across front with central iron hub)
+              const cross1 = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.12, 0.04), darkWoodMat);
+              cross1.position.set(0, 0.55, 0.045);
+              cross1.rotation.z = Math.atan2(0.8, 0.9);
+
+              const cross2 = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.12, 0.04), darkWoodMat);
+              cross2.position.set(0, 0.55, 0.065);
+              cross2.rotation.z = -Math.atan2(0.8, 0.9);
+
+              const hub = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, 0.08), ironBandMat);
+              hub.position.set(0, 0.55, 0.06);
+
+              const hubRivet = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.10, 8), rivetMat);
+              hubRivet.rotation.x = Math.PI / 2;
+              hubRivet.position.set(0, 0.55, 0.07);
+
+              barGroup.add(cross1, cross2, hub, hubRivet);
+              obsSubGroup.add(barGroup);
             } else if (type === "chasm") {
               const chasm = new THREE.Mesh(new THREE.PlaneGeometry(0.85, 0.85), new THREE.MeshBasicMaterial({ color: "#000" }));
               chasm.rotation.x = -Math.PI / 2;

@@ -971,17 +971,6 @@ export class CanvasRenderer {
       } else {
         this.scene.background = new THREE.Color("#080a0f");
       }
-
-      // Add a beautiful, ominous blood-red moon hanging high in the sky of Floor 0 (ignoring fog!)
-      const moonGeo = new THREE.SphereGeometry(2.5, 16, 16);
-      const moonMat = new THREE.MeshBasicMaterial({
-        color: "#dc2626", // Creepy deep red moon
-        fog: false
-      });
-      const moonMesh = new THREE.Mesh(moonGeo, moonMat);
-      // Position it high up and far away in the sky dome
-      moonMesh.position.set(30, 45, -30);
-      this.scene.add(moonMesh);
     }
 
     // Flashlight SpotLight - PRIMARY neutral white light source with realistic flashlight properties (decay = 1.1, range = 11.0m)
@@ -1163,6 +1152,40 @@ export class CanvasRenderer {
           floorMesh.rotation.x = -Math.PI / 2;
           floorMesh.position.set(0, 0, 0);
           cellGroup.add(floorMesh);
+
+          // Add tiny, creepy blood puddles on Floor 0 (Ground Floor) paths!
+          if (!isUnderground && cell.type === "floor" && !(x === 1 && y === 1)) {
+            // Seeded pseudo-random using cell coordinates (100% deterministic and lag-free)
+            const cellRand = Math.abs(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1;
+            if (cellRand < 0.08) { // 8% chance per floor cell
+              const bloodGroup = new THREE.Group();
+              const numDrops = 1 + Math.floor(cellRand * 30) % 3; // 1 to 3 drops/puddles
+              for (let dIdx = 0; dIdx < numDrops; dIdx++) {
+                const dropRandX = (Math.sin(x * 45.1 + y * 83.2 + dIdx * 19.3) * 43758.5453) % 1;
+                const dropRandY = (Math.cos(x * 12.4 + y * 39.1 + dIdx * 97.4) * 43758.5453) % 1;
+                const radiusRand = (Math.sin(x * 78.9 + y * 12.5 + dIdx * 54.1) * 43758.5453) % 1;
+                
+                const offsetX = (dropRandX * 2.0 - 1.0) * 0.25; // offset [-0.25, 0.25]
+                const offsetY = (dropRandY * 2.0 - 1.0) * 0.25;
+                const radius = 0.04 + Math.abs(radiusRand) * 0.12; // radius between 0.04m and 0.16m
+                
+                const puddleGeo = new THREE.CircleGeometry(radius, 12);
+                const puddleMat = new THREE.MeshStandardMaterial({
+                  color: "#7f1d1d", // Dark crimson blood red
+                  roughness: 0.08,  // Very glossy wet finish
+                  metalness: 0.1,
+                  transparent: true,
+                  opacity: 0.85
+                });
+                const puddle = new THREE.Mesh(puddleGeo, puddleMat);
+                puddle.rotation.x = -Math.PI / 2;
+                puddle.position.set(offsetX, 0.003, offsetY); // slightly raised above floor
+                puddle.userData.isDecoration = true;
+                bloodGroup.add(puddle);
+              }
+              cellGroup.add(bloodGroup);
+            }
+          }
 
           // B. Ceilings (Only underground!)
           if (isUnderground) {

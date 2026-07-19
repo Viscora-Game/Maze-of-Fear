@@ -251,12 +251,30 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
     b3: b3Node
   };
 
+  // Dynamically select and shuffle obstacle types for critical path checkpoints
+  const obTypes = ["gate", "ivy", "barricade", "chasm", "codeLock"];
+  for (let i = obTypes.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const temp = obTypes[i];
+    obTypes[i] = obTypes[j];
+    obTypes[j] = temp;
+  }
+  const type1 = obTypes[0];
+  const type2 = obTypes[1];
+  const type3 = obTypes[2];
+
   // Configure checkpoint obstacles (ensuring they block paths)
-  floors[barrierNodes.b1.floor][barrierNodes.b1.y][barrierNodes.b1.x].obstacle = { type: "gate", resolved: false };
-  floors[barrierNodes.b2.floor][barrierNodes.b2.y][barrierNodes.b2.x].obstacle = { type: "ivy", resolved: false };
-  
   const doorCode = Math.floor(1000 + Math.random() * 9000).toString();
-  floors[barrierNodes.b3.floor][barrierNodes.b3.y][barrierNodes.b3.x].obstacle = { type: "codeLock", code: doorCode, resolved: false };
+
+  floors[barrierNodes.b1.floor][barrierNodes.b1.y][barrierNodes.b1.x].obstacle = { type: type1, resolved: false };
+  if (type1 === "codeLock") floors[barrierNodes.b1.floor][barrierNodes.b1.y][barrierNodes.b1.x].obstacle.code = doorCode;
+
+  floors[barrierNodes.b2.floor][barrierNodes.b2.y][barrierNodes.b2.x].obstacle = { type: type2, resolved: false };
+  if (type2 === "codeLock") floors[barrierNodes.b2.floor][barrierNodes.b2.y][barrierNodes.b2.x].obstacle.code = doorCode;
+
+  floors[barrierNodes.b3.floor][barrierNodes.b3.y][barrierNodes.b3.x].obstacle = { type: type3, resolved: false };
+  if (type3 === "codeLock") floors[barrierNodes.b3.floor][barrierNodes.b3.y][barrierNodes.b3.x].obstacle.code = doorCode;
+
   occupiedCells.push({ x: barrierNodes.b1.x, y: barrierNodes.b1.y, floor: barrierNodes.b1.floor });
   occupiedCells.push({ x: barrierNodes.b2.x, y: barrierNodes.b2.y, floor: barrierNodes.b2.floor });
   occupiedCells.push({ x: barrierNodes.b3.x, y: barrierNodes.b3.y, floor: barrierNodes.b3.floor });
@@ -488,11 +506,38 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
     occupiedCells.push({ x: wellCell.x, y: wellCell.y, floor: wellCell.floor });
   }
 
+  // Helper to dynamically place a roadblock solver in a region
+  const placeRoadblockSolver = (rNum, type, prevNode, nextNode) => {
+    if (type === "gate") {
+      placeItemInRegion(rNum, { id: `chest_key_r${rNum}`, opened: false, content: { type: "item", item: "key", gold: 5 } }, 10);
+    } else if (type === "ivy") {
+      placeItemInRegion(rNum, { id: `chest_shears_r${rNum}`, opened: false, content: { type: "item", item: "shears", gold: 5 } }, 10);
+    } else if (type === "barricade") {
+      placeItemInRegion(rNum, { id: `chest_axe_r${rNum}`, opened: false, content: { type: "item", item: "axe", gold: 5 } }, 10);
+    } else if (type === "chasm") {
+      placeItemInRegion(rNum, { id: `chest_rope_r${rNum}`, opened: false, content: { type: "item", item: "rope", gold: 5 } }, 10);
+    } else if (type === "codeLock") {
+      const regFree = getFarFreeCells(rNum, 3, true);
+      let clueCell = null;
+      if (regFree.length > 0) {
+        let filtered = regFree.filter(c => {
+          const distToPrev = prevNode ? (Math.abs(c.x - prevNode.x) + Math.abs(c.y - prevNode.y)) : 999;
+          const distToNext = nextNode ? (Math.abs(c.x - nextNode.x) + Math.abs(c.y - nextNode.y)) : 999;
+          return distToNext >= 10 && distToPrev >= 10;
+        });
+        if (filtered.length === 0) filtered = regFree;
+        clueCell = filtered[Math.floor(Math.random() * filtered.length)];
+        clueCell.puzzleClue = doorCode;
+        occupiedCells.push({ x: clueCell.x, y: clueCell.y, floor: clueCell.floor });
+      }
+    }
+  };
+
   // Place Bucket far from Well and Start
   placeItemInRegion(0, { id: "chest_bucket", opened: false, content: { type: "item", item: "bucket", gold: 10 } }, 12);
 
-  // Place Key far from Well, Start, and Bucket
-  placeItemInRegion(0, { id: "chest_key", opened: false, content: { type: "item", item: "key", gold: 5 } }, 10);
+  // Place roadblock solver for B1 in Region 0
+  placeRoadblockSolver(0, type1, { x: 1, y: 1, floor: 0 }, barrierNodes.b1);
 
   // Place Rope if there are multiple floors so the player is guaranteed to be able to descend
   if (numFloors > 1) {
@@ -503,7 +548,7 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
   const reg1Free = getFarFreeCells(1, 3);
   let childCell = null;
   if (reg1Free.length > 0) {
-    // Pick Lost Child location far from Region 1 entrance (distance >= 15)
+    // Pick Lost Child location far from Region 1 entrance (distance >= 12)
     let filtered = reg1Free.filter(c => Math.abs(c.x - barrierNodes.b1.x) + Math.abs(c.y - barrierNodes.b1.y) >= 12);
     if (filtered.length === 0) filtered = reg1Free;
     childCell = filtered[Math.floor(Math.random() * filtered.length)];
@@ -511,10 +556,10 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
     occupiedCells.push({ x: childCell.x, y: childCell.y, floor: childCell.floor });
   }
 
-  // Place Shears far from Child and Region 1 entrance
-  placeItemInRegion(1, { id: "chest_shears", opened: false, content: { type: "item", item: "shears", gold: 5 } }, 10);
+  // Place roadblock solver for B2 in Region 1
+  placeRoadblockSolver(1, type2, barrierNodes.b1, barrierNodes.b2);
 
-  // Place Cheese far from Child, entrance, and Shears
+  // Place Cheese far from Child, entrance, and other items
   placeItemInRegion(1, { id: "chest_cheese", opened: false, content: { type: "item", item: "cheese", gold: 5 } }, 10);
 
   // Place Mouse far from other Region 1 elements
@@ -526,20 +571,8 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
   }
 
   // Region 2 setup
-  // Placement of Code Lock Clue in Region 2 far from entrance (B2) AND far from the actual code lock gate (B3), strictly on walls!
-  const reg2Free = getFarFreeCells(2, 3, true);
-  let clueCell = null;
-  if (reg2Free.length > 0) {
-    let filtered = reg2Free.filter(c => {
-      const distToB2 = Math.abs(c.x - barrierNodes.b2.x) + Math.abs(c.y - barrierNodes.b2.y);
-      const distToB3 = Math.abs(c.x - barrierNodes.b3.x) + Math.abs(c.y - barrierNodes.b3.y);
-      return distToB3 >= 10 && distToB2 >= 10;
-    });
-    if (filtered.length === 0) filtered = reg2Free;
-    clueCell = filtered[Math.floor(Math.random() * filtered.length)];
-    clueCell.puzzleClue = doorCode;
-    occupiedCells.push({ x: clueCell.x, y: clueCell.y, floor: clueCell.floor });
-  }
+  // Place roadblock solver for B3 in Region 2
+  placeRoadblockSolver(2, type3, barrierNodes.b2, barrierNodes.b3);
 
   // Place Merchant far from entrance and Code Lock Clue
   const reg2NpcFree = getFarFreeCells(2, 8);
@@ -593,20 +626,12 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
     occupiedCells.push({ x: c.x, y: c.y, floor: c.floor });
   }
 
-  // Scatter Standard Chests & Optional Roadblocks (Barricades & Chasms)
-  const regions = [0, 1, 2, 3];
-  regions.forEach(rNum => {
-    const deadEnds = getDeadEndsInRegion(rNum);
+  // 11. Populate remaining regions with standard random chests
+  const defaultItems = ["compass", "map_piece", "fuel", "cheese"];
+  
+  for (let r = 0; r < 4; r++) {
+    const deadEnds = getDeadEndsInRegion(r).filter(c => !c.chest && !c.npc && !c.puzzleClue && !c.isEntrance && !c.isExit);
     deadEnds.forEach((c, idx) => {
-      // Skip if already occupied
-      if (c.npc || c.isEntrance || c.isExit || c.puzzleClue || c.loreParchment || c.chest) return;
-      
-      // Enforce at least 1 floor tile of separation (Manhattan distance >= 2) from any occupied cell
-      const isTooClose = occupiedCells.some(pos => {
-        return pos.floor === c.floor && Math.abs(pos.x - c.x) + Math.abs(pos.y - c.y) < 2;
-      });
-      if (isTooClose) return;
-
       const roll = Math.random();
       let chestContent = {};
       if (roll < 0.75) {
@@ -614,8 +639,7 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
         if (rewardRoll < 0.25) {
           chestContent = { type: "gold", amount: 15 + Math.floor(Math.random() * 25) };
         } else if (rewardRoll < 0.85) {
-          const items = ["compass", "map_piece", "fuel", "cheese"];
-          const pickedItem = items[Math.floor(Math.random() * items.length)];
+          const pickedItem = defaultItems[Math.floor(Math.random() * defaultItems.length)];
           chestContent = { type: "item", item: pickedItem, gold: 5 + Math.floor(Math.random() * 11) };
         } else {
           chestContent = { type: "gold", amount: 10 };
@@ -627,47 +651,13 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
       }
 
       c.chest = {
-        id: `chest_f${c.floor}_r${rNum}_${idx}`,
+        id: `chest_f${c.floor}_r${r}_${idx}`,
         opened: false,
         content: chestContent
       };
       occupiedCells.push({ x: c.x, y: c.y, floor: c.floor });
     });
-
-    // Add optional roadblock to protect high-value chests
-    const freeCells = getFarFreeCells(rNum, 3);
-    if (freeCells.length > 3) {
-      const targetDeadEnd = getDeadEndsInRegion(rNum).find(c => c.chest && c.chest.content.type === "gold");
-      if (targetDeadEnd) {
-        const obType = Math.random() < 0.5 ? "barricade" : "chasm";
-        targetDeadEnd.obstacle = { type: obType, resolved: false };
-        targetDeadEnd.chest.content = { type: "gold", amount: 45 + Math.floor(Math.random() * 35) };
-        const items = ["map_piece"];
-        targetDeadEnd.chest.content.item = items[Math.floor(Math.random() * items.length)];
-
-        // Ensure the required tool is placed in another chest inside the same region,
-        // making the roadblock solvable and the tool useful!
-        const requiredTool = obType === "barricade" ? "axe" : "rope";
-        const otherChests = getDeadEndsInRegion(rNum).filter(c => c.chest && c !== targetDeadEnd);
-        if (otherChests.length > 0) {
-          const pickedChestCell = otherChests[Math.floor(Math.random() * otherChests.length)];
-          pickedChestCell.chest.content = { type: "item", item: requiredTool, gold: 5 };
-        } else {
-          // If no other chests exist, spawn a new chest with the required tool in a free cell
-          const freeForTool = getFarFreeCells(rNum, 3).filter(c => !c.chest && !c.npc && !c.isEntrance && !c.isExit && !c.puzzleClue && !c.loreParchment);
-          if (freeForTool.length > 0) {
-            const toolCell = freeForTool[Math.floor(Math.random() * freeForTool.length)];
-            toolCell.chest = {
-              id: `chest_f${toolCell.floor}_r${rNum}_tool`,
-              opened: false,
-              content: { type: "item", item: requiredTool, gold: 5 }
-            };
-            occupiedCells.push({ x: toolCell.x, y: toolCell.y, floor: toolCell.floor });
-          }
-        }
-      }
-    }
-  });
+  }
 
   return {
     floors,

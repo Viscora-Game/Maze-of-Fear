@@ -251,8 +251,8 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
     b3: b3Node
   };
 
-  // Dynamically select and shuffle obstacle types for critical path checkpoints
-  const obTypes = ["gate", "ivy", "barricade", "chasm", "codeLock"];
+  // Dynamically select and shuffle obstacle types for critical path checkpoints (chasm removed; rope is strictly for lower floor descent)
+  const obTypes = ["gate", "ivy", "barricade", "codeLock"];
   for (let i = obTypes.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     const temp = obTypes[i];
@@ -626,9 +626,10 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
     occupiedCells.push({ x: c.x, y: c.y, floor: c.floor });
   }
 
-  // 11. Populate remaining regions with standard random chests
-  const defaultItems = ["compass", "map_piece", "fuel", "cheese"];
-  
+  // 11. Populate remaining dead-end chests with gold, fuel, or non-repeating unique rewards
+  const placedUniqueItems = new Set();
+  const uniqueItemsPool = ["compass", "map_piece", "cheese"];
+
   for (let r = 0; r < 4; r++) {
     const deadEnds = getDeadEndsInRegion(r).filter(c => !c.chest && !c.npc && !c.puzzleClue && !c.isEntrance && !c.isExit);
     deadEnds.forEach((c, idx) => {
@@ -636,13 +637,22 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
       let chestContent = {};
       if (roll < 0.75) {
         const rewardRoll = Math.random();
-        if (rewardRoll < 0.25) {
+        // 65% Gold, 25% Fuel, 10% Unique Item (at most 1 of each per maze level)
+        if (rewardRoll < 0.65) {
           chestContent = { type: "gold", amount: 15 + Math.floor(Math.random() * 25) };
-        } else if (rewardRoll < 0.85) {
-          const pickedItem = defaultItems[Math.floor(Math.random() * defaultItems.length)];
-          chestContent = { type: "item", item: pickedItem, gold: 5 + Math.floor(Math.random() * 11) };
+        } else if (rewardRoll < 0.90) {
+          chestContent = { type: "item", item: "fuel", gold: 5 + Math.floor(Math.random() * 10) };
         } else {
-          chestContent = { type: "gold", amount: 10 };
+          // Unique item roll
+          const availableUniques = uniqueItemsPool.filter(item => !placedUniqueItems.has(item));
+          if (availableUniques.length > 0) {
+            const picked = availableUniques[Math.floor(Math.random() * availableUniques.length)];
+            placedUniqueItems.add(picked);
+            chestContent = { type: "item", item: picked, gold: 5 + Math.floor(Math.random() * 10) };
+          } else {
+            // Fallback to gold if all unique items have already been placed
+            chestContent = { type: "gold", amount: 20 + Math.floor(Math.random() * 15) };
+          }
         }
       } else if (roll < 0.90) {
         chestContent = { type: "trap", damage: 25 }; // Constant 25 damage (survive up to 3 chests)

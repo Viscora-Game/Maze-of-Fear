@@ -1,4 +1,4 @@
-import { Game } from "./game.js?v=29";
+import { Game } from "./game.js?v=33";
 
 const init = () => {
   const game = new Game();
@@ -2369,7 +2369,7 @@ function setupUI(game) {
       }
     }
     
-    // Draw player trail
+    // Draw player trail (only segment lines that are on the current floor)
     if (s.playerTrail && s.playerTrail.length > 0) {
       ctx.strokeStyle = "#ef4444";
       ctx.lineWidth = Math.max(3, cellSize * 0.2);
@@ -2379,11 +2379,22 @@ function setupUI(game) {
       // Draw dotted path line
       ctx.setLineDash([cellSize * 0.3, cellSize * 0.3]);
       ctx.beginPath();
-      s.playerTrail.forEach((pos, idx) => {
-        const cx = offsetX + (pos.x + 0.5) * cellSize;
-        const cy = offsetY + (pos.y + 0.5) * cellSize;
-        if (idx === 0) ctx.moveTo(cx, cy);
-        else ctx.lineTo(cx, cy);
+      let isFirst = true;
+      s.playerTrail.forEach((pos) => {
+        // Only draw segment if it matches the current active rendering floor!
+        if (pos.floor === s.currentFloor) {
+          const cx = offsetX + (pos.x + 0.5) * cellSize;
+          const cy = offsetY + (pos.y + 0.5) * cellSize;
+          if (isFirst) {
+            ctx.moveTo(cx, cy);
+            isFirst = false;
+          } else {
+            ctx.lineTo(cx, cy);
+          }
+        } else {
+          // Break line segment when floor changes to prevent cross-floor diagonal streaks
+          isFirst = true;
+        }
       });
       ctx.stroke();
       ctx.setLineDash([]); // reset dashes

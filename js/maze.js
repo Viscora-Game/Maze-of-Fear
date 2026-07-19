@@ -494,6 +494,11 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
   // Place Key far from Well, Start, and Bucket
   placeItemInRegion(0, { id: "chest_key", opened: false, content: { type: "item", item: "key", gold: 5 } }, 10);
 
+  // Place Rope if there are multiple floors so the player is guaranteed to be able to descend
+  if (numFloors > 1) {
+    placeItemInRegion(0, { id: "chest_rope", opened: false, content: { type: "item", item: "rope", gold: 5 } }, 8);
+  }
+
   // Region 1 setup
   const reg1Free = getFarFreeCells(1, 3);
   let childCell = null;
@@ -604,18 +609,18 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
 
       const roll = Math.random();
       let chestContent = {};
-      if (roll < 0.50) {
+      if (roll < 0.75) {
         const rewardRoll = Math.random();
         if (rewardRoll < 0.25) {
           chestContent = { type: "gold", amount: 15 + Math.floor(Math.random() * 25) };
         } else if (rewardRoll < 0.85) {
-          const items = ["key", "shears", "axe", "rope", "compass", "map_piece", "fuel", "cheese"];
+          const items = ["compass", "map_piece", "fuel", "cheese"];
           const pickedItem = items[Math.floor(Math.random() * items.length)];
           chestContent = { type: "item", item: pickedItem, gold: 5 + Math.floor(Math.random() * 11) };
         } else {
           chestContent = { type: "gold", amount: 10 };
         }
-      } else if (roll < 0.80) {
+      } else if (roll < 0.90) {
         chestContent = { type: "trap", damage: 25 }; // Constant 25 damage (survive up to 3 chests)
       } else {
         chestContent = { type: "mimic", damage: 25 }; // Constant 25 damage (survive up to 3 chests)
@@ -639,6 +644,27 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
         targetDeadEnd.chest.content = { type: "gold", amount: 45 + Math.floor(Math.random() * 35) };
         const items = ["map_piece"];
         targetDeadEnd.chest.content.item = items[Math.floor(Math.random() * items.length)];
+
+        // Ensure the required tool is placed in another chest inside the same region,
+        // making the roadblock solvable and the tool useful!
+        const requiredTool = obType === "barricade" ? "axe" : "rope";
+        const otherChests = getDeadEndsInRegion(rNum).filter(c => c.chest && c !== targetDeadEnd);
+        if (otherChests.length > 0) {
+          const pickedChestCell = otherChests[Math.floor(Math.random() * otherChests.length)];
+          pickedChestCell.chest.content = { type: "item", item: requiredTool, gold: 5 };
+        } else {
+          // If no other chests exist, spawn a new chest with the required tool in a free cell
+          const freeForTool = getFarFreeCells(rNum, 3).filter(c => !c.chest && !c.npc && !c.isEntrance && !c.isExit && !c.puzzleClue && !c.loreParchment);
+          if (freeForTool.length > 0) {
+            const toolCell = freeForTool[Math.floor(Math.random() * freeForTool.length)];
+            toolCell.chest = {
+              id: `chest_f${toolCell.floor}_r${rNum}_tool`,
+              opened: false,
+              content: { type: "item", item: requiredTool, gold: 5 }
+            };
+            occupiedCells.push({ x: toolCell.x, y: toolCell.y, floor: toolCell.floor });
+          }
+        }
       }
     }
   });

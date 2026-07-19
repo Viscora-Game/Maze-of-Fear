@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=29";
-import { AudioEngine } from "./audio.js?v=29";
-import { CanvasRenderer } from "./canvas.js?v=29";
-import { translations } from "./translations.js?v=29";
-import { randomEvents, deathEvents } from "./events.js?v=29";
-import { getSeededRandom } from "./prng.js?v=29";
+import { generateMaze } from "./maze.js?v=33";
+import { AudioEngine } from "./audio.js?v=33";
+import { CanvasRenderer } from "./canvas.js?v=33";
+import { translations } from "./translations.js?v=33";
+import { randomEvents, deathEvents } from "./events.js?v=33";
+import { getSeededRandom } from "./prng.js?v=33";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -206,7 +206,7 @@ export class Game {
       staircaseCooldown: 0,
       timeOfDay: 0.0, // 0.0 to 1.0 cycle (0.0 to 0.45 day, 0.45 to 0.55 sunset, 0.55 to 0.90 night, 0.90 to 1.0 sunrise)
       lanternOn: false, // lantern starts turned off by default
-      playerTrail: [{ x: 1, y: 1 }], // Track player path coordinates
+      playerTrail: [{ x: 1, y: 1, floor: 0 }], // Track player path coordinates
 
       player: {
         x: 1.5, // Start centered in cell (1, 1)
@@ -244,8 +244,8 @@ export class Game {
       },
 
       merchantStock: {
-        fuel: { cost: 10, count: 3 },
-        rope: { cost: 15, count: 2 },
+        fuel: { cost: 10, count: Math.floor(1 + Math.random() * 3) },
+        rope: { cost: 25, count: 1 },
         axe: { cost: 20, count: 1 }
       },
 
@@ -598,6 +598,29 @@ export class Game {
       const dist = Math.hypot(p.x - (cellX + 0.5), p.y - (cellY + 0.5));
       if (dist < 0.28) {
         const nextFloor = cell.staircase === "down" ? this.state.currentFloor + 1 : this.state.currentFloor - 1;
+        
+        // Downward transitions require a rope to be deployed first
+        if (cell.staircase === "down" && !cell.staircaseDeployed) {
+          if (p.inventory.rope > 0) {
+            p.inventory.rope--;
+            cell.staircaseDeployed = true;
+            // Mark the corresponding staircase up cell on the destination floor as deployed
+            if (this.state.floors[nextFloor] && this.state.floors[nextFloor][cellY] && this.state.floors[nextFloor][cellY][cellX]) {
+              this.state.floors[nextFloor][cellY][cellX].staircaseDeployed = true;
+            }
+            if (this.showToast) {
+              this.showToast(this.t("obstacles.ropePitSuccess"));
+            }
+          } else {
+            // Block transition and show warning toast with a cooldown to prevent spamming
+            this.state.staircaseCooldown = 2.0;
+            if (this.showToast) {
+              this.showToast(this.t("obstacles.ropePitWarning"));
+            }
+            return;
+          }
+        }
+
         this.state.staircaseCooldown = 2.0; // cooldown of 2 seconds
         this.audio.playUnlock();
         this.revealArea(cellX, cellY);
@@ -673,9 +696,9 @@ export class Game {
     }
 
     // Track player trail (deduplicated cell visits)
-    const currentCell = { x: Math.floor(p.x), y: Math.floor(p.y) };
+    const currentCell = { x: Math.floor(p.x), y: Math.floor(p.y), floor: this.state.currentFloor };
     const lastTrail = this.state.playerTrail[this.state.playerTrail.length - 1];
-    if (!lastTrail || lastTrail.x !== currentCell.x || lastTrail.y !== currentCell.y) {
+    if (!lastTrail || lastTrail.x !== currentCell.x || lastTrail.y !== currentCell.y || lastTrail.floor !== currentCell.floor) {
       this.state.playerTrail.push(currentCell);
       if (this.onStateChange) this.onStateChange();
     }
@@ -925,9 +948,9 @@ export class Game {
           const cell = grid[cy][cx];
           
           let type = null;
-          if (cell.chest && !cell.chest.opened) type = "chest";
+          if (cell.obstacle && !cell.obstacle.resolved) type = "obstacle";
+          else if (cell.chest && !cell.chest.opened) type = "chest";
           else if (cell.npc && !cell.npc.disappearing) type = "npc";
-          else if (cell.obstacle && !cell.obstacle.resolved) type = "obstacle";
           else if (cell.puzzleClue) type = "clue";
           else if (cell.loreParchment) type = "lore";
           

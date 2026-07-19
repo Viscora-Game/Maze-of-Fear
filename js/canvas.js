@@ -971,6 +971,17 @@ export class CanvasRenderer {
       } else {
         this.scene.background = new THREE.Color("#080a0f");
       }
+
+      // Add a beautiful, ominous blood-red moon hanging high in the sky of Floor 0 (ignoring fog!)
+      const moonGeo = new THREE.SphereGeometry(2.5, 16, 16);
+      const moonMat = new THREE.MeshBasicMaterial({
+        color: "#dc2626", // Creepy deep red moon
+        fog: false
+      });
+      const moonMesh = new THREE.Mesh(moonGeo, moonMat);
+      // Position it high up and far away in the sky dome
+      moonMesh.position.set(30, 45, -30);
+      this.scene.add(moonMesh);
     }
 
     // Flashlight SpotLight - PRIMARY neutral white light source with realistic flashlight properties (decay = 1.1, range = 11.0m)

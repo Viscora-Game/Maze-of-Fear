@@ -94,7 +94,9 @@ export const translations = {
       ivy: "Thick, thorny ivy covers the path. Requires Garden Shears.",
       barricade: "A wooden barricade blocks the corridor. Requires an Axe.",
       chasm: "A deep chasm yawns before you. Requires a Rope to cross.",
-      codeLock: "A gate with a combination dial. Enter the 4-digit code."
+      codeLock: "A gate with a combination dial. Enter the 4-digit code.",
+      ropePitWarning: "This is a deep pit. You must find a Rope in chests or from the Merchant to climb down!",
+      ropePitSuccess: "You deployed the rope. Now you can descend safely!"
     },
 
     // Chest events
@@ -324,7 +326,9 @@ export const translations = {
       ivy: "Geçidi kalın, dikenli sarmaşıklar sarmış. Bahçe Makası gerekiyor.",
       barricade: "Ahşap bir barikat koridoru kapatıyor. Balta gerekiyor.",
       chasm: "Önünüzde dipsiz bir uçurum uzanıyor. Karşıya geçmek için Halat gerekiyor.",
-      codeLock: "Şifreli kadranı olan bir kapı. 4 haneli şifreyi girin."
+      codeLock: "Şifreli kadranı olan bir kapı. 4 haneli şifreyi girin.",
+      ropePitWarning: "Burası derin bir çukur. Aşağı inmek için sandıklardan veya Tüccardan bir Halat bulmalısın!",
+      ropePitSuccess: "Halatı çukura sarkıttın. Artık güvenle aşağı inebilirsin!"
     },
 
     // Chest events

@@ -251,6 +251,7 @@ export class Game {
 
       lastCheckPoint: { x: 1.5, y: 1.5, floor: 0 },
       shadowMonsters: (() => {
+        if (this.difficulty === "peaceful") return [];
         // Difficulty-based spawner parameters
         let initialSpawn = 30.0 + Math.random() * 15.0; // Medium default
         let baseSpeed = 1.55;
@@ -556,7 +557,7 @@ export class Game {
       this.lastCellY = cellY;
       
       const anyActiveMonster = this.state.shadowMonsters && this.state.shadowMonsters.some(sm => sm.active);
-      if (this.state.gameState === "playing" && !anyActiveMonster) {
+      if (this.state.gameState === "playing" && !anyActiveMonster && this.difficulty !== "peaceful") {
         if (Math.random() < 0.004) {
           this.state.gameState = "modal";
           this.audio.playJumpscare();
@@ -686,7 +687,8 @@ export class Game {
     // Fuel consumption when lantern is ON
     if (this.state.lanternOn && p.fuel > 0) {
       let decayMult = 1.0;
-      if (this.difficulty === "easy") decayMult = 0.7;
+      if (this.difficulty === "peaceful") decayMult = 0.5;
+      else if (this.difficulty === "easy") decayMult = 0.7;
       else if (this.difficulty === "hard") decayMult = 1.25;
       else if (this.difficulty === "nightmare") decayMult = 1.4;
       p.fuel = Math.max(0, p.fuel - dt * (100 / 240) * decayMult);
@@ -1013,7 +1015,18 @@ export class Game {
 
     const executeChestOpen = () => {
       chest.opened = true;
-      const content = chest.content;
+      let content = chest.content;
+
+      // In peaceful mode, automatically convert traps/mimics to rewards (gold or map pieces)
+      if (this.difficulty === "peaceful" && (content.type === "trap" || content.type === "mimic")) {
+        const seedVal = chest.id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        if (seedVal % 2 === 0) {
+          content = { type: "gold", amount: 15 };
+        } else {
+          content = { type: "item", item: "map_piece", gold: 5 };
+        }
+      }
+
       let title = "";
       let text = "";
       let detail = null;

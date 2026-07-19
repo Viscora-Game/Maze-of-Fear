@@ -214,7 +214,7 @@ function setupUI(game) {
     }
 
     // Difficulty buttons toggle
-    const difficulties = ["easy", "medium", "hard", "nightmare"];
+    const difficulties = ["easy", "medium", "hard", "nightmare", "peaceful"];
     difficulties.forEach(diff => {
       const btn = document.getElementById(`btn-diff-${diff}`);
       if (btn) btn.classList.toggle("active", game.difficulty === diff);
@@ -832,7 +832,7 @@ function setupUI(game) {
     settingsVolSlider.addEventListener("change", handleVolumeChange);
   }
 
-  const difficulties = ["easy", "medium", "hard", "nightmare"];
+  const difficulties = ["easy", "medium", "hard", "nightmare", "peaceful"];
   difficulties.forEach(diff => {
     const btn = document.getElementById(`btn-diff-${diff}`);
     if (btn) {

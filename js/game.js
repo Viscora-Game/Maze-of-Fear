@@ -232,6 +232,7 @@ export class Game {
           compass: 0,
           map_piece: 0,
           fuel: 0,
+          fuel_half: 0,
           cheese: 0
         }
       },
@@ -1187,7 +1188,7 @@ export class Game {
             // Quest reward processing
             inv.bucket_full--;
             inv.bucket++;
-            inv.fuel = (inv.fuel || 0) + 1; // Add 1 battery (fuel) to inventory
+            inv.fuel_half = (inv.fuel_half || 0) + 1; // Add 1 half-used battery to inventory
             this.state.quests.childState = "solved";
             this.audio.playPickup();
             if (this.onStateChange) this.onStateChange();
@@ -1442,6 +1443,11 @@ export class Game {
     if (itemId === "fuel") {
       p.inventory.fuel--;
       p.fuel = Math.min(100, p.fuel + 30);
+      this.audio.playPickup();
+      if (this.onStateChange) this.onStateChange();
+    } else if (itemId === "fuel_half") {
+      p.inventory.fuel_half--;
+      p.fuel = Math.min(100, p.fuel + 15); // Restores 15% (half battery)
       this.audio.playPickup();
       if (this.onStateChange) this.onStateChange();
     } else if (itemId === "map_piece") {

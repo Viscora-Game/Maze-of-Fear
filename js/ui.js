@@ -1081,7 +1081,7 @@ function setupUI(game) {
     const equipped = p.equippedItem;
     if (equipped) {
       const emojiMap = {
-        key: "🔑", shears: "✂️", bucket: "🪣", bucket_full: "💧", axe: "🪓", rope: "🪵", compass: "🧭", map_piece: "📜", fuel: "🛢️", cheese: "🧀"
+        key: "🔑", shears: "✂️", bucket: "🪣", bucket_full: "💧", axe: "🪓", rope: "🪵", compass: "🧭", map_piece: "📜", fuel: "🛢️", fuel_half: "🛢️", cheese: "🧀"
       };
       if (hud.equippedVal) hud.equippedVal.textContent = `${emojiMap[equipped] || "📦"} ${game.t("items." + equipped + ".name")}`;
     } else {
@@ -1808,7 +1808,7 @@ function setupUI(game) {
     hud.invGrid.innerHTML = "";
 
     const emojiMap = {
-      key: "🔑", shears: "✂️", bucket: "🪣", bucket_full: "💧", axe: "🪓", rope: "🪵", compass: "🧭", map_piece: "📜", fuel: "🛢️", cheese: "🧀"
+      key: "🔑", shears: "✂️", bucket: "🪣", bucket_full: "💧", axe: "🪓", rope: "🪵", compass: "🧭", map_piece: "📜", fuel: "🛢️", fuel_half: "🛢️", cheese: "🧀"
     };
 
     Object.entries(p.inventory).forEach(([itemId, count]) => {
@@ -1855,7 +1855,7 @@ function setupUI(game) {
     hud.invItemDesc.textContent = desc;
 
     // Use Button
-    const usableItems = ["fuel", "map_piece", "compass"];
+    const usableItems = ["fuel", "fuel_half", "map_piece", "compass"];
     if (usableItems.includes(itemId)) {
       hud.btnInvUse.style.display = "block";
       hud.btnInvUse.textContent = game.lang === "tr" ? "Kullan" : "Use";

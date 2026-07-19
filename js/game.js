@@ -903,36 +903,6 @@ export class Game {
   }
 
   // Proximity Scan & Interact helper methods
-  hasLineOfSight(x1, y1, x2, y2, grid) {
-    const px = Math.floor(x1);
-    const py = Math.floor(y1);
-    const cx = Math.floor(x2);
-    const cy = Math.floor(y2);
-    if (px === cx && py === cy) return true;
-
-    // Cardinally adjacent: no cell in between, so line of sight is clear
-    if (Math.abs(px - cx) + Math.abs(py - cy) === 1) return true;
-
-    // Cardinally separated by 2 cells: check the middle cell for wall blockers
-    if (px === cx && Math.abs(py - cy) === 2) {
-      const midY = (py + cy) / 2;
-      return grid[midY] && grid[midY][px] && grid[midY][px].type !== "wall";
-    }
-    if (py === cy && Math.abs(px - cx) === 2) {
-      const midX = (px + cx) / 2;
-      return grid[py] && grid[py][midX] && grid[py][midX].type !== "wall";
-    }
-
-    // Diagonally adjacent: check both corners
-    if (Math.abs(px - cx) === 1 && Math.abs(py - cy) === 1) {
-      const corner1 = (px < 0 || px >= this.state.width || cy < 0 || cy >= this.state.height) || (grid[cy] && grid[cy][px] && grid[cy][px].type === "wall");
-      const corner2 = (cx < 0 || cx >= this.state.width || py < 0 || py >= this.state.height) || (grid[py] && grid[py][cx] && grid[py][cx].type === "wall");
-      if (corner1 && corner2) return false;
-      return true;
-    }
-
-    return false; // Beyond interaction range
-  }
 
   findClosestInteractable() {
     const p = this.state.player;
@@ -1569,7 +1539,7 @@ export class Game {
     }
   }
 
-  hasLineOfSight(x1, y1, x2, y2, grid, width, height) {
+  hasLineOfSight(x1, y1, x2, y2, grid, width = this.state.width, height = this.state.height) {
     const dx = x2 - x1;
     const dy = y2 - y1;
     const dist = Math.hypot(dx, dy);

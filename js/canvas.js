@@ -637,10 +637,26 @@ export class CanvasRenderer {
     }
     const loader = new THREE.GLTFLoader();
     loader.load('assets/models/chest_simple.glb', (gltf) => {
-      this.chestModel = gltf.scene;
-      console.log("Low-poly GLTF chest model loaded successfully!");
+      const scene = gltf.scene;
+      
+      // Wrap scene in a parent group to normalize offset coordinates
+      const wrapper = new THREE.Group();
+      wrapper.add(scene);
+      
+      // Calculate and apply centering of the model
+      const box = new THREE.Box3().setFromObject(scene);
+      const center = new THREE.Vector3();
+      box.getCenter(center);
+      
+      // Shift child nodes inside scene so they are centered at (0, 0, 0)
+      scene.position.x = -center.x;
+      scene.position.z = -center.z;
+      scene.position.y = -box.min.y;
+      
+      this.chestModel = wrapper;
+      console.log("Low-poly GLTF chest model loaded and centered successfully!");
       if (this.renderer) {
-        try { this.renderer.compile(gltf.scene, this.camera); } catch (e) { console.warn("Warmup compile failed for chest:", e); }
+        try { this.renderer.compile(wrapper, this.camera); } catch (e) { console.warn("Warmup compile failed for chest:", e); }
       }
       if (this.lastState) {
         this.rebuildScene(this.lastState);
@@ -696,6 +712,10 @@ export class CanvasRenderer {
             if (obj.parent) obj.parent.remove(obj);
           });
 
+          // Create a wrapper group to normalize positions and offsets
+          const wrapper = new THREE.Group();
+          wrapper.add(fbx);
+
           // Reset rotation (stand upright by default)
           fbx.rotation.set(0, 0, 0);
 
@@ -707,19 +727,26 @@ export class CanvasRenderer {
           const scaleFactor = targetHeight / (rawHeight > 0.001 ? rawHeight : 1.0);
           fbx.scale.set(scaleFactor, scaleFactor, scaleFactor);
 
-          // Align feet to Y = 0 based on scaled bounding box
+          // Center horizontally and align feet to Y = 0 based on scaled bounding box
           const boxScaled = new THREE.Box3().setFromObject(fbx);
+          const center = new THREE.Vector3();
+          boxScaled.getCenter(center);
+
+          fbx.position.x = -center.x;
+          fbx.position.z = -center.z;
           fbx.position.y = -boxScaled.min.y;
           
-          fbx.userData.initialY = fbx.position.y;
-          fbx.userData.initialScaleX = scaleFactor;
-          fbx.userData.initialScaleY = scaleFactor;
-          fbx.userData.initialScaleZ = scaleFactor;
+          wrapper.userData = {
+            initialY: 0,
+            initialScaleX: 1.0,
+            initialScaleY: 1.0,
+            initialScaleZ: 1.0
+          };
           
-          this[modelProp] = fbx;
-          console.log(`FBX Character ${name} loaded, scaled to ${targetHeight}m, and foot-aligned successfully!`);
+          this[modelProp] = wrapper;
+          console.log(`FBX Character ${name} loaded, centered, scaled to ${targetHeight}m, and foot-aligned successfully!`);
           if (this.renderer) {
-            try { this.renderer.compile(fbx, this.camera); } catch (e) { console.warn("Warmup compile failed for character:", e); }
+            try { this.renderer.compile(wrapper, this.camera); } catch (e) { console.warn("Warmup compile failed for character:", e); }
           }
           if (this.lastState) {
             this.rebuildScene(this.lastState);

@@ -245,6 +245,10 @@ export class CanvasRenderer {
       depthWrite: false
     });
 
+    // Shared gold particle meshes for chest opening bursts
+    this.chestParticleGeom = new THREE.SphereGeometry(0.012, 4, 4);
+    this.chestParticleMat = new THREE.MeshBasicMaterial({ color: "#fbbf24" });
+
     // 3. Initialize Scene Graph & Fog (Gloomy, dark night-fog atmosphere - no day/night cycle)
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color("#080a0f"); // Pitch black / dark night sky
@@ -829,11 +833,9 @@ export class CanvasRenderer {
   // Spawns a beautiful glowing burst of particles when a chest is opened
   spawnParticles(x, y, z) {
     const pCount = 18;
-    const pGeo = new THREE.SphereGeometry(0.012, 4, 4);
-    const pMat = new THREE.MeshBasicMaterial({ color: "#fbbf24" }); // Glowing gold
     
     for (let i = 0; i < pCount; i++) {
-      const pMesh = new THREE.Mesh(pGeo, pMat);
+      const pMesh = new THREE.Mesh(this.chestParticleGeom, this.chestParticleMat);
       pMesh.position.set(
         x + (Math.random() - 0.5) * 0.15,
         y + 0.05,
@@ -2628,34 +2630,63 @@ export class CanvasRenderer {
       if (playerMoved) {
         this.lastTorchCullX = px;
         this.lastTorchCullY = py;
+        
+        // Batch calculate torch distances relative to player using fast square root to avoid Math.hypot overhead
+        this.torches.forEach(t => {
+          if (typeof t.worldX === "number") {
+            const dx = px - t.worldX;
+            const dz = py - t.worldZ;
+            t.lastDist = Math.sqrt(dx * dx + dz * dz);
+          } else {
+            t.lastDist = 999.0;
+          }
+        });
+        
+        // Sort torches in-place by distance so the closest ones are at the front of the array
+        this.torches.sort((a, b) => a.lastDist - b.lastDist);
       }
+
+      // Capping visible lights to exactly 6 closest lights in the scene.
+      // This maintains a constant light count of exactly 6 in the Three.js scene graph,
+      // which completely prevents GPU shader recompilation stutters when walking between rooms.
+      const activeLimit = Math.min(this.torches.length, 6);
 
       this.torches.forEach((t, i) => {
         const flicker = Math.sin(time * 3.3 + i) * 0.18 + Math.cos(time * 6.7 + i * 2.1) * 0.12 + Math.sin(time * 19.3 + i * 3.4) * 0.06;
-        t.light.intensity = t.baseIntensity + flicker;
-        if (t.flame) {
-          const s = 1.0 + flicker * 0.45;
-          t.flame.scale.set(s, s * 1.25, s);
-          // Organic wind sway and wobble
-          t.flame.position.x = Math.sin(time * 2.5 + i) * 0.003;
-          t.flame.position.z = Math.cos(time * 3.1 + i * 1.7) * 0.003;
-          t.flame.rotation.y = time * 2.0 + i; // gentle spin
-          t.flame.rotation.z = Math.sin(time * 4.0 + i) * 0.05; // tilt sway
+        
+        if (i < activeLimit) {
+          t.light.visible = true;
+          // Only enable intensity if it is close enough to affect player visuals (under 6.5m)
+          if (t.lastDist < 6.5) {
+            t.light.intensity = t.baseIntensity + flicker;
+          } else {
+            t.light.intensity = 0.0;
+          }
+        } else {
+          t.light.visible = false;
+          t.light.intensity = 0.0;
         }
 
-        // Throttled distance calculation for dynamic light culling
-        if (typeof t.worldX === "number") {
-          if (playerMoved) {
-            const dist = Math.hypot(px - t.worldX, py - t.worldZ);
-            t.lastDist = dist;
-            t.light.visible = (dist < 5.0);
-          }
-          const dist = t.lastDist !== undefined ? t.lastDist : 999.0;
-          if (dist < minTorchDist) {
-            minTorchDist = dist;
+        if (t.flame) {
+          // Cull flame mesh scale/position matrix updates if too far to be visible to save CPU cycles
+          if (t.lastDist < 8.0) {
+            t.flame.visible = true;
+            const s = 1.0 + flicker * 0.45;
+            t.flame.scale.set(s, s * 1.25, s);
+            t.flame.position.x = Math.sin(time * 2.5 + i) * 0.003;
+            t.flame.position.z = Math.cos(time * 3.1 + i * 1.7) * 0.003;
+            t.flame.rotation.y = time * 2.0 + i; // gentle spin
+            t.flame.rotation.z = Math.sin(time * 4.0 + i) * 0.05; // tilt sway
+          } else {
+            t.flame.visible = false;
           }
         }
       });
+
+      // The first element of the sorted list is always the closest torch!
+      if (this.torches[0] && typeof this.torches[0].lastDist === "number") {
+        minTorchDist = this.torches[0].lastDist;
+      }
 
       if (this.audio && typeof this.audio.updateFireVolume === "function") {
         this.audio.updateFireVolume(minTorchDist);
@@ -3492,7 +3523,6 @@ export class CanvasRenderer {
         
         if (p.life <= 0) {
           this.scene.remove(p.mesh);
-          p.mesh.geometry.dispose();
           this.particles.splice(i, 1);
         } else {
           p.mesh.scale.set(p.life, p.life, p.life);

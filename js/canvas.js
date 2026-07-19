@@ -940,9 +940,10 @@ export class CanvasRenderer {
 
     this.dirLight = new THREE.DirectionalLight("#1e293b", isUnderground ? 0.0 : 0.04); // No moonlight underground!
     this.dirLight.position.set(10, 30, 10);
-    this.dirLight.castShadow = this.shadowsEnabled;
-    this.dirLight.shadow.mapSize.width = 1024;
-    this.dirLight.shadow.mapSize.height = 1024;
+    this.dirLight.castShadow = isUnderground ? false : this.shadowsEnabled;
+    const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+    this.dirLight.shadow.mapSize.width = isMobile ? 512 : 1024;
+    this.dirLight.shadow.mapSize.height = isMobile ? 512 : 1024;
     this.dirLight.shadow.camera.near = 0.5;
     this.dirLight.shadow.camera.far = 60;
     const d = 12; // focused shadow orthographic volume around player
@@ -980,9 +981,6 @@ export class CanvasRenderer {
       this.lantern.target = new THREE.Object3D();
     }
     this.scene.add(this.lantern.target);
-
-    // Detect mobile device to scale particle counts and ensure peak 60 FPS rendering on mobile GPUs
-    const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
     // 1b. Rain Particles System (Gloomy, moody falling rain - dynamically scaled for mobile)
     const rainCount = isMobile ? 120 : 400;
@@ -3405,7 +3403,7 @@ export class CanvasRenderer {
     }
 
     // Update rain particles (highly optimized direct typed array manipulation to prevent FPS drops)
-    if (this.rainParticles && this.rainVelocities) {
+    if (this.rainParticles && this.rainParticles.visible && this.rainVelocities) {
       const posAttr = this.rainParticles.geometry.attributes.position;
       const len = this.rainVelocities.length;
       const array = posAttr.array || new Float32Array(len * 3);
@@ -3434,7 +3432,7 @@ export class CanvasRenderer {
     }
 
     // Update low-lying ground fog particles (localized around player with GPU hardware acceleration)
-    if (this.groundFogParticles && this.fogDriftVelocities) {
+    if (this.groundFogParticles && this.groundFogParticles.visible && this.fogDriftVelocities) {
       const posAttr = this.groundFogParticles.geometry.attributes.position;
       const len = this.fogDriftVelocities.length;
       const array = posAttr.array || new Float32Array(len * 3);

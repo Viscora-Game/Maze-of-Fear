@@ -92,23 +92,27 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
   }
 
   // 3. Connect Floors using Staircases at random odd room coordinates
-  // Collect all odd room coordinates
-  const oddRooms = [];
-  for (let y = 1; y < height - 1; y += 2) {
-    for (let x = 1; x < width - 1; x += 2) {
-      oddRooms.push({ x, y });
-    }
-  }
-
-  // Shuffle rooms for random distributions
-  const shuffleArray = (arr) => {
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-  };
-  
-  shuffleArray(oddRooms);
+   // Collect all odd room coordinates
+   const oddRooms = [];
+   for (let y = 1; y < height - 1; y += 2) {
+     for (let x = 1; x < width - 1; x += 2) {
+       // Exclude entrance (1, 1) and exit (width - 2, height - 2) to prevent staircases spawning on them
+       if ((x === 1 && y === 1) || (x === width - 2 && y === height - 2)) {
+         continue;
+       }
+       oddRooms.push({ x, y });
+     }
+   }
+ 
+   // Shuffle rooms for random distributions
+   const shuffleArray = (arr) => {
+     for (let i = arr.length - 1; i > 0; i--) {
+       const j = Math.floor(Math.random() * (i + 1));
+       [arr[i], arr[j]] = [arr[j], arr[i]];
+     }
+   };
+   
+   shuffleArray(oddRooms);
 
   // Link Floor f to Floor f+1
   for (let f = 0; f < numFloors - 1; f++) {

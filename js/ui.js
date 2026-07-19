@@ -2286,6 +2286,34 @@ function setupUI(game) {
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillText("🪜", cx + cellSize/2, cy + cellSize/2);
+          } else if (cell.staircase) {
+            if (cell.staircase === "down") {
+              // Draw a warm orange/red glowing background for staircase down kuyu
+              ctx.fillStyle = "rgba(239, 68, 68, 0.4)";
+              ctx.fillRect(cx, cy, cellSize, cellSize);
+              ctx.strokeStyle = "#ef4444";
+              ctx.lineWidth = 1.5;
+              ctx.strokeRect(cx + 1, cy + 1, cellSize - 2, cellSize - 2);
+
+              ctx.fillStyle = "#ef4444";
+              ctx.font = `bold ${Math.floor(cellSize * 0.75)}px Arial`;
+              ctx.textAlign = "center";
+              ctx.textBaseline = "middle";
+              ctx.fillText("🕳️", cx + cellSize/2, cy + cellSize/2);
+            } else {
+              // Draw a warm green glowing background for staircase up tırmanma halatı
+              ctx.fillStyle = "rgba(16, 185, 129, 0.4)";
+              ctx.fillRect(cx, cy, cellSize, cellSize);
+              ctx.strokeStyle = "#10b981";
+              ctx.lineWidth = 1.5;
+              ctx.strokeRect(cx + 1, cy + 1, cellSize - 2, cellSize - 2);
+
+              ctx.fillStyle = "#10b981";
+              ctx.font = `bold ${Math.floor(cellSize * 0.75)}px Arial`;
+              ctx.textAlign = "center";
+              ctx.textBaseline = "middle";
+              ctx.fillText("🪜", cx + cellSize/2, cy + cellSize/2);
+            }
           }
           
           // Draw chests

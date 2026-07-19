@@ -2770,7 +2770,17 @@ export class CanvasRenderer {
     // Toggle lantern light and flame core visibility
     if (this.lantern) {
       if (state.lanternOn && player.fuel > 0) {
-        this.lantern.intensity = 4.5; // Distance-decay flashlight beam to keep texture details and colors rich
+        let baseIntensity = 4.5; // Distance-decay flashlight beam to keep texture details and colors rich
+        // Low battery (<20%) causes dynamic flashlight beam flickering
+        if (player.fuel < 20) {
+          const rand = Math.random();
+          if (rand < 0.18) {
+            baseIntensity = 0.5 + Math.random() * 1.5; // dark flicker drop
+          } else if (rand < 0.38) {
+            baseIntensity = 2.2 + Math.random() * 1.2; // dim flicker
+          }
+        }
+        this.lantern.intensity = baseIntensity;
         if (this.lanternFlame) this.lanternFlame.visible = true;
       } else {
         this.lantern.intensity = 0.0; // completely off

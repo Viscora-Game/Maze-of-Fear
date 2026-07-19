@@ -1,4 +1,4 @@
-import { Game } from "./game.js?v=34";
+import { Game } from "./game.js?v=35";
 
 const init = () => {
   const game = new Game();
@@ -134,13 +134,15 @@ function setupUI(game) {
     chest: document.getElementById("modal-chest"),
     keypad: document.getElementById("modal-keypad"),
     ad: document.getElementById("modal-ad"),
-    end: document.getElementById("modal-end")
+    end: document.getElementById("modal-end"),
+    map: document.getElementById("modal-map")
   };
 
   // 2. State & Screen Management Helper with Minimal CSS Entry Transition
   const showScreen = (screenName) => {
     // Hide all active modals and clear dialogue typewriter animations if transitioning to non-game screens (e.g. pause menu, settings, main menu)
     if (screenName !== "game") {
+      if (typeof closeMap === "function") closeMap();
       Object.values(modals).forEach(m => {
         if (m) m.classList.add("hidden");
       });
@@ -1011,6 +1013,15 @@ function setupUI(game) {
       hud.fuelVal.textContent = `${Math.ceil(p.fuel)}%`;
       hud.fuelBar.style.width = `${p.fuel}%`;
       hud.fuelBar.className = "battery-fill " + (p.fuel < 25 ? "bg-red-pulse" : "bg-gold");
+      
+      const fuelWrapper = document.getElementById("hud-fuel");
+      if (fuelWrapper) {
+        if (p.fuel < 20 && s.lanternOn) {
+          fuelWrapper.classList.add("battery-low-shake");
+        } else {
+          fuelWrapper.classList.remove("battery-low-shake");
+        }
+      }
     }
 
     // Toggle crosshair visibility in gameplay
@@ -1252,10 +1263,14 @@ function setupUI(game) {
 
     // Render as a spooky ancient parchment note if it is a clue
     if (config.isClue) {
+      if (game.audio && typeof game.audio.playPaperRustle === "function") {
+        game.audio.playPaperRustle();
+      }
       const container = document.createElement("div");
       container.className = "parchment-container animate-fade-in";
       container.innerHTML = `
         <div class="parchment-scroll">
+          <div class="parchment-seal">📜</div>
           <h2 class="parchment-title">${config.title}</h2>
           <p class="parchment-text">${config.text.replace(/\n/g, '<br>')}</p>
           <div class="parchment-buttons" id="dialog-buttons"></div>

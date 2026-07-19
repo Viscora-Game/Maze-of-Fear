@@ -940,6 +940,34 @@ export class AudioEngine {
     }
   }
 
+  // Synthesize paper unfolding / parchment rustle sound effect
+  playPaperRustle() {
+    if (this.muted || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    
+    const duration = 0.35;
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = this.noiseBuffer;
+    
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = "bandpass";
+    filter.frequency.setValueAtTime(600, now);
+    filter.frequency.exponentialRampToValueAtTime(2200, now + duration);
+    filter.Q.value = 1.8;
+    
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.01, now);
+    gain.gain.linearRampToValueAtTime(0.15, now + 0.08);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+    
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.masterGain);
+    
+    noise.start(now);
+    noise.stop(now + duration);
+  }
+
   // Synthesize deep structural chasm groan (sweeping lowpass saw/triangle detuned nodes + sweeping bandpass noise)
   playChasmGroan() {
     if (this.muted || !this.ctx) return;

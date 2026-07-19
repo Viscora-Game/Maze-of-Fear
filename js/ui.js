@@ -796,24 +796,28 @@ function setupUI(game) {
 
   const settingsVolSlider = document.getElementById("settings-volume-slider");
   if (settingsVolSlider) {
-    settingsVolSlider.addEventListener("input", (e) => {
+    const handleVolumeChange = (e) => {
       let val = parseInt(e.target.value);
       const warningEl = document.getElementById("creepy-sound-warning");
       const volVal = document.getElementById("settings-volume-val");
 
-      if (val === 0) {
-        // Snap back to 10% - NO MUTE ALLOWED!
+      if (val < 10) {
+        // Snap back to 10% - NO MUTE OR LOW VOLUME ALLOWED!
         e.target.value = 10;
         val = 10;
         
         if (warningEl) warningEl.classList.remove("hidden");
         game.audio.setVolume(0.1);
         
-        // Trigger a creepy stinger sound!
-        if (game.audio && typeof game.audio.init === "function") {
-          game.audio.init();
-          if (typeof game.audio._playBuffer === "function") {
-            game.audio._playBuffer("slow_stinger", 0.7);
+        // Trigger a creepy stinger sound with debouncing to prevent overlapping sound clutter
+        const now = Date.now();
+        if (!settingsVolSlider._lastStingerTime || now - settingsVolSlider._lastStingerTime > 2500) {
+          settingsVolSlider._lastStingerTime = now;
+          if (game.audio && typeof game.audio.init === "function") {
+            game.audio.init();
+            if (typeof game.audio._playBuffer === "function") {
+              game.audio._playBuffer("slow_stinger", 0.7);
+            }
           }
         }
       } else {
@@ -822,7 +826,10 @@ function setupUI(game) {
       }
       
       if (volVal) volVal.textContent = `${val}%`;
-    });
+    };
+
+    settingsVolSlider.addEventListener("input", handleVolumeChange);
+    settingsVolSlider.addEventListener("change", handleVolumeChange);
   }
 
   const difficulties = ["easy", "medium", "hard", "nightmare"];
@@ -1319,7 +1326,7 @@ function setupUI(game) {
         `}
         <div class="dialog-bubble dialog-bubble-npc" style="${hasNpcPortrait ? '' : 'margin-left: 0; width: 100%;'}">
           <p class="dialog-text" style="margin: 0;"></p>
-          <div class="dialog-typewriter-prompt">${game.state.lang === "tr" ? "▶ Hızlandırmak için buraya tıkla" : "▶ Click here to skip"}</div>
+          <div class="dialog-typewriter-prompt">${game.lang === "tr" ? "▶ Hızlandırmak için buraya tıkla" : "▶ Click here to skip"}</div>
         </div>
       </div>
 
@@ -1330,7 +1337,7 @@ function setupUI(game) {
             <img src="${portraitExplorer}" class="dialog-portrait-img">
             <div class="dialog-crt-overlay"></div>
           </div>
-          <span class="dialog-name">${game.state.lang === "tr" ? "Kaşif" : "Explorer"}</span>
+          <span class="dialog-name">${game.lang === "tr" ? "Kaşif" : "Explorer"}</span>
         </div>
         <div class="dialog-bubble dialog-bubble-player" style="display: flex; flex-direction: column; gap: 8px;">
           <div class="modal-buttons" id="dialog-buttons" style="flex-direction: column; width: 100%;"></div>

@@ -1187,7 +1187,7 @@ export class Game {
             // Quest reward processing
             inv.bucket_full--;
             inv.bucket++;
-            this.state.player.fuel = Math.min(100, this.state.player.fuel + 15);
+            inv.fuel = (inv.fuel || 0) + 1; // Add 1 battery (fuel) to inventory
             this.state.quests.childState = "solved";
             this.audio.playPickup();
             if (this.onStateChange) this.onStateChange();
@@ -1197,7 +1197,7 @@ export class Game {
               title: this.t("npc.child.name"),
               text: this.t("npc.child.thanks"),
               choices: [{
-                text: this.state.lang === "tr" ? "Dinle..." : "Listen...",
+                text: this.lang === "tr" ? "Dinle..." : "Listen...",
                 action: () => {
                   // Screen 2: Final mysterious lore quote
                   this.onDialog({
@@ -1240,7 +1240,7 @@ export class Game {
               title: this.t("npc.mouse.name"),
               text: this.t("npc.mouse.thanks"),
               choices: [{
-                text: this.state.lang === "tr" ? "Bekle..." : "Wait...",
+                text: this.lang === "tr" ? "Bekle..." : "Wait...",
                 action: () => {
                   // Screen 2: Final mysterious loop lore quote
                   this.onDialog({

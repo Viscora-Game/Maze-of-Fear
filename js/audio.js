@@ -5,7 +5,7 @@ export class AudioEngine {
     this.windNode = null;
     this.noiseBuffer = null;
     this.muted = (localStorage.getItem("maze_muted") === "true");
-    this.volume = parseFloat(localStorage.getItem("maze_volume") || "1.0");
+    this.volume = Math.max(0.1, parseFloat(localStorage.getItem("maze_volume") || "1.0"));
     this.soundBuffers = {}; // Cache for loaded audio file buffers
     this._loadingPromises = {}; // Prevent duplicate loading
     this.rapidHeartbeatInterval = null;

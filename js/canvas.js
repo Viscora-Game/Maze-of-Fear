@@ -1078,7 +1078,7 @@ export class CanvasRenderer {
 
     const hedgeMat = new THREE.MeshStandardMaterial({ 
       map: this.hedgeTexture, 
-      color: "#0d120d", // Extremely dark, muted charcoal green (prevents walls being overly green)
+      color: "#1d261d", // Slightly lighter green so it is visible under fener
       roughness: 0.98 
     });
 
@@ -1098,7 +1098,7 @@ export class CanvasRenderer {
           map: this.brickTexture,
           bumpMap: this.brickBump,
           bumpScale: 0.08,
-          color: "#161920", // dark cold stone bricks
+          color: "#3a4454", // stone brick grey instead of pitch black
           roughness: 0.85
         })
       : hedgeMat;
@@ -1108,7 +1108,7 @@ export class CanvasRenderer {
           map: this.floorTexture,
           bumpMap: this.brickBump,
           bumpScale: 0.08,
-          color: "#111215", // extremely dark floor
+          color: "#242830", // visible dark floor instead of pitch black
           roughness: 0.9
         })
       : floorMat;

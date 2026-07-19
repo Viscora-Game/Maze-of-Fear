@@ -139,6 +139,17 @@ function setupUI(game) {
 
   // 2. State & Screen Management Helper with Minimal CSS Entry Transition
   const showScreen = (screenName) => {
+    // Hide all active modals and clear dialogue typewriter animations if transitioning to non-game screens (e.g. pause menu, settings, main menu)
+    if (screenName !== "game") {
+      Object.values(modals).forEach(m => {
+        if (m) m.classList.add("hidden");
+      });
+      if (window._dialogTypewriterInterval) {
+        clearInterval(window._dialogTypewriterInterval);
+        window._dialogTypewriterInterval = null;
+      }
+    }
+
     Object.entries(screens).forEach(([name, el]) => {
       if (name === screenName) {
         el.classList.remove("hidden");

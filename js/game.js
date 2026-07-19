@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=35";
-import { AudioEngine } from "./audio.js?v=35";
-import { CanvasRenderer } from "./canvas.js?v=35";
-import { translations } from "./translations.js?v=35";
-import { randomEvents, deathEvents } from "./events.js?v=35";
-import { getSeededRandom } from "./prng.js?v=35";
+import { generateMaze } from "./maze.js?v=36";
+import { AudioEngine } from "./audio.js?v=36";
+import { CanvasRenderer } from "./canvas.js?v=36";
+import { translations } from "./translations.js?v=36";
+import { randomEvents, deathEvents } from "./events.js?v=36";
+import { getSeededRandom } from "./prng.js?v=36";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -204,6 +204,7 @@ export class Game {
       nextEventSteps: 1500 + Math.floor(Math.random() * 1000), // Rare random events for peaceful exploration
       levelEvents: levelEventsPool,
       staircaseCooldown: 0,
+      staircaseCell: null,
       timeOfDay: 0.0, // 0.0 to 1.0 cycle (0.0 to 0.45 day, 0.45 to 0.55 sunset, 0.55 to 0.90 night, 0.90 to 1.0 sunrise)
       lanternOn: false, // lantern starts turned off by default
       playerTrail: [{ x: 1, y: 1, floor: 0 }], // Track player path coordinates
@@ -580,6 +581,14 @@ export class Game {
       }
     }
 
+    // Update staircase stepped-off tracking
+    if (this.state.staircaseCell) {
+      if (cellX !== this.state.staircaseCell.x || cellY !== this.state.staircaseCell.y || this.state.currentFloor !== this.state.staircaseCell.floor) {
+        // Player stepped off the staircase cell; clear restriction
+        this.state.staircaseCell = null;
+      }
+    }
+
     // Decrement staircase timer
     if (this.state.staircaseCooldown > 0) {
       this.state.staircaseCooldown -= dt;
@@ -594,8 +603,8 @@ export class Game {
       }
     }
 
-    // B. Check Staircase
-    if (cell.staircase && this.state.staircaseCooldown <= 0) {
+    // B. Check Staircase (Requires 4.0 seconds cooldown AND player stepping off the landing cell before re-triggering)
+    if (cell.staircase && this.state.staircaseCooldown <= 0 && !this.state.staircaseCell) {
       const dist = Math.hypot(p.x - (cellX + 0.5), p.y - (cellY + 0.5));
       if (dist < 0.28) {
         const nextFloor = cell.staircase === "down" ? this.state.currentFloor + 1 : this.state.currentFloor - 1;
@@ -614,7 +623,7 @@ export class Game {
             }
           } else {
             // Block transition and show warning toast with a cooldown to prevent spamming
-            this.state.staircaseCooldown = 2.0;
+            this.state.staircaseCooldown = 3.0;
             if (this.showToast) {
               this.showToast(this.t("obstacles.ropePitWarning"));
             }
@@ -622,7 +631,8 @@ export class Game {
           }
         }
 
-        this.state.staircaseCooldown = 2.0; // cooldown of 2 seconds
+        this.state.staircaseCooldown = 4.0; // 4 seconds reaction delay
+        this.state.staircaseCell = { x: cellX, y: cellY, floor: nextFloor }; // require stepping off before re-triggering
         this.audio.playUnlock();
         this.revealArea(cellX, cellY);
         

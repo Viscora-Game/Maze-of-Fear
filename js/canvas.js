@@ -2526,10 +2526,11 @@ export class CanvasRenderer {
         smokeGroup.add(smokeMesh);
       }
 
-      // 4. Red Point Light casting eerie glow on walls
-      const shadowLight = new THREE.PointLight(0xff0000, 1.2, 5.0);
+      // 4. Red Point Light casting eerie glow on walls (start disabled to prevent light-uniform recompilation)
+      const shadowLight = new THREE.PointLight(0xff0000, 0.0, 5.0);
       shadowLight.name = "shadowLight";
       shadowLight.position.set(0, 0.75, 0.2);
+      shadowLight.visible = false;
       mesh.add(shadowLight);
 
       this.scene.add(mesh);
@@ -3306,52 +3307,9 @@ export class CanvasRenderer {
       
       state.shadowMonsters.forEach((sm, index) => {
         let mesh = this.shadowMonsterMeshes[index];
+        if (!mesh) return;
+
         if (sm.active) {
-          // If the mesh doesn't exist, create it once (fallback, though pre-created in rebuildScene)
-          if (!mesh) {
-            mesh = new THREE.Group();
-            
-            // 1. Billboard Jumpscare Face Plane
-            const faceMesh = new THREE.Mesh(this.monsterFaceGeom, this.createMonsterFaceMat());
-            faceMesh.name = "face";
-            faceMesh.position.set(0, 0.75, 0.25);
-            mesh.add(faceMesh);
-            
-            // 3. Volumetric Smoke Body (15 overlapping black/dark spheres)
-            const smokeGroup = new THREE.Group();
-            smokeGroup.name = "smokeGroup";
-            mesh.add(smokeGroup);
-            
-            for (let i = 0; i < 15; i++) {
-              const size = 0.25 + Math.random() * 0.25;
-              const smokeMesh = new THREE.Mesh(this.monsterSmokeGeom, this.monsterSmokeMat.clone());
-              smokeMesh.scale.set(size, size, size);
-              smokeMesh.position.set(
-                (Math.random() - 0.5) * 0.45,
-                0.75 + (Math.random() - 0.5) * 0.45,
-                -0.10 + (Math.random() - 0.5) * 0.3
-              );
-              smokeMesh.userData = {
-                initialPos: new THREE.Vector3(smokeMesh.position.x, smokeMesh.position.y, smokeMesh.position.z),
-                speedX: 0.5 + Math.random() * 1.5,
-                speedY: 0.5 + Math.random() * 1.5,
-                speedZ: 0.5 + Math.random() * 1.5,
-                phase: Math.random() * Math.PI * 2,
-                pulseSpeed: 1.0 + Math.random() * 2.0
-              };
-              smokeGroup.add(smokeMesh);
-            }
-            
-            // 4. Red Point Light casting eerie glow on walls
-            const shadowLight = new THREE.PointLight(0xff0000, 1.2, 5.0);
-            shadowLight.name = "shadowLight";
-            shadowLight.position.set(0, 0.75, 0.2);
-            mesh.add(shadowLight);
-            
-            this.scene.add(mesh);
-            this.shadowMonsterMeshes[index] = mesh;
-          }
-          
           const time = Date.now() * 0.005 + index * 10.0;
           const burnRatio = Math.max(0.15, 1.0 - (sm.burnTime / 2.0));
           
@@ -3383,6 +3341,7 @@ export class CanvasRenderer {
           
           const shadowLight = mesh.getObjectByName("shadowLight");
           if (shadowLight) {
+            shadowLight.visible = true;
             shadowLight.intensity = 1.2 * burnRatio;
           }
           
@@ -3406,9 +3365,12 @@ export class CanvasRenderer {
           
           mesh.visible = true;
         } else {
-          // Hide if not active (keep in pool)
-          if (mesh) {
-            mesh.visible = false;
+          // Hide if not active (keep in pre-compiled pool)
+          mesh.visible = false;
+          const shadowLight = mesh.getObjectByName("shadowLight");
+          if (shadowLight) {
+            shadowLight.visible = false;
+            shadowLight.intensity = 0.0;
           }
         }
       });

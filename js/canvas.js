@@ -1453,6 +1453,14 @@ export class CanvasRenderer {
     return texture;
   }
 
+  resize(containerWidth, containerHeight, mazeWidth, mazeHeight) {
+    if (this.renderer && this.camera) {
+      this.renderer.setSize(containerWidth, containerHeight);
+      this.camera.aspect = containerWidth / containerHeight;
+      this.camera.updateProjectionMatrix();
+    }
+  }
+
   resetFloorCache() {
     this.currentFloorId = null;
     this.camX = null;

@@ -1,4 +1,4 @@
-import { Game } from "./game.js?v=48";
+import { Game } from "./game.js?v=49";
 
 const init = () => {
   const game = new Game();
@@ -71,6 +71,9 @@ function setupUI(game) {
       await delay(80);
     } catch (e) {
       console.error("Error during game startup:", e);
+      if (typeof window.onerror === "function") {
+        window.onerror("Startup Error: " + e.message, "js/ui.js", 73, 0, e);
+      }
     } finally {
       if (loadingScreen) loadingScreen.classList.add("hidden");
       game.state.gameState = "playing";
@@ -1745,6 +1748,9 @@ function setupUI(game) {
       await delay(100);
     } catch (e) {
       console.error("Error during floor transition:", e);
+      if (typeof window.onerror === "function") {
+        window.onerror("Transition Error: " + e.message, "js/ui.js", 1749, 0, e);
+      }
     } finally {
       if (loadingScreen) loadingScreen.classList.add("hidden");
       // Resume game state

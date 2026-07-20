@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=38";
-import { AudioEngine } from "./audio.js?v=38";
-import { CanvasRenderer } from "./canvas.js?v=38";
-import { translations } from "./translations.js?v=38";
-import { randomEvents, deathEvents } from "./events.js?v=38";
-import { getSeededRandom } from "./prng.js?v=38";
+import { generateMaze } from "./maze.js?v=39";
+import { AudioEngine } from "./audio.js?v=39";
+import { CanvasRenderer } from "./canvas.js?v=39";
+import { translations } from "./translations.js?v=39";
+import { randomEvents, deathEvents } from "./events.js?v=39";
+import { getSeededRandom } from "./prng.js?v=39";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -235,7 +235,9 @@ export class Game {
           fuel: 0,
           fuel_half: 0,
           cheese: 0
-        }
+        },
+        hasCompass: false,
+        equippedItem: null
       },
 
       quests: {
@@ -852,6 +854,7 @@ export class Game {
           text: `${this.t("useItem")}: ${this.t("items.key.name")} (x${inv.key})`,
           action: () => {
              inv.key--;
+             if (inv.key <= 0 && this.state.player.equippedItem === "key") this.state.player.equippedItem = null;
              this.resolveObstacle(cell.obstacle);
              this.audio.playChainGate();
              this.state.gameState = "playing";
@@ -865,6 +868,7 @@ export class Game {
           text: `${this.t("useItem")}: ${this.t("items.shears.name")} (x${inv.shears})`,
           action: () => {
             inv.shears--;
+            if (inv.shears <= 0 && this.state.player.equippedItem === "shears") this.state.player.equippedItem = null;
             this.resolveObstacle(cell.obstacle);
             this.audio.playSlash();
             this.state.gameState = "playing";
@@ -878,6 +882,7 @@ export class Game {
           text: `${this.t("useItem")}: ${this.t("items.axe.name")} (x${inv.axe})`,
           action: () => {
             inv.axe--;
+            if (inv.axe <= 0 && this.state.player.equippedItem === "axe") this.state.player.equippedItem = null;
             this.resolveObstacle(cell.obstacle);
             this.audio.playSlash();
             this.state.gameState = "playing";
@@ -891,6 +896,7 @@ export class Game {
           text: `${this.t("useItem")}: ${this.t("items.rope.name")} (x${inv.rope})`,
           action: () => {
             inv.rope--;
+            if (inv.rope <= 0 && this.state.player.equippedItem === "rope") this.state.player.equippedItem = null;
             this.resolveObstacle(cell.obstacle);
             this.audio.playUnlock();
             this.state.gameState = "playing";
@@ -1051,6 +1057,7 @@ export class Game {
           const itemTrans = this.t(`items.${content.item}.name`);
           text = this.t("chest.itemReward", { item: itemTrans });
           this.state.player.inventory[content.item]++;
+          if (content.item === "compass") this.state.player.hasCompass = true;
           if (content.gold) this.state.player.gold += content.gold;
         }
         this.audio.playPickup();

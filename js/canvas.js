@@ -2088,12 +2088,18 @@ export class CanvasRenderer {
               const ironMat = new THREE.MeshStandardMaterial({ color: "#27272a", metalness: 0.85, roughness: 0.2 });
               const goldTipMat = new THREE.MeshStandardMaterial({ color: "#d97706", metalness: 0.9, roughness: 0.1 });
               
+              // 0. Solid back wall panel (dark stone, blocks view behind gate)
+              const backWallMat = new THREE.MeshStandardMaterial({ color: "#1a1a1e", roughness: 0.95, metalness: 0.1 });
+              const backWall = new THREE.Mesh(new THREE.BoxGeometry(1.05, 1.25, 0.04), backWallMat);
+              backWall.position.set(0, 0.625, -0.02);
+              obsSubGroup.add(backWall);
+
               // 1. Solid Outer Door Frame (left post, right post, top header)
               const frameL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.25, 0.04), ironMat);
-              frameL.position.set(-0.48, 0.625, 0);
+              frameL.position.set(-0.52, 0.625, 0);
               const frameR = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.25, 0.04), ironMat);
-              frameR.position.set(0.48, 0.625, 0);
-              const frameTop = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.04, 0.04), ironMat);
+              frameR.position.set(0.52, 0.625, 0);
+              const frameTop = new THREE.Mesh(new THREE.BoxGeometry(1.08, 0.04, 0.04), ironMat);
               frameTop.position.set(0, 1.23, 0);
               obsSubGroup.add(frameL, frameR, frameTop);
 
@@ -2262,12 +2268,18 @@ export class CanvasRenderer {
               const ironMat = new THREE.MeshStandardMaterial({ color: "#27272a", metalness: 0.85, roughness: 0.2 });
               const goldTipMat = new THREE.MeshStandardMaterial({ color: "#d97706", metalness: 0.9, roughness: 0.1 });
               
+              // 0. Solid back wall panel (dark stone, blocks view behind codeLock gate)
+              const backWallMat = new THREE.MeshStandardMaterial({ color: "#1a1a1e", roughness: 0.95, metalness: 0.1 });
+              const backWall = new THREE.Mesh(new THREE.BoxGeometry(1.05, 1.25, 0.04), backWallMat);
+              backWall.position.set(0, 0.625, -0.02);
+              obsSubGroup.add(backWall);
+
               // 1. Solid Outer Door Frame (left post, right post, top header)
               const frameL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.25, 0.04), ironMat);
-              frameL.position.set(-0.48, 0.625, 0);
+              frameL.position.set(-0.52, 0.625, 0);
               const frameR = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.25, 0.04), ironMat);
-              frameR.position.set(0.48, 0.625, 0);
-              const frameTop = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.04, 0.04), ironMat);
+              frameR.position.set(0.52, 0.625, 0);
+              const frameTop = new THREE.Mesh(new THREE.BoxGeometry(1.08, 0.04, 0.04), ironMat);
               frameTop.position.set(0, 1.23, 0);
               obsSubGroup.add(frameL, frameR, frameTop);
 
@@ -2341,57 +2353,28 @@ export class CanvasRenderer {
               obsSubGroup.add(keyPlate);
             }
             
-            // Determine orientation of gate/barricade/codeLock/ivy obstacles based on adjacent regions and walls
+            // Determine orientation of gate/barricade/codeLock/ivy obstacles based strictly on physical corridor walls
             if (type === "gate" || type === "barricade" || type === "codeLock" || type === "ivy") {
               const isWall = (tx, ty) => {
                 if (tx < 0 || tx >= width || ty < 0 || ty >= height) return true;
                 return grid[ty][tx].type === "wall";
               };
-              
-              const reg = cell.region;
-              
-              // 1. Check if this is a region boundary node. If so, align perpendicular to the entry direction from the previous region.
-              let prevRegionNeighbor = null;
-              const borderDirs = [
-                { dx: 0, dy: -1, dir: "N" },
-                { dx: 0, dy: 1, dir: "S" },
-                { dx: -1, dy: 0, dir: "W" },
-                { dx: 1, dy: 0, dir: "E" }
-              ];
-              
-              for (const d of borderDirs) {
-                const nx = x + d.dx;
-                const ny = y + d.dy;
-                if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                  const neighborCell = grid[ny][nx];
-                  if (neighborCell && neighborCell.type === "floor" && neighborCell.region < reg && neighborCell.region !== -1) {
-                    prevRegionNeighbor = d.dir;
-                    break;
-                  }
-                }
-              }
-              
-              if (prevRegionNeighbor) {
-                if (prevRegionNeighbor === "N" || prevRegionNeighbor === "S") {
-                  obsSubGroup.rotation.y = 0; // blocks North-South corridor passage
-                } else {
-                  obsSubGroup.rotation.y = Math.PI / 2; // blocks East-West corridor passage
-                }
+
+              const westIsWall = isWall(x - 1, y);
+              const eastIsWall = isWall(x + 1, y);
+              const northIsWall = isWall(x, y - 1);
+              const southIsWall = isWall(x, y + 1);
+
+              if (westIsWall && eastIsWall) {
+                // Corridor runs North-South (walls on West and East). Spans East-West (rotation 0) to block passage.
+                obsSubGroup.rotation.y = 0;
+              } else if (northIsWall && southIsWall) {
+                // Corridor runs East-West (walls on North and South). Spans North-South (rotation 90deg) to block passage.
+                obsSubGroup.rotation.y = Math.PI / 2;
+              } else if (westIsWall || eastIsWall) {
+                obsSubGroup.rotation.y = 0;
               } else {
-                // 2. Fallback to normal surrounding wall check
-                if (isWall(x - 1, y) && isWall(x + 1, y)) {
-                  // East/West are both walls: corridor runs North/South. Run East/West (rotation 0) to block.
-                  obsSubGroup.rotation.y = 0;
-                } else if (isWall(x, y - 1) && isWall(x, y + 1)) {
-                  // North/South are both walls: corridor runs East/West. Run North/South (rotation 90deg) to block.
-                  obsSubGroup.rotation.y = Math.PI / 2;
-                } else if (isWall(x - 1, y) || isWall(x + 1, y)) {
-                  // Fallback: West/East is wall, meaning corridor runs North/South. Run East/West (rotation 0) to block.
-                  obsSubGroup.rotation.y = 0;
-                } else {
-                  // North/South is wall, meaning corridor runs East-West. Run North/South (rotation 90deg) to block.
-                  obsSubGroup.rotation.y = Math.PI / 2;
-                }
+                obsSubGroup.rotation.y = Math.PI / 2;
               }
             }
 

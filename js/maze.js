@@ -127,13 +127,22 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
     occupiedCells.push({ x: r.x, y: r.y, floor: f + 1 });
   }
 
-  // 4. Find Critical Path on the 3D Graph (X, Y, Floor)
+  // 4. Ensure Exit Cell at bottom-right corner of deepest floor is carved as a floor and connected
+  const exitX = width - 2;
+  const exitY = height - 2;
+  const exitFloor = numFloors - 1;
+  floors[exitFloor][exitY][exitX].type = "floor";
+  // Carve adjacent walls to guarantee connection to the maze
+  if (exitX - 1 > 0) floors[exitFloor][exitY][exitX - 1].type = "floor";
+  if (exitY - 1 > 0) floors[exitFloor][exitY - 1][exitX].type = "floor";
+
+  // 5. Find Critical Path on the 3D Graph (X, Y, Floor)
   const queue = [{ x: 1, y: 1, floor: 0 }];
   const distMap = new Map();
   distMap.set("1,1,0", 0);
   const parentMap = new Map();
 
-  let deepestNode = { x: 1, y: 1, floor: 0 };
+  let maxBfsNode = { x: 1, y: 1, floor: 0 };
   let maxDistance = 0;
 
   const visited3D = new Set();
@@ -146,7 +155,7 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
 
     if (currDist > maxDistance) {
       maxDistance = currDist;
-      deepestNode = curr;
+      maxBfsNode = curr;
     }
 
     const neighbors = [];
@@ -182,25 +191,41 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
     }
   }
 
-  // Force exit to be at the furthest bottom-right corner of the deepest floor
-  const exitX = width - 2;
-  const exitY = height - 2;
-  const exitFloor = numFloors - 1;
-  deepestNode = { x: exitX, y: exitY, floor: exitFloor };
+  // Reconstruct Critical Path safely
+  let targetExitNode = { x: exitX, y: exitY, floor: exitFloor };
+  if (!parentMap.has(`${exitX},${exitY},${exitFloor}`)) {
+    targetExitNode = maxBfsNode;
+  }
 
-  // Reconstruct Critical Path
   const critPath = [];
-  let p = deepestNode;
-  while (p) {
+  let p = targetExitNode;
+  const pathVisited = new Set();
+  while (p && !pathVisited.has(`${p.x},${p.y},${p.floor}`)) {
     critPath.push(p);
+    pathVisited.add(`${p.x},${p.y},${p.floor}`);
     p = parentMap.get(`${p.x},${p.y},${p.floor}`);
   }
   critPath.reverse();
 
+  // If critical path is too short, fallback to furthest BFS node
+  if (critPath.length < 3) {
+    critPath.length = 0;
+    pathVisited.clear();
+    p = maxBfsNode;
+    while (p && !pathVisited.has(`${p.x},${p.y},${p.floor}`)) {
+      critPath.push(p);
+      pathVisited.add(`${p.x},${p.y},${p.floor}`);
+      p = parentMap.get(`${p.x},${p.y},${p.floor}`);
+    }
+    critPath.reverse();
+  }
+
+  const finalExitNode = critPath[critPath.length - 1] || targetExitNode;
+
   // Mark Entrance and Exit
   floors[0][1][1].isEntrance = true;
-  floors[deepestNode.floor][deepestNode.y][deepestNode.x].isExit = true;
-  occupiedCells.push({ x: deepestNode.x, y: deepestNode.y, floor: deepestNode.floor });
+  floors[finalExitNode.floor][finalExitNode.y][finalExitNode.x].isExit = true;
+  occupiedCells.push({ x: finalExitNode.x, y: finalExitNode.y, floor: finalExitNode.floor });
 
   // Helper to determine if a cell is a straight corridor (has exactly 2 opposite walls)
   const isStraightCorridor = (cell) => {

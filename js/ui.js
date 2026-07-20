@@ -1,4 +1,4 @@
-import { Game } from "./game.js?v=43";
+import { Game } from "./game.js?v=44";
 
 const init = () => {
   const game = new Game();
@@ -38,40 +38,45 @@ function setupUI(game) {
     const isEn = localStorage.getItem("maze_lang") === "en";
     const delay = ms => new Promise(r => setTimeout(r, ms));
     
-    // Step 1: Blaupause (Blueprints)
-    if (loadingText) loadingText.textContent = isEn ? "Drawing dungeon blueprints..." : "Labirent planı çiziliyor...";
-    if (loadingBar) loadingBar.style.width = "15%";
-    await delay(350);
-    
-    // Step 2: Carve rooms
-    if (loadingText) loadingText.textContent = isEn ? "Carving passages and stone rooms..." : "Koridorlar ve odalar oyuluyor...";
-    if (loadingBar) loadingBar.style.width = "35%";
-    await delay(350);
-    
-    // Step 3: Initialize new game math (generate maze & rebuildScene)
-    game.initNewGame(isRetry);
-    
-    // Step 4: Spawning items and souls
-    if (loadingText) loadingText.textContent = isEn ? "Scattering items and lost souls..." : "Eşyalar ve kayıp ruhlar yerleştiriliyor...";
-    if (loadingBar) loadingBar.style.width = "60%";
-    await delay(350);
-    
-    // Step 5: Lighting torches and compile GPU
-    if (loadingText) loadingText.textContent = isEn ? "Lighting torches and pre-compiling shadows..." : "Gölgeler derleniyor ve meşaleler yakılıyor...";
-    if (loadingBar) loadingBar.style.width = "85%";
-    await delay(350);
-    
-    // Step 6: Finalize
-    game.state.gameState = "playing";
-    game.resizeCanvas();
-    
-    if (loadingBar) loadingBar.style.width = "100%";
-    if (loadingText) loadingText.textContent = isEn ? "Entering the darkness..." : "Karanlığa adım atılıyor...";
-    await delay(300);
-    
-    if (loadingScreen) loadingScreen.classList.add("hidden");
-    
-    game.draw();
+    try {
+      // Step 1: Blaupause (Blueprints)
+      if (loadingText) loadingText.textContent = isEn ? "Drawing dungeon blueprints..." : "Labirent planı çiziliyor...";
+      if (loadingBar) loadingBar.style.width = "20%";
+      await delay(80);
+      
+      // Step 2: Carve rooms
+      if (loadingText) loadingText.textContent = isEn ? "Carving passages and stone rooms..." : "Koridorlar ve odalar oyuluyor...";
+      if (loadingBar) loadingBar.style.width = "40%";
+      await delay(80);
+      
+      // Step 3: Initialize new game math (generate maze & rebuildScene)
+      game.initNewGame(isRetry);
+      
+      // Step 4: Spawning items and souls
+      if (loadingText) loadingText.textContent = isEn ? "Scattering items and lost souls..." : "Eşyalar ve kayıp ruhlar yerleştiriliyor...";
+      if (loadingBar) loadingBar.style.width = "70%";
+      await delay(80);
+      
+      // Step 5: Lighting torches and compile GPU
+      if (loadingText) loadingText.textContent = isEn ? "Lighting torches and pre-compiling shadows..." : "Gölgeler derleniyor ve meşaleler yakılıyor...";
+      if (loadingBar) loadingBar.style.width = "90%";
+      await delay(80);
+      
+      // Step 6: Finalize
+      game.state.gameState = "playing";
+      game.resizeCanvas();
+      
+      if (loadingBar) loadingBar.style.width = "100%";
+      if (loadingText) loadingText.textContent = isEn ? "Entering the darkness..." : "Karanlığa adım atılıyor...";
+      await delay(80);
+    } catch (e) {
+      console.error("Error during game startup:", e);
+    } finally {
+      if (loadingScreen) loadingScreen.classList.add("hidden");
+      game.state.gameState = "playing";
+      game.resizeCanvas();
+      game.draw();
+    }
 
     if (showIntroTip) {
       const introTip = document.getElementById("intro-tip-overlay");
@@ -1725,25 +1730,28 @@ function setupUI(game) {
     }
     
     const delay = ms => new Promise(r => setTimeout(r, ms));
-    await delay(350);
     
-    if (loadingBar) loadingBar.style.width = "50%";
-    
-    // Switch state floor
-    game.state.currentFloor = nextFloor;
-    
-    // Rebuild the scene immediately while loading screen is covering the freeze
-    game.renderer.rebuildScene(game.state);
-    
-    if (loadingBar) loadingBar.style.width = "100%";
-    await delay(350);
-    
-    if (loadingScreen) loadingScreen.classList.add("hidden");
-    
-    // Resume game state
-    game.state.gameState = prevGameState;
-    game.resizeCanvas();
-    game.draw();
+    try {
+      await delay(100);
+      if (loadingBar) loadingBar.style.width = "50%";
+      
+      // Switch state floor
+      game.state.currentFloor = nextFloor;
+      
+      // Rebuild the scene immediately while loading screen is covering the freeze
+      game.renderer.rebuildScene(game.state);
+      
+      if (loadingBar) loadingBar.style.width = "100%";
+      await delay(100);
+    } catch (e) {
+      console.error("Error during floor transition:", e);
+    } finally {
+      if (loadingScreen) loadingScreen.classList.add("hidden");
+      // Resume game state
+      game.state.gameState = prevGameState;
+      game.resizeCanvas();
+      game.draw();
+    }
   };
 
   // Game End Screens (Victory / Game Over)

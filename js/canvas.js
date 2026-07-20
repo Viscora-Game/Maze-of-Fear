@@ -1067,9 +1067,11 @@ export class CanvasRenderer {
     this.shadowMonsterMixer = null;
 
     const isUnderground = (state.currentFloor > 0);
+    const isDeepestFloor = (state.currentFloor >= 2);
 
-    // 1. Lighting Setup (Floor 1 Underground is pitch black pitch darkness!)
-    this.ambientLight = new THREE.AmbientLight("#0f172a", isUnderground ? 0.005 : 0.035); // Zero ambient light underground
+    // 1. Lighting Setup (Floor 2+ is deepest pitch-black horror vault!)
+    const ambientVal = isDeepestFloor ? 0.003 : (isUnderground ? 0.005 : 0.035);
+    this.ambientLight = new THREE.AmbientLight("#0f172a", ambientVal);
     this.scene.add(this.ambientLight);
 
     this.dirLight = new THREE.DirectionalLight("#1e293b", isUnderground ? 0.0 : 0.04); // No moonlight underground!
@@ -1088,14 +1090,26 @@ export class CanvasRenderer {
     this.dirLight.shadow.bias = -0.0005;
     this.scene.add(this.dirLight);
 
-    // Configure Fog dynamically based on floor level (deep, dense claustrophobic pitch-black fog underground)
+    // Configure Fog dynamically based on floor level
     if (this.scene.fog) {
-      this.scene.fog.color.set(isUnderground ? "#010103" : "#060913");
-      this.scene.fog.near = isUnderground ? 0.8 : 1.5;
-      this.scene.fog.far = isUnderground ? 4.0 : 6.0;
+      if (isDeepestFloor) {
+        this.scene.fog.color.set("#0e0204"); // Crimson blood void dark fog
+        this.scene.fog.near = 0.5;
+        this.scene.fog.far = 3.2; // Ultra tight, claustrophobic horror visibility
+      } else if (isUnderground) {
+        this.scene.fog.color.set("#010103"); // Cold pitch-black zindan fog
+        this.scene.fog.near = 0.8;
+        this.scene.fog.far = 4.0;
+      } else {
+        this.scene.fog.color.set("#060913"); // Night sky outdoor fog
+        this.scene.fog.near = 1.5;
+        this.scene.fog.far = 6.0;
+      }
     }
     // Update background color/texture
-    if (isUnderground) {
+    if (isDeepestFloor) {
+      this.scene.background = new THREE.Color("#0e0204");
+    } else if (isUnderground) {
       this.scene.background = new THREE.Color("#010103");
     } else {
       if (!this.starrySkyTexture) {
@@ -1251,25 +1265,44 @@ export class CanvasRenderer {
     const { floors, width, height, currentFloor } = state;
     const grid = floors[currentFloor];
 
-    const activeWallMat = isUnderground
-      ? new THREE.MeshStandardMaterial({
-          map: this.brickTexture,
-          bumpMap: this.brickBump,
-          bumpScale: 0.08,
-          color: "#3a4454", // stone brick grey instead of pitch black
-          roughness: 0.85
-        })
-      : hedgeMat;
+    let activeWallMat;
+    let activeFloorMat;
 
-    const activeFloorMat = isUnderground
-      ? new THREE.MeshStandardMaterial({
-          map: this.floorTexture,
-          bumpMap: this.brickBump,
-          bumpScale: 0.08,
-          color: "#242830", // visible dark floor instead of pitch black
-          roughness: 0.9
-        })
-      : floorMat;
+    if (currentFloor === 0) {
+      activeWallMat = hedgeMat;
+      activeFloorMat = floorMat;
+    } else if (currentFloor === 1) {
+      activeWallMat = new THREE.MeshStandardMaterial({
+        map: this.brickTexture,
+        bumpMap: this.brickBump,
+        bumpScale: 0.08,
+        color: "#3a4454", // cold grey stone zindan
+        roughness: 0.85
+      });
+      activeFloorMat = new THREE.MeshStandardMaterial({
+        map: this.floorTexture,
+        bumpMap: this.brickBump,
+        bumpScale: 0.08,
+        color: "#242830", // zindan zemin gri
+        roughness: 0.9
+      });
+    } else {
+      // Floor 2+ (Deepest floor - Crimson/Blood Vault Horror Theme)
+      activeWallMat = new THREE.MeshStandardMaterial({
+        map: this.brickTexture,
+        bumpMap: this.brickBump,
+        bumpScale: 0.10,
+        color: "#4d2226", // nemli bordo/kızıl-kahve taşlar
+        roughness: 0.80
+      });
+      activeFloorMat = new THREE.MeshStandardMaterial({
+        map: this.floorTexture,
+        bumpMap: this.brickBump,
+        bumpScale: 0.10,
+        color: "#2b1215", // nemli kan kırmızısı zemin
+        roughness: 0.85
+      });
+    }
 
     for (let y = 0; y < height; y++) {
       const row = [];
@@ -2900,25 +2933,20 @@ export class CanvasRenderer {
       this.lookZ = null;
     }
 
-    // 1. Static Gloomy Overcast Atmosphere (no day/night cycle)
-    // Generate canvas-based gradient grey sky
-    if (!this.skyCanvas) {
-      this.skyCanvas = document.createElement("canvas");
-      this.skyCanvas.width = 2;
-      this.skyCanvas.height = 128;
-      this.skyCtx = this.skyCanvas.getContext("2d");
-      this.skyTexture = new THREE.CanvasTexture(this.skyCanvas);
-      this.scene.background = this.skyTexture;
-      const grad = this.skyCtx.createLinearGradient(0, 0, 0, 128);
-      grad.addColorStop(0, "#020408"); // Pitch black sky top
-      grad.addColorStop(0.5, "#080a10"); // Very dark slate grey mid
-      grad.addColorStop(1, "#0d1117"); // Dark night horizon
-      this.skyCtx.fillStyle = grad;
-      this.skyCtx.fillRect(0, 0, 2, 128);
-      this.skyTexture.needsUpdate = true;
+    // Floor background selection
+    const isDeepestFloor = (currentFloor >= 2);
+    if (isDeepestFloor) {
+      this.scene.background = new THREE.Color("#0e0204");
+    } else if (isUnderground) {
+      this.scene.background = new THREE.Color("#010103");
+    } else {
+      if (!this.starrySkyTexture) {
+        this.starrySkyTexture = this.buildStarrySkyTexture();
+      }
+      this.scene.background = this.starrySkyTexture;
     }
 
-    // Keep fog and ambient constant (gloomy overcast)
+    // Keep light position synced with player
     if (this.dirLight) {
       this.dirLight.position.set(player.visualX + 8, 16, player.visualY + 8);
       this.dirLight.target.position.set(player.visualX, 0, player.visualY);
@@ -2928,20 +2956,23 @@ export class CanvasRenderer {
     // Toggle lantern light and flame core visibility
     if (this.lantern) {
       if (state.lanternOn && player.fuel > 0) {
-        let baseIntensity = 4.5; // Distance-decay flashlight beam to keep texture details and colors rich
-        // Low battery (<20%) causes dynamic flashlight beam flickering
+        let baseIntensity = isDeepestFloor ? 4.0 : 4.5;
+        // Low battery (<20%) OR deepest floor ancient curse causes dynamic flashlight flickering
         if (player.fuel < 20) {
           const rand = Math.random();
           if (rand < 0.18) {
-            baseIntensity = 0.5 + Math.random() * 1.5; // dark flicker drop
+            baseIntensity = 0.5 + Math.random() * 1.5;
           } else if (rand < 0.38) {
-            baseIntensity = 2.2 + Math.random() * 1.2; // dim flicker
+            baseIntensity = 2.2 + Math.random() * 1.2;
           }
+        } else if (isDeepestFloor && Math.random() < 0.04) {
+          // Paranormal subtle flicker in the deepest floor
+          baseIntensity *= 0.55 + Math.random() * 0.35;
         }
         this.lantern.intensity = baseIntensity;
         if (this.lanternFlame) this.lanternFlame.visible = true;
       } else {
-        this.lantern.intensity = 0.0; // completely off
+        this.lantern.intensity = 0.0;
         if (this.lanternFlame) this.lanternFlame.visible = false;
       }
     }

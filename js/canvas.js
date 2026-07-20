@@ -1239,7 +1239,21 @@ export class CanvasRenderer {
     return texture;
   }
 
+  resetFloorCache() {
+    this.currentFloorId = null;
+    this.camX = null;
+    this.camZ = null;
+    this.lookX = null;
+    this.lookZ = null;
+  }
+
   rebuildScene(state) {
+    if (!state) return;
+    this.currentFloorId = `${state.currentFloor}_${state.currentLevel}`;
+    this.camX = null;
+    this.camZ = null;
+    this.lookX = null;
+    this.lookZ = null;
     // Traverse and dispose all geometry and material buffers to prevent WebGL VRAM memory leaks
     this.scene.traverse((node) => {
       if (node.isMesh) {
@@ -3324,15 +3338,10 @@ export class CanvasRenderer {
       }
     }
 
-    // Rebuild Scene Graph when loading new floor
+    // Rebuild Scene Graph when loading new floor or if scene graph is empty
     const floorId = `${currentFloor}_${state.currentLevel}`;
-    if (this.currentFloorId !== floorId) {
+    if (this.currentFloorId !== floorId || this.scene.children.length === 0) {
       this.rebuildScene(state);
-      this.currentFloorId = floorId;
-      this.camX = null;
-      this.camZ = null;
-      this.lookX = null;
-      this.lookZ = null;
     }
 
     // Floor background selection

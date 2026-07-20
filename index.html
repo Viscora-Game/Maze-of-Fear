@@ -25,6 +25,11 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
   <script>
     function showVisualError(type, msg, stack) {
+      // Truncate extremely long messages (like object serialization) to prevent covering the screen
+      if (typeof msg === 'string' && msg.length > 300) {
+        msg = msg.substring(0, 300) + '... [Yazı çok uzun olduğu için kısaltıldı]';
+      }
+      
       let errContainer = document.getElementById('debug-error-container');
       if (!errContainer) {
         errContainer = document.createElement('div');
@@ -83,6 +88,7 @@
     console.error = function() {
       _origConsoleError.apply(console, arguments);
       const args = Array.from(arguments).map(arg => typeof arg === 'object' ? JSON.stringify(arg) : arg).join(' ');
+      // Truncate to ignore massive object dumps in general errors
       showVisualError('CONSOLE ERROR', args);
     };
 
@@ -90,6 +96,12 @@
     console.warn = function() {
       _origConsoleWarn.apply(console, arguments);
       const args = Array.from(arguments).map(arg => typeof arg === 'object' ? JSON.stringify(arg) : arg).join(' ');
+      
+      // Strict filters to ignore harmless loader, skinning, weights, and object shadow warnings
+      if (args.includes('SkinnedMesh') || args.includes('skinning') || args.includes('FBXLoader') || args.includes('weights') || args.includes('WebGLShadowMap')) {
+        return;
+      }
+      
       if (args.includes('WebGL') || args.includes('compile error') || args.includes('shader') || args.includes('compiler')) {
         showVisualError('CONSOLE WARN', args);
       }
@@ -498,6 +510,6 @@
     <img src="assets/jumpscare.png" style="width: 100%; height: 100%; object-fit: contain; filter: brightness(1.2) contrast(1.3); transform: scale(1.1);" />
   </div>
 
-  <script type="module" src="js/ui.js?v=52"></script>
+  <script type="module" src="js/ui.js?v=53"></script>
 </body>
 </html>

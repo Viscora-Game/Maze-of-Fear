@@ -700,7 +700,7 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
     height,
     numFloors,
     startCell: floors[0][1][1],
-    exitCell: floors[deepestNode.floor][deepestNode.y][deepestNode.x],
+    exitCell: floors[finalExitNode.floor][finalExitNode.y][finalExitNode.x],
     doorCode
   };
 }

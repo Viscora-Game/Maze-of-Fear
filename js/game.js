@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=41";
-import { AudioEngine } from "./audio.js?v=41";
-import { CanvasRenderer } from "./canvas.js?v=41";
-import { translations } from "./translations.js?v=41";
-import { randomEvents, deathEvents } from "./events.js?v=41";
-import { getSeededRandom } from "./prng.js?v=41";
+import { generateMaze } from "./maze.js?v=42";
+import { AudioEngine } from "./audio.js?v=42";
+import { CanvasRenderer } from "./canvas.js?v=42";
+import { translations } from "./translations.js?v=42";
+import { randomEvents, deathEvents } from "./events.js?v=42";
+import { getSeededRandom } from "./prng.js?v=42";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -1351,31 +1351,58 @@ export class Game {
       }
     } else if (npc.id === "traveler") {
       title = this.t("npc.traveler.name");
-      text = npc.currentText || this.t("npc.traveler.greeting");
+      const lvl = Math.min(20, Math.max(1, this.currentLevel));
+      const lvlData = (translations[this.lang]?.npc?.traveler?.levels?.[lvl]) || (translations["en"]?.npc?.traveler?.levels?.[lvl]);
+
+      text = npc.currentText || (lvlData ? lvlData.greeting : this.t("npc.traveler.greeting"));
+
+      if (lvlData) {
+        if (lvlData.q1 && lvlData.a1) {
+          choices.push({
+            text: lvlData.q1,
+            action: () => {
+              npc.currentText = lvlData.a1;
+              this.triggerNPCInteraction(cell);
+            }
+          });
+        }
+        if (lvlData.q2 && lvlData.a2) {
+          choices.push({
+            text: lvlData.q2,
+            action: () => {
+              npc.currentText = lvlData.a2;
+              this.triggerNPCInteraction(cell);
+            }
+          });
+        }
+        if (lvlData.q3 && lvlData.a3) {
+          choices.push({
+            text: lvlData.q3,
+            action: () => {
+              npc.currentText = lvlData.a3;
+              this.triggerNPCInteraction(cell);
+            }
+          });
+        }
+      } else {
+        choices.push({
+          text: this.t("npc.traveler.askWho"),
+          action: () => {
+            npc.currentText = this.t("npc.traveler.replyWho");
+            this.triggerNPCInteraction(cell);
+          }
+        });
+        choices.push({
+          text: this.t("npc.traveler.askEscape"),
+          action: () => {
+            npc.currentText = this.t("npc.traveler.replyEscape");
+            this.triggerNPCInteraction(cell);
+          }
+        });
+      }
 
       choices.push({
-        text: this.t("npc.traveler.askWho"),
-        action: () => {
-          npc.currentText = this.t("npc.traveler.replyWho");
-          this.triggerNPCInteraction(cell);
-        }
-      });
-      choices.push({
-        text: this.t("npc.traveler.askEscape"),
-        action: () => {
-          npc.currentText = this.t("npc.traveler.replyEscape");
-          this.triggerNPCInteraction(cell);
-        }
-      });
-      choices.push({
-        text: this.t("npc.traveler.askMonster"),
-        action: () => {
-          npc.currentText = this.t("npc.traveler.replyMonster");
-          this.triggerNPCInteraction(cell);
-        }
-      });
-      choices.push({
-        text: this.t("npc.traveler.farewell"),
+        text: this.t("npc.traveler.farewell") || "Sohbeti Bitir",
         action: () => {
           this.state.gameState = "playing";
           npc.hasSpoken = true;

@@ -992,6 +992,189 @@ export class CanvasRenderer {
     return texture;
   }
 
+  buildBloodTexture() {
+    const canvas = document.createElement("canvas");
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext("2d");
+
+    // Clear transparent background
+    ctx.clearRect(0, 0, 128, 128);
+
+    // 1. Organic main pool center (dark coagulated blood core)
+    const coreGrad = ctx.createRadialGradient(64, 64, 4, 64, 64, 45);
+    coreGrad.addColorStop(0.0, "rgba(45, 2, 4, 0.95)");    // Dark thick coagulated core
+    coreGrad.addColorStop(0.35, "rgba(115, 6, 10, 0.85)");  // Rich crimson blood
+    coreGrad.addColorStop(0.7, "rgba(165, 12, 18, 0.55)"); // Fresh semi-transparent blood
+    coreGrad.addColorStop(1.0, "rgba(165, 12, 18, 0.0)");  // Feathered wet edge
+
+    ctx.fillStyle = coreGrad;
+    ctx.beginPath();
+    ctx.arc(64, 64, 45, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 2. Irregular organic splatter droplets around the pool
+    ctx.fillStyle = "rgba(105, 5, 8, 0.78)";
+    let seed = 1234;
+    const rng = () => {
+      seed = (seed * 9301 + 49297) % 233280;
+      return seed / 233280;
+    };
+
+    for (let i = 0; i < 20; i++) {
+      const angle = rng() * Math.PI * 2;
+      const dist = 18 + rng() * 34;
+      const r = 1.2 + rng() * 4.2;
+      const dx = 64 + Math.cos(angle) * dist;
+      const dy = 64 + Math.sin(angle) * dist;
+
+      ctx.beginPath();
+      ctx.arc(dx, dy, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
+  }
+
+  buildPaintingTexture(variant = 0) {
+    const canvas = document.createElement("canvas");
+    canvas.width = 256;
+    canvas.height = 320;
+    const ctx = canvas.getContext("2d");
+
+    // Dark canvas background
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, 320);
+    bgGrad.addColorStop(0, "#05070a");
+    bgGrad.addColorStop(1, "#120a10");
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, 256, 320);
+
+    if (variant === 0) {
+      // "The Cursed Monarch" - Ominous shadow portrait with glowing red eyes
+      const g = ctx.createRadialGradient(128, 120, 10, 128, 160, 120);
+      g.addColorStop(0, "rgba(180, 20, 30, 0.35)");
+      g.addColorStop(1, "rgba(0,0,0,0.95)");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 256, 320);
+
+      // Head silhouette
+      ctx.fillStyle = "#181418";
+      ctx.beginPath();
+      ctx.ellipse(128, 110, 42, 55, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Shoulders
+      ctx.beginPath();
+      ctx.moveTo(40, 260);
+      ctx.quadraticCurveTo(128, 170, 216, 260);
+      ctx.lineTo(216, 320);
+      ctx.lineTo(40, 320);
+      ctx.closePath();
+      ctx.fill();
+
+      // Glowing red eyes
+      ctx.fillStyle = "#ef4444";
+      ctx.shadowColor = "#ef4444";
+      ctx.shadowBlur = 14;
+      ctx.beginPath();
+      ctx.arc(112, 105, 4, 0, Math.PI * 2);
+      ctx.arc(144, 105, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Crown outline
+      ctx.strokeStyle = "#d97706";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(96, 62);
+      ctx.lineTo(108, 45);
+      ctx.lineTo(128, 55);
+      ctx.lineTo(148, 45);
+      ctx.lineTo(160, 62);
+      ctx.stroke();
+    } else if (variant === 1) {
+      // "The Shadow Entity" - Dark figure under blood moon
+      const g = ctx.createRadialGradient(128, 90, 5, 128, 90, 70);
+      g.addColorStop(0, "rgba(220, 38, 38, 0.85)");
+      g.addColorStop(0.5, "rgba(153, 27, 27, 0.4)");
+      g.addColorStop(1, "rgba(5, 5, 10, 0.95)");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 256, 320);
+
+      // Slender shadow figure
+      ctx.fillStyle = "#09090b";
+      ctx.beginPath();
+      ctx.ellipse(128, 100, 18, 25, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(110, 125);
+      ctx.lineTo(146, 125);
+      ctx.lineTo(155, 320);
+      ctx.lineTo(101, 320);
+      ctx.closePath();
+      ctx.fill();
+    } else if (variant === 2) {
+      // "The Eye of the Void" - Mystic cosmic eye
+      const g = ctx.createRadialGradient(128, 160, 10, 128, 160, 110);
+      g.addColorStop(0, "rgba(56, 189, 248, 0.65)");
+      g.addColorStop(0.6, "rgba(139, 92, 246, 0.3)");
+      g.addColorStop(1, "rgba(2, 4, 8, 0.95)");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 256, 320);
+
+      ctx.strokeStyle = "#38bdf8";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(50, 160);
+      ctx.quadraticCurveTo(128, 90, 206, 160);
+      ctx.quadraticCurveTo(128, 230, 50, 160);
+      ctx.stroke();
+
+      ctx.fillStyle = "#020617";
+      ctx.beginPath();
+      ctx.arc(128, 160, 32, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#38bdf8";
+      ctx.beginPath();
+      ctx.arc(128, 160, 12, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      // "The Ghostly Maiden"
+      const g = ctx.createRadialGradient(128, 130, 20, 128, 130, 100);
+      g.addColorStop(0, "rgba(148, 163, 184, 0.35)");
+      g.addColorStop(1, "rgba(2, 4, 10, 0.95)");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 256, 320);
+
+      ctx.fillStyle = "#cbd5e1";
+      ctx.beginPath();
+      ctx.ellipse(128, 120, 35, 48, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#020617";
+      ctx.beginPath();
+      ctx.arc(114, 115, 8, 0, Math.PI * 2);
+      ctx.arc(142, 115, 8, 0, Math.PI * 2);
+      ctx.arc(128, 142, 7, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Heavy wooden ornate frame around painting
+    ctx.strokeStyle = "#451a03";
+    ctx.lineWidth = 16;
+    ctx.strokeRect(8, 8, 240, 304);
+
+    ctx.strokeStyle = "#d97706"; // gold inlay
+    ctx.lineWidth = 4;
+    ctx.strokeRect(16, 16, 224, 288);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
+  }
+
   rebuildScene(state) {
     // Traverse and dispose all geometry and material buffers to prevent WebGL VRAM memory leaks
     this.scene.traverse((node) => {
@@ -1317,33 +1500,42 @@ export class CanvasRenderer {
           floorMesh.position.set(0, 0, 0);
           cellGroup.add(floorMesh);
 
-          // Add tiny, creepy blood puddles on Floor 0 (Ground Floor) paths!
-          if (!isUnderground && cell.type === "floor" && !(x === 1 && y === 1)) {
-            // Seeded pseudo-random using cell coordinates (100% deterministic and lag-free)
+          // Add realistic, wet, semi-transparent blood pools on paths!
+          if (cell.type === "floor" && !(x === 1 && y === 1)) {
             const cellRand = Math.abs(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1;
-            if (cellRand < 0.08) { // 8% chance per floor cell
+            const bloodChance = isDeepestFloor ? 0.20 : (isUnderground ? 0.12 : 0.07);
+            
+            if (cellRand < bloodChance) {
+              if (!this.bloodTexture) {
+                this.bloodTexture = this.buildBloodTexture();
+              }
               const bloodGroup = new THREE.Group();
-              const numDrops = 1 + Math.floor(cellRand * 30) % 3; // 1 to 3 drops/puddles
+              const numDrops = 1 + Math.floor(cellRand * 30) % 2; // 1 to 2 pools
               for (let dIdx = 0; dIdx < numDrops; dIdx++) {
                 const dropRandX = (Math.sin(x * 45.1 + y * 83.2 + dIdx * 19.3) * 43758.5453) % 1;
                 const dropRandY = (Math.cos(x * 12.4 + y * 39.1 + dIdx * 97.4) * 43758.5453) % 1;
                 const radiusRand = (Math.sin(x * 78.9 + y * 12.5 + dIdx * 54.1) * 43758.5453) % 1;
                 
-                const offsetX = (dropRandX * 2.0 - 1.0) * 0.25; // offset [-0.25, 0.25]
+                const offsetX = (dropRandX * 2.0 - 1.0) * 0.25;
                 const offsetY = (dropRandY * 2.0 - 1.0) * 0.25;
-                const radius = 0.04 + Math.abs(radiusRand) * 0.12; // radius between 0.04m and 0.16m
+                const radius = 0.12 + Math.abs(radiusRand) * 0.22; // radius 0.12m to 0.34m
                 
-                const puddleGeo = new THREE.CircleGeometry(radius, 12);
+                const puddleGeo = new THREE.PlaneGeometry(radius * 2, radius * 2);
                 const puddleMat = new THREE.MeshStandardMaterial({
-                  color: "#7f1d1d", // Dark crimson blood red
-                  roughness: 0.08,  // Very glossy wet finish
-                  metalness: 0.1,
+                  map: this.bloodTexture,
                   transparent: true,
-                  opacity: 0.85
+                  opacity: 0.82,
+                  roughness: 0.05, // Glossy specular reflection
+                  metalness: 0.25,
+                  depthWrite: false, // Prevents Z-fighting / box artifacts
+                  polygonOffset: true,
+                  polygonOffsetFactor: -1,
+                  polygonOffsetUnits: -1
                 });
                 const puddle = new THREE.Mesh(puddleGeo, puddleMat);
                 puddle.rotation.x = -Math.PI / 2;
-                puddle.position.set(offsetX, 0.003, offsetY); // slightly raised above floor
+                puddle.rotation.z = dropRandX * Math.PI * 2;
+                puddle.position.set(offsetX, 0.003, offsetY);
                 puddle.userData.isDecoration = true;
                 bloodGroup.add(puddle);
               }
@@ -2560,6 +2752,54 @@ export class CanvasRenderer {
             const stoneCap = new THREE.Mesh(wallCapGeo, capMat);
             stoneCap.position.set(0, 1.305, 0);
             colGroup.add(stoneCap);
+          }
+
+          // 3. Haunted Wall Paintings (Mount 3D framed oil paintings on dungeon wall faces facing open corridors)
+          if (isUnderground) {
+            const cellRand = Math.abs(Math.sin(x * 37.129 + y * 91.83) * 43758.54) % 1;
+            if (cellRand < 0.16) { // 16% chance per wall block
+              const paintingVariant = Math.floor(cellRand * 400) % 4;
+              if (!this.paintingTextures) this.paintingTextures = [];
+              if (!this.paintingTextures[paintingVariant]) {
+                this.paintingTextures[paintingVariant] = this.buildPaintingTexture(paintingVariant);
+              }
+              const paintingTex = this.paintingTextures[paintingVariant];
+
+              const isFloor = (tx, ty) => (tx >= 0 && tx < width && ty >= 0 && ty < height && grid[ty][tx].type !== "wall");
+
+              const paintingGeo = new THREE.BoxGeometry(0.38, 0.48, 0.03);
+              const frameMat = new THREE.MeshStandardMaterial({ color: "#451a03", roughness: 0.8 });
+              const canvasMat = new THREE.MeshStandardMaterial({ map: paintingTex, roughness: 0.7 });
+
+              const paintingGroup = new THREE.Group();
+              const frameBox = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.52, 0.04), frameMat);
+              const canvasMesh = new THREE.Mesh(paintingGeo, canvasMat);
+              canvasMesh.position.z = 0.01;
+              paintingGroup.add(frameBox, canvasMesh);
+
+              let mounted = false;
+              if (isFloor(x, y + 1)) {
+                paintingGroup.position.set(0, 0.65, 0.51);
+                paintingGroup.rotation.y = 0;
+                mounted = true;
+              } else if (isFloor(x, y - 1)) {
+                paintingGroup.position.set(0, 0.65, -0.51);
+                paintingGroup.rotation.y = Math.PI;
+                mounted = true;
+              } else if (isFloor(x + 1, y)) {
+                paintingGroup.position.set(0.51, 0.65, 0);
+                paintingGroup.rotation.y = Math.PI / 2;
+                mounted = true;
+              } else if (isFloor(x - 1, y)) {
+                paintingGroup.position.set(-0.51, 0.65, 0);
+                paintingGroup.rotation.y = -Math.PI / 2;
+                mounted = true;
+              }
+
+              if (mounted) {
+                colGroup.add(paintingGroup);
+              }
+            }
           }
 
           cellGroup.add(colGroup);

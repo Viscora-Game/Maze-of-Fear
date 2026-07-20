@@ -1175,6 +1175,70 @@ export class CanvasRenderer {
     return texture;
   }
 
+  buildRunePlaqueTexture() {
+    const canvas = document.createElement("canvas");
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext("2d");
+
+    // Stone plaque background
+    ctx.fillStyle = "#262e3b";
+    ctx.fillRect(0, 0, 128, 128);
+
+    ctx.strokeStyle = "#475569";
+    ctx.lineWidth = 6;
+    ctx.strokeRect(4, 4, 120, 120);
+
+    // Glowing cyan carved runes
+    ctx.strokeStyle = "#38bdf8";
+    ctx.shadowColor = "#0284c7";
+    ctx.shadowBlur = 10;
+    ctx.lineWidth = 3;
+
+    ctx.beginPath();
+    ctx.moveTo(30, 30); ctx.lineTo(64, 98); ctx.lineTo(98, 30);
+    ctx.moveTo(30, 98); ctx.lineTo(98, 98);
+    ctx.moveTo(64, 20); ctx.lineTo(64, 108);
+    ctx.stroke();
+
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
+  }
+
+  buildBloodRuneTexture() {
+    const canvas = document.createElement("canvas");
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext("2d");
+
+    ctx.clearRect(0, 0, 128, 128);
+
+    // Occult Blood Pentagram Symbol
+    ctx.strokeStyle = "rgba(185, 28, 28, 0.9)";
+    ctx.shadowColor = "#ef4444";
+    ctx.shadowBlur = 12;
+    ctx.lineWidth = 4;
+
+    ctx.beginPath();
+    ctx.arc(64, 64, 52, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.beginPath();
+    const cx = 64, cy = 64, r = 48;
+    for (let i = 0; i < 5; i++) {
+      const a = (i * 4 * Math.PI) / 5 - Math.PI / 2;
+      const x = cx + r * Math.cos(a);
+      const y = cy + r * Math.sin(a);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
+  }
+
   rebuildScene(state) {
     // Traverse and dispose all geometry and material buffers to prevent WebGL VRAM memory leaks
     this.scene.traverse((node) => {
@@ -2754,51 +2818,149 @@ export class CanvasRenderer {
             colGroup.add(stoneCap);
           }
 
-          // 3. Haunted Wall Paintings (Mount 3D framed oil paintings on dungeon wall faces facing open corridors)
-          if (isUnderground) {
-            const cellRand = Math.abs(Math.sin(x * 37.129 + y * 91.83) * 43758.54) % 1;
-            if (cellRand < 0.16) { // 16% chance per wall block
-              const paintingVariant = Math.floor(cellRand * 400) % 4;
-              if (!this.paintingTextures) this.paintingTextures = [];
-              if (!this.paintingTextures[paintingVariant]) {
-                this.paintingTextures[paintingVariant] = this.buildPaintingTexture(paintingVariant);
+          // 3. Floor-Specific Wall Decorations (Deterministic, zero-lag placement on wall faces facing open corridors)
+          const wallRand = Math.abs(Math.sin(x * 37.129 + y * 91.83) * 43758.54) % 1;
+          const isFloor = (tx, ty) => (tx >= 0 && tx < width && ty >= 0 && ty < height && grid[ty][tx].type !== "wall");
+
+          let wallProp = null;
+
+          if (!isUnderground) {
+            // Floor 0 (Ruins & Hedge Maze): Mossy Stone Rune Plaques & Creeping Wall Ivy Sprouts
+            if (wallRand < 0.18) { // 18% chance
+              const propType = Math.floor(wallRand * 300) % 2;
+              if (propType === 0) {
+                // Mossy Ancient Rune Plaque
+                if (!this.runePlaqueTex) this.runePlaqueTex = this.buildRunePlaqueTexture();
+                const plaqueMesh = new THREE.Mesh(
+                  new THREE.BoxGeometry(0.32, 0.32, 0.03),
+                  new THREE.MeshStandardMaterial({ map: this.runePlaqueTex, roughness: 0.85 })
+                );
+                wallProp = plaqueMesh;
+              } else {
+                // Creeping Hedge Ivy Leaf Patch on Wall Face
+                const ivyMesh = new THREE.Mesh(
+                  new THREE.BoxGeometry(0.42, 0.65, 0.02),
+                  new THREE.MeshStandardMaterial({ map: this.hedgeTexture, color: "#142414", roughness: 0.95 })
+                );
+                wallProp = ivyMesh;
               }
-              const paintingTex = this.paintingTextures[paintingVariant];
-
-              const isFloor = (tx, ty) => (tx >= 0 && tx < width && ty >= 0 && ty < height && grid[ty][tx].type !== "wall");
-
-              const paintingGeo = new THREE.BoxGeometry(0.38, 0.48, 0.03);
-              const frameMat = new THREE.MeshStandardMaterial({ color: "#451a03", roughness: 0.8 });
-              const canvasMat = new THREE.MeshStandardMaterial({ map: paintingTex, roughness: 0.7 });
-
-              const paintingGroup = new THREE.Group();
-              const frameBox = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.52, 0.04), frameMat);
-              const canvasMesh = new THREE.Mesh(paintingGeo, canvasMat);
-              canvasMesh.position.z = 0.01;
-              paintingGroup.add(frameBox, canvasMesh);
-
-              let mounted = false;
-              if (isFloor(x, y + 1)) {
-                paintingGroup.position.set(0, 0.65, 0.51);
-                paintingGroup.rotation.y = 0;
-                mounted = true;
-              } else if (isFloor(x, y - 1)) {
-                paintingGroup.position.set(0, 0.65, -0.51);
-                paintingGroup.rotation.y = Math.PI;
-                mounted = true;
-              } else if (isFloor(x + 1, y)) {
-                paintingGroup.position.set(0.51, 0.65, 0);
-                paintingGroup.rotation.y = Math.PI / 2;
-                mounted = true;
-              } else if (isFloor(x - 1, y)) {
-                paintingGroup.position.set(-0.51, 0.65, 0);
-                paintingGroup.rotation.y = -Math.PI / 2;
-                mounted = true;
+            }
+          } else if (currentFloor === 1) {
+            // Floor 1 (Stone Dungeon): Haunted Paintings, Rusted Iron Shackles/Chains, Iron Ventilation Grates
+            if (wallRand < 0.22) { // 22% chance
+              const propType = Math.floor(wallRand * 400) % 3;
+              if (propType === 0) {
+                // Haunted Oil Painting
+                const variant = Math.floor(wallRand * 500) % 4;
+                if (!this.paintingTextures) this.paintingTextures = [];
+                if (!this.paintingTextures[variant]) this.paintingTextures[variant] = this.buildPaintingTexture(variant);
+                
+                const pGroup = new THREE.Group();
+                const frameBox = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.52, 0.04), new THREE.MeshStandardMaterial({ color: "#451a03", roughness: 0.8 }));
+                const canvasMesh = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.48, 0.03), new THREE.MeshStandardMaterial({ map: this.paintingTextures[variant], roughness: 0.7 }));
+                canvasMesh.position.z = 0.01;
+                pGroup.add(frameBox, canvasMesh);
+                wallProp = pGroup;
+              } else if (propType === 1) {
+                // Rusted Iron Wall Shackle & Chains
+                const cGroup = new THREE.Group();
+                const plateMat = new THREE.MeshStandardMaterial({ color: "#27272a", metalness: 0.85, roughness: 0.3 });
+                const plate = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.03), plateMat);
+                
+                const ringMat = new THREE.MeshStandardMaterial({ color: "#3f3f46", metalness: 0.9, roughness: 0.2 });
+                const ring1 = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.008, 6, 12), ringMat);
+                ring1.position.set(-0.03, -0.04, 0.03);
+                const ring2 = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.008, 6, 12), ringMat);
+                ring2.position.set(0.03, -0.04, 0.03);
+                
+                cGroup.add(plate, ring1, ring2);
+                wallProp = cGroup;
+              } else {
+                // Rusted Iron Ventilation Grate
+                const grateMat = new THREE.MeshStandardMaterial({ color: "#18181b", metalness: 0.9, roughness: 0.4 });
+                const gGroup = new THREE.Group();
+                const grateFrame = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.36, 0.03), grateMat);
+                for (let b = -0.12; b <= 0.12; b += 0.06) {
+                  const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.32), grateMat);
+                  bar.position.set(b, 0, 0.01);
+                  gGroup.add(bar);
+                }
+                gGroup.add(grateFrame);
+                wallProp = gGroup;
               }
-
-              if (mounted) {
-                colGroup.add(paintingGroup);
+            }
+          } else {
+            // Floor 2 (Deepest Crimson Horror Vault): Occult Blood Pentagram Runes, Haunted Paintings & Rusted Chains
+            if (wallRand < 0.26) { // 26% chance
+              const propType = Math.floor(wallRand * 400) % 3;
+              if (propType === 0) {
+                // Occult Blood-Red Glowing Pentagram Rune
+                if (!this.bloodRuneTex) this.bloodRuneTex = this.buildBloodRuneTexture();
+                const bloodMesh = new THREE.Mesh(
+                  new THREE.PlaneGeometry(0.44, 0.44),
+                  new THREE.MeshStandardMaterial({
+                    map: this.bloodRuneTex,
+                    transparent: true,
+                    opacity: 0.9,
+                    emissive: "#7f1d1d",
+                    emissiveIntensity: 0.6,
+                    depthWrite: false
+                  })
+                );
+                wallProp = bloodMesh;
+              } else if (propType === 1) {
+                // Haunted Horror Painting
+                const variant = Math.floor(wallRand * 500) % 4;
+                if (!this.paintingTextures) this.paintingTextures = [];
+                if (!this.paintingTextures[variant]) this.paintingTextures[variant] = this.buildPaintingTexture(variant);
+                
+                const pGroup = new THREE.Group();
+                const frameBox = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.52, 0.04), new THREE.MeshStandardMaterial({ color: "#2b0a0a", roughness: 0.85 }));
+                const canvasMesh = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.48, 0.03), new THREE.MeshStandardMaterial({ map: this.paintingTextures[variant], roughness: 0.7 }));
+                canvasMesh.position.z = 0.01;
+                pGroup.add(frameBox, canvasMesh);
+                wallProp = pGroup;
+              } else {
+                // Hanging Iron Dungeon Chains
+                const cGroup = new THREE.Group();
+                const plateMat = new THREE.MeshStandardMaterial({ color: "#1c1917", metalness: 0.85, roughness: 0.3 });
+                const plate = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 0.03), plateMat);
+                
+                const chainMat = new THREE.MeshStandardMaterial({ color: "#292524", metalness: 0.9, roughness: 0.2 });
+                for (let c = 0; c < 3; c++) {
+                  const link = new THREE.Mesh(new THREE.TorusGeometry(0.025, 0.007, 6, 10), chainMat);
+                  link.position.set(0, -0.04 - c * 0.045, 0.02);
+                  if (c % 2 === 1) link.rotation.y = Math.PI / 2;
+                  cGroup.add(link);
+                }
+                cGroup.add(plate);
+                wallProp = cGroup;
               }
+            }
+          }
+
+          if (wallProp) {
+            let mounted = false;
+            if (isFloor(x, y + 1)) {
+              wallProp.position.set(0, 0.65, 0.51);
+              wallProp.rotation.y = 0;
+              mounted = true;
+            } else if (isFloor(x, y - 1)) {
+              wallProp.position.set(0, 0.65, -0.51);
+              wallProp.rotation.y = Math.PI;
+              mounted = true;
+            } else if (isFloor(x + 1, y)) {
+              wallProp.position.set(0.51, 0.65, 0);
+              wallProp.rotation.y = Math.PI / 2;
+              mounted = true;
+            } else if (isFloor(x - 1, y)) {
+              wallProp.position.set(-0.51, 0.65, 0);
+              wallProp.rotation.y = -Math.PI / 2;
+              mounted = true;
+            }
+
+            if (mounted) {
+              colGroup.add(wallProp);
             }
           }
 

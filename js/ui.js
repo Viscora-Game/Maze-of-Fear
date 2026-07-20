@@ -1,4 +1,4 @@
-import { Game } from "./game.js?v=39";
+import { Game } from "./game.js?v=40";
 
 const init = () => {
   const game = new Game();
@@ -1088,20 +1088,6 @@ function setupUI(game) {
       hud.questsList.appendChild(qLi);
     }
 
-    // Sync Equipped Item Val (auto-clear if equipped item count dropped to 0)
-    if (p.equippedItem && (p.inventory[p.equippedItem] || 0) <= 0) {
-      p.equippedItem = null;
-    }
-    const equipped = p.equippedItem;
-    if (equipped) {
-      const emojiMap = {
-        key: "🔑", shears: "✂️", bucket: "🪣", bucket_full: "💧", axe: "🪓", rope: "🪵", compass: "🧭", map_piece: "📜", fuel: "🛢️", fuel_half: "🛢️", cheese: "🧀"
-      };
-      if (hud.equippedVal) hud.equippedVal.textContent = `${emojiMap[equipped] || "📦"} ${game.t("items." + equipped + ".name")}`;
-    } else {
-      if (hud.equippedVal) hud.equippedVal.textContent = game.lang === "tr" ? "Boş" : "Empty";
-    }
-
     // Show compass HUD only after player has found a compass
     const compassPanel = document.getElementById("hud-compass-panel");
     if (compassPanel) {
@@ -1897,30 +1883,8 @@ function setupUI(game) {
       hud.btnInvUse.style.display = "none";
     }
 
-    // Equip/Unequip Button (only for items with 3D hand models)
-    const equippableItems = ["key", "shears", "axe", "rope", "bucket", "bucket_full", "compass"];
-    if (equippableItems.includes(itemId)) {
-      hud.btnInvEquip.style.display = "block";
-      const isEquipped = p.equippedItem === itemId;
-      hud.btnInvEquip.textContent = isEquipped 
-        ? (game.lang === "tr" ? "Bırak" : "Unequip") 
-        : (game.lang === "tr" ? "Kuşan" : "Equip");
-
-      const newEquip = hud.btnInvEquip.cloneNode(true);
-      hud.btnInvEquip.replaceWith(newEquip);
-      hud.btnInvEquip = newEquip;
-
-      hud.btnInvEquip.addEventListener("click", () => {
-        if (isEquipped) {
-          p.equippedItem = null;
-        } else {
-          p.equippedItem = itemId;
-        }
-        renderInventory();
-        game.onStateChange();
-        game.draw();
-      });
-    } else {
+    // Equip button disabled (items are used automatically when interacting with obstacles)
+    if (hud.btnInvEquip) {
       hud.btnInvEquip.style.display = "none";
     }
   };

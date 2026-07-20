@@ -854,10 +854,142 @@ export class CanvasRenderer {
     }
   }
 
-  resize(containerWidth, containerHeight, mazeWidth, mazeHeight) {
-    this.renderer.setSize(containerWidth, containerHeight);
-    this.camera.aspect = containerWidth / containerHeight;
-    this.camera.updateProjectionMatrix();
+  buildStarrySkyTexture() {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1024;
+    canvas.height = 512;
+    const ctx = canvas.getContext("2d");
+
+    // 1. Dark cosmic gradient background (Deep space night)
+    const grad = ctx.createLinearGradient(0, 0, 0, 512);
+    grad.addColorStop(0.0, "#010206"); // Deep space black at zenith
+    grad.addColorStop(0.4, "#030612"); // Dark midnight sky
+    grad.addColorStop(0.75, "#070b1a"); // Eerie deep navy
+    grad.addColorStop(1.0, "#0a0e1a"); // Horizon dark slate
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 1024, 512);
+
+    // 2. Soft Milky Way / Cosmic Nebula dust cloud
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    const nebGrad = ctx.createRadialGradient(480, 160, 20, 500, 180, 280);
+    nebGrad.addColorStop(0.0, "rgba(56, 189, 248, 0.14)"); // Soft cyan glow
+    nebGrad.addColorStop(0.4, "rgba(139, 92, 246, 0.09)"); // Subtle violet glow
+    nebGrad.addColorStop(1.0, "rgba(0, 0, 0, 0)");
+    ctx.fillStyle = nebGrad;
+    ctx.beginPath();
+    ctx.arc(500, 180, 280, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // 3. Random background stars (800+ tiny twinkling stars)
+    let seed = 777;
+    const rng = () => {
+      seed = (seed * 9301 + 49297) % 233280;
+      return seed / 233280;
+    };
+
+    for (let i = 0; i < 800; i++) {
+      const x = rng() * 1024;
+      const y = rng() * 340; // Keep stars mostly in upper sky
+      const radius = 0.35 + rng() * 1.4;
+      const alpha = 0.2 + rng() * 0.8;
+      
+      const starColors = ["#ffffff", "#f0f9ff", "#e0f2fe", "#fef3c7", "#fed7aa", "#bae6fd"];
+      const color = starColors[Math.floor(rng() * starColors.length)];
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Soft halo glow for brighter stars
+      if (radius > 1.25) {
+        ctx.globalAlpha = alpha * 0.35;
+        ctx.beginPath();
+        ctx.arc(x, y, radius * 2.8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // 4. Prominent Orion Constellation (Avcı Takımyıldızı)
+    const ox = 512;
+    const oy = 140;
+
+    const orionStars = [
+      { name: "Betelgeuse", dx: -42, dy: -58, r: 3.4, color: "#f97316" }, // Reddish-orange supergiant (Top-Left)
+      { name: "Bellatrix",  dx:  44, dy: -50, r: 2.7, color: "#e0f2fe" }, // Blue-white giant (Top-Right)
+      { name: "Meissa",     dx:   2, dy: -88, r: 2.1, color: "#ffffff" }, // Head star
+      
+      // Orion's Belt (3 perfectly aligned stars: Alnitak, Alnilam, Mintaka)
+      { name: "Alnitak",   dx: -22, dy:   2, r: 2.7, color: "#38bdf8" }, // Left belt
+      { name: "Alnilam",   dx:   0, dy:   0, r: 2.9, color: "#ffffff" }, // Center belt
+      { name: "Mintaka",   dx:  22, dy:  -2, r: 2.7, color: "#38bdf8" }, // Right belt
+      
+      // Orion's Sword / Nebula
+      { name: "M42 Nebula", dx:  -2, dy:  28, r: 2.4, color: "#c084fc", isNebula: true },
+      { name: "Hatysa",     dx:  -4, dy:  45, r: 1.9, color: "#e0f2fe" },
+      
+      // Feet
+      { name: "Saiph",      dx: -34, dy:  65, r: 2.5, color: "#e0f2fe" }, // Bottom-Left
+      { name: "Rigel",      dx:  50, dy:  58, r: 3.6, color: "#60a5fa" }  // Bright bluish supergiant (Bottom-Right)
+    ];
+
+    // Delicate constellation connecting lines
+    const lines = [
+      [orionStars[0], orionStars[2]], // Betelgeuse to Meissa
+      [orionStars[1], orionStars[2]], // Bellatrix to Meissa
+      [orionStars[0], orionStars[3]], // Betelgeuse to Alnitak
+      [orionStars[1], orionStars[5]], // Bellatrix to Mintaka
+      [orionStars[3], orionStars[4]], // Belt 1-2
+      [orionStars[4], orionStars[5]], // Belt 2-3
+      [orionStars[3], orionStars[8]], // Alnitak to Saiph
+      [orionStars[5], orionStars[9]], // Mintaka to Rigel
+      [orionStars[4], orionStars[6]], // Belt center to Orion Nebula
+      [orionStars[6], orionStars[7]]  // Nebula to Hatysa
+    ];
+
+    ctx.save();
+    ctx.strokeStyle = "rgba(147, 197, 253, 0.22)"; // Eerie pale blue constellation lines
+    ctx.lineWidth = 1.2;
+    for (const [s1, s2] of lines) {
+      ctx.beginPath();
+      ctx.moveTo(ox + s1.dx, oy + s1.dy);
+      ctx.lineTo(ox + s2.dx, oy + s2.dy);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // Draw Orion Stars with glowing halos
+    for (const s of orionStars) {
+      const sx = ox + s.dx;
+      const sy = oy + s.dy;
+
+      ctx.save();
+      const starGrad = ctx.createRadialGradient(sx, sy, 0, sx, sy, s.r * 3.8);
+      starGrad.addColorStop(0.0, s.color);
+      starGrad.addColorStop(0.4, s.isNebula ? "rgba(192, 132, 252, 0.45)" : "rgba(255, 255, 255, 0.35)");
+      starGrad.addColorStop(1.0, "rgba(0, 0, 0, 0)");
+      ctx.fillStyle = starGrad;
+      ctx.beginPath();
+      ctx.arc(sx, sy, s.r * 3.8, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Core star point
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.arc(sx, sy, s.r * 0.75, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.ClampToEdgeWrapping;
+    return texture;
   }
 
   rebuildScene(state) {
@@ -936,8 +1068,8 @@ export class CanvasRenderer {
 
     const isUnderground = (state.currentFloor > 0);
 
-    // 1. Lighting Setup (Creepy night fog - flashlight is the absolute primary light source)
-    this.ambientLight = new THREE.AmbientLight("#0f172a", isUnderground ? 0.015 : 0.04); // Even darker ambient underground
+    // 1. Lighting Setup (Floor 1 Underground is pitch black pitch darkness!)
+    this.ambientLight = new THREE.AmbientLight("#0f172a", isUnderground ? 0.005 : 0.035); // Zero ambient light underground
     this.scene.add(this.ambientLight);
 
     this.dirLight = new THREE.DirectionalLight("#1e293b", isUnderground ? 0.0 : 0.04); // No moonlight underground!
@@ -956,21 +1088,20 @@ export class CanvasRenderer {
     this.dirLight.shadow.bias = -0.0005;
     this.scene.add(this.dirLight);
 
-    // Configure Fog dynamically based on floor level (deep, dense pitch-black fog underground)
+    // Configure Fog dynamically based on floor level (deep, dense claustrophobic pitch-black fog underground)
     if (this.scene.fog) {
-      this.scene.fog.color.set(isUnderground ? "#020305" : "#080a0f");
-      this.scene.fog.near = isUnderground ? 1.0 : 1.5;
-      this.scene.fog.far = isUnderground ? 5.5 : 6.0;
+      this.scene.fog.color.set(isUnderground ? "#010103" : "#060913");
+      this.scene.fog.near = isUnderground ? 0.8 : 1.5;
+      this.scene.fog.far = isUnderground ? 4.0 : 6.0;
     }
     // Update background color/texture
     if (isUnderground) {
-      this.scene.background = new THREE.Color("#020305");
+      this.scene.background = new THREE.Color("#010103");
     } else {
-      if (this.skyTexture) {
-        this.scene.background = this.skyTexture;
-      } else {
-        this.scene.background = new THREE.Color("#080a0f");
+      if (!this.starrySkyTexture) {
+        this.starrySkyTexture = this.buildStarrySkyTexture();
       }
+      this.scene.background = this.starrySkyTexture;
     }
 
     // Flashlight SpotLight - PRIMARY neutral white light source with realistic flashlight properties (decay = 1.1, range = 11.0m)
@@ -2927,232 +3058,7 @@ export class CanvasRenderer {
       );
     }
 
-    // Attach 3D accessory for equipped item (First Person Left Hand)
-    if (this.lastEquippedItem !== player.equippedItem) {
-      this.lastEquippedItem = player.equippedItem;
-      // Clear old accessory
-      if (this.equippedAccessory) {
-        this.camera.remove(this.equippedAccessory);
-        this.equippedAccessory = null;
-      }
-
-      // Add new accessory if equipped
-      if (player.equippedItem) {
-        const item = player.equippedItem;
-        this.equippedAccessory = new THREE.Group();
-
-        // Left Sleeve & Hand (Matches the right tactical sleeve and black glove)
-        const sleeveMat = new THREE.MeshStandardMaterial({ color: "#1e293b", roughness: 0.85 });
-        const gloveMat = new THREE.MeshStandardMaterial({ color: "#0f172a", roughness: 0.9, metalness: 0.1 });
-
-        // Left Sleeve (Forearm extending from bottom-left)
-        const armGeo = new THREE.CylinderGeometry(0.016, 0.02, 0.20, 8);
-        const arm = new THREE.Mesh(armGeo, sleeveMat);
-        arm.rotation.x = Math.PI / 2.2;
-        arm.position.set(0, 0, 0.10);
-        this.equippedAccessory.add(arm);
-
-        // Glove Palm (Main body of the left hand)
-        const hand = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.022, 0.028), gloveMat);
-        hand.position.set(0, 0.012, -0.01);
-        this.equippedAccessory.add(hand);
-
-        // Procedural fingers wrapping around the item
-        const lf1 = new THREE.Mesh(new THREE.BoxGeometry(0.020, 0.006, 0.006), gloveMat);
-        lf1.position.set(-0.004, 0.016, -0.022);
-        lf1.rotation.y = Math.PI / 8;
-        
-        const lf2 = new THREE.Mesh(new THREE.BoxGeometry(0.020, 0.006, 0.006), gloveMat);
-        lf2.position.set(-0.004, 0.016, -0.034);
-        lf2.rotation.y = Math.PI / 8;
-        
-        const lthumb = new THREE.Mesh(new THREE.BoxGeometry(0.010, 0.006, 0.012), gloveMat);
-        lthumb.position.set(0.008, 0.020, -0.022);
-        
-        this.equippedAccessory.add(lf1, lf2, lthumb);
-
-        let mesh;
-        if (item === "key") {
-          const keyGroup = new THREE.Group();
-          const keyMat = new THREE.MeshPhongMaterial({ color: "#eab308", shininess: 60, specular: "#fef08a" }); // metallic gold
-          
-          // Key shaft (central cylinder)
-          const shaft = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.004, 0.004, 0.13, 8),
-            keyMat
-          );
-          shaft.rotation.x = Math.PI / 2;
-          shaft.position.set(0, 0.015, -0.06);
-          keyGroup.add(shaft);
-
-          // Key head (torus ring)
-          const headGeo = new THREE.TorusGeometry(0.012, 0.0035, 8, 16);
-          const head = new THREE.Mesh(headGeo, keyMat);
-          head.position.set(0, 0.015, -0.005);
-          keyGroup.add(head);
-
-          // Key teeth (two small boxes at the end of the shaft)
-          const tooth1 = new THREE.Mesh(
-            new THREE.BoxGeometry(0.01, 0.008, 0.004),
-            keyMat
-          );
-          tooth1.position.set(0.008, 0.015, -0.11);
-          
-          const tooth2 = new THREE.Mesh(
-            new THREE.BoxGeometry(0.006, 0.008, 0.004),
-            keyMat
-          );
-          tooth2.position.set(0.006, 0.015, -0.118);
-          
-          keyGroup.add(tooth1, tooth2);
-          mesh = keyGroup;
-        } else if (item === "shears") {
-          const shearsGroup = new THREE.Group();
-          const ironMat = new THREE.MeshStandardMaterial({ color: "#64748b", metalness: 0.8, roughness: 0.2 }); // steel iron
-          const handleMat = new THREE.MeshStandardMaterial({ color: "#dc2626", roughness: 0.6 }); // red handles
-
-          // Blades (two angled metal wedges extending forward)
-          const blade1 = new THREE.Mesh(
-            new THREE.BoxGeometry(0.004, 0.012, 0.09),
-            ironMat
-          );
-          blade1.rotation.y = 0.12;
-          blade1.position.set(-0.004, 0.015, -0.06);
-
-          const blade2 = new THREE.Mesh(
-            new THREE.BoxGeometry(0.004, 0.012, 0.09),
-            ironMat
-          );
-          blade2.rotation.y = -0.12;
-          blade2.position.set(0.004, 0.015, -0.06);
-
-          // Pivot bolt in the center
-          const bolt = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.003, 0.003, 0.016, 6),
-            ironMat
-          );
-          bolt.rotation.x = Math.PI / 2;
-          bolt.position.set(0, 0.015, -0.03);
-
-          // Handles (rings for fingers at the back)
-          const hRing1 = new THREE.Mesh(
-            new THREE.TorusGeometry(0.008, 0.002, 6, 12),
-            handleMat
-          );
-          hRing1.position.set(-0.01, 0.015, -0.005);
-          hRing1.rotation.y = Math.PI / 12;
-
-          const hRing2 = new THREE.Mesh(
-            new THREE.TorusGeometry(0.008, 0.002, 6, 12),
-            handleMat
-          );
-          hRing2.position.set(0.01, 0.015, -0.005);
-          hRing2.rotation.y = -Math.PI / 12;
-
-          shearsGroup.add(blade1, blade2, bolt, hRing1, hRing2);
-          mesh = shearsGroup;
-        } else if (item === "axe") {
-          const axeGroup = new THREE.Group();
-          
-          // Wooden Handle
-          const handle = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.006, 0.006, 0.22, 8),
-            new THREE.MeshStandardMaterial({ color: "#78350f", roughness: 0.85 }) // dark brown wood
-          );
-          handle.rotation.x = Math.PI / 2;
-          handle.position.set(0, 0.015, -0.05);
-
-          // Steel Axe Blade (tapered box shape)
-          const blade = new THREE.Mesh(
-            new THREE.BoxGeometry(0.06, 0.035, 0.008),
-            new THREE.MeshStandardMaterial({ color: "#94a3b8", metalness: 0.85, roughness: 0.25 }) // steel color
-          );
-          blade.position.set(0.02, 0.015, -0.12);
-          blade.rotation.y = -Math.PI / 16;
-
-          // Connection socket (metal bracket holding the blade to the shaft)
-          const socket = new THREE.Mesh(
-            new THREE.BoxGeometry(0.016, 0.018, 0.02),
-            new THREE.MeshStandardMaterial({ color: "#475569", metalness: 0.8 })
-          );
-          socket.position.set(0, 0.015, -0.12);
-
-          axeGroup.add(handle, blade, socket);
-          mesh = axeGroup;
-        } else if (item === "compass") {
-          const compassGroup = new THREE.Group();
-          const brassMat = new THREE.MeshStandardMaterial({ color: "#d97706", metalness: 0.8, roughness: 0.2 }); // brass
-          const dialMat = new THREE.MeshBasicMaterial({ color: "#f8fafc" }); // white face
-          const needleMat = new THREE.MeshBasicMaterial({ color: "#ef4444" }); // red needle
-
-          // Outer case
-          const caseMesh = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.024, 0.024, 0.008, 12),
-            brassMat
-          );
-          caseMesh.rotation.x = Math.PI / 2.5;
-          caseMesh.position.set(0, 0.015, -0.04);
-          compassGroup.add(caseMesh);
-
-          // Dial face
-          const dial = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.020, 0.020, 0.001, 12),
-            dialMat
-          );
-          dial.rotation.x = Math.PI / 2.5;
-          dial.position.set(0, 0.018, -0.04);
-          compassGroup.add(dial);
-
-          // Needle pointer
-          const needle = new THREE.Mesh(
-            new THREE.BoxGeometry(0.003, 0.001, 0.030),
-            needleMat
-          );
-          needle.rotation.x = Math.PI / 2.5;
-          needle.position.set(0, 0.019, -0.04);
-          compassGroup.add(needle);
-
-          mesh = compassGroup;
-        } else if (item === "rope") {
-          mesh = new THREE.Mesh(
-            new THREE.TorusGeometry(0.025, 0.008, 8, 24),
-            new THREE.MeshStandardMaterial({ color: "#b45309", roughness: 0.95 }) // rope brown/tan
-          );
-          mesh.rotation.x = Math.PI / 2.2;
-          mesh.position.set(0, 0.015, -0.04);
-        } else if (item === "bucket" || item === "bucket_full") {
-          mesh = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.05, 0.04, 0.08, 10),
-            new THREE.MeshPhongMaterial({ color: item === "bucket" ? "#4b5563" : "#3b82f6" })
-          );
-          mesh.position.set(0, 0.02, -0.05);
-        } else {
-          mesh = new THREE.Mesh(
-            new THREE.BoxGeometry(0.06, 0.06, 0.06),
-            new THREE.MeshPhongMaterial({ color: "#a855f7" })
-          );
-          mesh.position.set(0, 0.02, -0.04);
-        }
-
-        if (mesh) {
-          this.equippedAccessory.add(mesh);
-        }
-
-        this.equippedAccessory.position.set(-0.12, -0.12, -0.18);
-        this.equippedAccessory.rotation.y = Math.PI / 8;
-        this.equippedAccessory.scale.set(0.7, 0.7, 0.7); // scaled down for closer view Z = -0.18 (prevents wall clipping)
-        this.camera.add(this.equippedAccessory);
-      }
-    }
-
-    if (this.equippedAccessory) {
-      this.equippedAccessory.position.set(-0.12 - bobX + this.swayX * 0.03, -0.12 + bobY + this.swayY * 0.03, -0.18);
-      this.equippedAccessory.rotation.set(
-        this.swayY * 0.25,
-        Math.PI / 8 + this.swayX * 0.25,
-        -swingZ
-      );
-    }
+    // (3D left-hand equipped accessory removed per user request)
 
     // 3. First Person Camera Positioning (with organic height bobbing)
     const targetCamX = player.visualX;

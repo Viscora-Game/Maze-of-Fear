@@ -3442,6 +3442,7 @@ export class CanvasRenderer {
     }
     const { floors, width, height, player, currentFloor, visitedMap } = state;
     const grid = floors[currentFloor];
+    const isUnderground = (currentFloor > 0);
 
     // Exit pointer lock if the game is in a modal state to allow mouse clicks on PC
     if (state.gameState !== "playing" && document.pointerLockElement === this.canvas) {

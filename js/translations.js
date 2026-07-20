@@ -132,13 +132,30 @@ export const translations = {
       traveler: {
         name: "Old Sage",
         greeting: "Greetings, lost soul. You have finally awakened in the Maze of Fear... A purgatory born from the deepest corners of the mind. Do you seek answers, or just survival?",
-        askWho: "Ask 'Who am I? What is this place?'",
-        askEscape: "Ask 'How do I escape?'",
-        askMonster: "Ask 'What is that thing in the dark?'",
-        replyWho: "You are a mortal who surrendered to fear, and this labyrinth is a prison of shadow and sorrow. Escape is possible, but the toll is heavy.",
-        replyEscape: "You must go deeper into the maze. You will need keys and combination codes hidden on the walls. Most importantly, never let your flashlight die.",
-        replyMonster: "That is the Shadow Monster. It hunts when your light fades. Manage your batteries carefully. You can buy them from the merchant in the maze.",
-        farewell: "End Dialogue"
+        farewell: "End Dialogue",
+        stages: {
+          start: {
+            q1: "Who am I? Who are you?",
+            a1: "You are a mortal who surrendered to fear, and this labyrinth is a prison of shadow and sorrow. I am the first victim of this purgatory, bound here eternally to guide lost souls.",
+            q2: "How do I escape?",
+            a2: "You must descend deeper. You will need keys and combination codes hidden on the walls. Most importantly, never let your flashlight die."
+          },
+          who_are_you: {
+            q1: "How was this maze created?",
+            a1: "Whenever a soul is crushed under regret and fear, a new stone is laid in these walls. You are walking inside a prison of your own making.",
+            q2: "Where did the shadow monster come from?",
+            a2: "It was spawned from the despair and wrath of those who lost their light here before you. The shadows will swallow you the second your light fades.",
+            back: "Go Back"
+          },
+          how_to_escape: {
+            q1: "What lies in the deeper floors?",
+            a1: "The first floor is only the beginning. As you descend, the zindans turn pitch black, and the paths narrow. You will need ropes to descend, and shears or axes to clear roadblocks.",
+            back: "Go Back"
+          },
+          sub: {
+            back: "Go Back"
+          }
+        }
       },
       merchant: {
         name: "Lost Merchant",
@@ -364,150 +381,29 @@ export const translations = {
       },
       traveler: {
         name: "Yaşlı Bilge",
-        greeting: "Selam kayıp ruh. Nihayet Korku Labirenti'nde uyandın...",
+        greeting: "Selam kayıp ruh. Nihayet Korku Labirenti'nde uyandın... Burası zihninin en karanlık köşelerinden beslenen bir araf. Cevaplar mı arıyorsun, yoksa sadece hayatta kalmak mı?",
         farewell: "Sohbeti Bitir",
-        levels: {
-          1: {
-            greeting: "Selam kayıp ruh. Nihayet Korku Labirenti'nde uyandın... Zihninin en karanlık köşelerinden beslenen bu kapanda cevaplar mı arıyorsun, yoksa sadece hayatta kalmak mı?",
-            q1: "Ben kimim? Burası neresi?",
-            a1: "Sen korkularına teslim olmuş bir faniyisin. Adını unuttun ama buraya geliş amacın geçmişindeki derin bir pişmanlıktır.",
-            q2: "Labirentten nasıl kaçarım?",
-            a2: "İlerlemelisin. Çıkış kapısının şifreleri duvar parşömenlerine kazındı. En önemlisi, fenerinin pillerini idareli kullan.",
-            q3: "Karanlıktaki o mahluk da nedir?",
-            a3: "O, Gölge Avcısı. Işığın söndüğünde seni avlar. Işık senin tek sığınağındır."
+        stages: {
+          start: {
+            q1: "Ben kimim? Sen kimsin?",
+            a1: "Sen korkularına teslim olup buraya sürüklenen bir faniyisin. Ben ise bu arafın ilk kurbanı, kayıp ruhlara rehberlik etme cezasıyla buraya bağlanmış bir bilgeyim. Burası senin zihninin hapishanesi...",
+            q2: "Buradan nasıl kaçarım?",
+            a2: "Yalnızca daha derine inerek. 20 kat boyunca ilerlemeli, kapı şifrelerini duvarlardaki parşömenlerden öğrenmeli ve en önemlisi... fenerinin ışığını asla söndürmemelisin."
           },
-          2: {
-            greeting: "Yeniden karşılaştık. İlk adımları attın ama dehlizler daha da daralıyor. Fenerinin ateşi titriyor...",
-            q1: "Sen kimsin bilge kişi? Neden buradasın?",
-            a1: "Ben bu zindanın ilk mahkumuyum. Asırlar önce bu labirent inşa edildiğinde buraya kilitlendim.",
-            q2: "Sandıklardaki mektuplar ne anlama geliyor?",
-            a2: "Onlar senden önce gelenlerin son çığlıkları. Dikkatli oku, sırları kavra."
+          who_are_you: {
+            q1: "Bu labirent nasıl yaratıldı?",
+            a1: "İnsanoğlu ne zaman pişmanlık ve korkularının altında ezilse, bu dehlizlerin duvarları bir taş daha yükselir. Kendi ellerinle ördüğün bir hapishanede yürüyorsun.",
+            q2: "Karanlıktaki o mahluk nereden geldi?",
+            a2: "Işığını kaybedip buraya yenik düşenlerin geride bıraktığı ümitsizlik ve öfkeden doğdu. Fenerinin ateşi söndüğü an seni yutmak için bekliyor.",
+            back: "Geri Dön"
           },
-          3: {
-            greeting: "Daha derine ilerliyorsun. Yolunda garip bir tüccarla karşılaşabilirsin...",
-            q1: "Tüccar güvenilir biri mi?",
-            a1: "O sadece altın karşılığı pil satar. Ancak dikkat et, altın ararken tuzağa düşme.",
-            q2: "Duvarlardaki semboller ne anlatıyor?",
-            a2: "Onlar labirentin kadim koruyucularına ait mühürlerdir."
-          },
-          4: {
-            greeting: "Labirentin derinliklerinde susuzluktan kıvranan küçük bir çocuk dolaşır...",
-            q1: "Çocuk bir illüzyon mu?",
-            a1: "O da senin gibi bu labirentte yolunu kaybetmiş masum bir ruh. Ona yardım etmeyi seçersen iyilik seni korur.",
-            q2: "Neden bazı kapılar şifreli?",
-            a2: "Korkunun koruyucuları en büyük sırları şifreli kilitlerin arkasına sakladı."
-          },
-          5: {
-            greeting: "Yakında ilk katın sonuna ulaşacaksın. Ama altındaki zindanlar buradan çok daha karanlık...",
+          how_to_escape: {
             q1: "Alt katlarda bizi ne bekliyor?",
-            a1: "Işığın neredeyse hiç ulaşmadığı zifiri zindanlar. Alt kata inebilmek için bir halat bulmalısın.",
-            q2: "Hiç buradan kurtulan oldu mu?",
-            a2: "Efsaneler 20 kapıyı geçen birinin kurtulduğunu söyler. Ama bedeli ağırdır."
+            a1: "İlk katlar sadece bir başlangıç. Derine indikçe zindanlar zifiri karanlığa bürünecek, yollar daralacak. İnmek için halat, engelleri aşmak için makas ve balta bulmalısın.",
+            back: "Geri Dön"
           },
-          6: {
-            greeting: "Hazır ol. Bir sonraki seviyede ilk defa yerin altına, zindan katlarına ineceksin...",
-            q1: "Zindanda gezinmek daha mı zor?",
-            a1: "Evet. Alt katta tavan kararır, ortam zifiri karanlığa bürünür. Fenerin pillerini harcarken çok dikkatli ol.",
-            q2: "Halatı nerede bulabilirim?",
-            a2: "Sandıkların içinde gizlenmiş halatlar bulacaksın. O halatla derin zindan çukuruna inebilirsin."
-          },
-          7: {
-            greeting: "İşte ilk zindan katı... Gökyüzü artık yok. Sadece soğuk zindan taşları ve karanlık var.",
-            q1: "Duvarlardaki tablolar kimin?",
-            a1: "Labirentin eski lordlarına ve gölge yaratıklarına ait tablolardır. Onlara fazla bakma...",
-            q2: "Neden sesler duyuyorum?",
-            a2: "Zindan ruhların yankılarıyla doludur. Korkunu kontrol et."
-          },
-          8: {
-            greeting: "Derin zindanda ilerliyorsun. Fenerin pilleri hızla tükeniyor, öyle değil mi?",
-            q1: "Işığım biterse ne olur?",
-            a1: "Karanlık seni saniyeler içinde yutar. Gölge Yaratığı asla acımaz.",
-            q2: "Kaç kat daha aşağı inebiliriz?",
-            a2: "Daha da derin zindan katları var... En alttaki kanlı zindan en tehlikelisisidir."
-          },
-          9: {
-            greeting: "Duvar diplerinde bir fare ciyaklıyor... Onu küçümseme.",
-            q1: "Fare ne işe yarar?",
-            a1: "Ona sandıktan bulduğun bir parça peynir verirsen sana gizli geçitleri gösterecektir.",
-            q2: "Zindanın haritası değişiyor mu?",
-            a2: "Her seviyede labirent zihnine göre yeniden şekilledir."
-          },
-          10: {
-            greeting: "Yolun yarısına geldin yürekli savaşçı. 10 seviye geride kaldı...",
-            q1: "Geçmişimi hatırlamaya başladım...",
-            a1: "Güzel. Hatırladıkça labirentin üzerindeki gücü azalacaktır.",
-            q2: "Önümüzdeki seviyeler daha mı zor?",
-            a2: "Daha büyük labirentler ve 3 katlı derin zindanlar seni bekliyor."
-          },
-          11: {
-            greeting: "Labirent genişliyor. Artık 2 katlı zindan dehlizlerindesin.",
-            q1: "Harita parçalarını bulmak şart mı?",
-            a1: "Harita parçaları körlemesine kaybolmanı önler.",
-            q2: "Gölge Canavarı yaklaştığında ne yapmalıyım?",
-            a2: "Hemen fenerini yak ve geriye bakmadan koş."
-          },
-          12: {
-            greeting: "Zindandaki fısıltılar güçleniyor... Son kat yaklaşıyor.",
-            q1: "Sesler bana ne söylüyor?",
-            a1: "Zihnine şüphe ekmeye çalışıyorlar. Dinleme.",
-            q2: "Tüccar neden buralarda dolaşıyor?",
-            a2: "Tüccar da buranın lanetine mahkum bir tüccar ruhudur."
-          },
-          13: {
-            greeting: "Bir sonraki seviyede en derin 3. kata ineceksin. Kanlı Zindan Katı...",
-            q1: "Kanlı Zindan nedir?",
-            a1: "En alt kattaki kızıl kuyu. Sis kan kırmızısıdır ve fenerin paranormal şekilde titrer.",
-            q2: "Oraya inmek zorunda mıyım?",
-            a2: "Çıkış kapısına ulaşmak için o katı geçmek zorundasın."
-          },
-          14: {
-            greeting: "İşte 3. Kat... Kanlı Zindan'dasın. Sis kızıl ve fenerin fısıldıyor...",
-            q1: "Duvarlar neden kızıl renkte?",
-            a1: "Burası korkunun merkezidir. Sadece en cesurlar buradan canlı çıkar.",
-            q2: "Görüş mesafem çok azaldı!",
-            a2: "Evet, kan sisi ışığı yutar. Yavaş ve dikkatli ilerle."
-          },
-          15: {
-            greeting: "Duvarlardaki tabloların gözleri seni takip ediyor...",
-            q1: "Tablolar canlanacak mı?",
-            a1: "Hayır ama zihnini sarsabilirler. Işığına odaklan.",
-            q2: "Son seviyeler yaklaşıyor mu?",
-            a2: "Evet, 20. seviye bu kabusun sonudur."
-          },
-          16: {
-            greeting: "Harabelerdeki eski kuyular ve susuz kalan ruhlar...",
-            q1: "Kovayla su çekmenin faydası ne?",
-            a1: "Susuz kalan kayıp çocuğa yardım edebilirsin.",
-            q2: "Ödül olarak ne veriyor?",
-            a2: "Sana fenerin için pil verecektir."
-          },
-          17: {
-            greeting: "En alt kattan zemin kata çıktığında gökyüzüne bak... Yıldızlar hala orada.",
-            q1: "Orion takımyıldızını gördüm...",
-            a1: "O yıldızlar umudun simgesidir. Yolunu aydınlatır.",
-            q2: "Az kaldı mı?",
-            a2: "Sadece 3 seviye kaldı."
-          },
-          18: {
-            greeting: "18. seviye... Labirentin duvarları çatlıyor!",
-            q1: "Gölge Canavarı daha hızlı mı?",
-            a1: "Son seviyelerde daha agresiftir. Asla durma.",
-            q2: "Şifreler daha mı zor?",
-            a2: "Dikkatli oku, 4 haneli şifreleri hemen bulacaksın."
-          },
-          19: {
-            greeting: "20. seviyeden önceki son engel. Hazır mısın?",
-            q1: "Bütün bu olanlar gerçek miydi?",
-            a1: "Zihninle verdiğin savaştı. Son kapıyı açtığında özgürsün.",
-            q2: "Sana ne olacak Bilge?",
-            a2: "Ben burada kalacağım, yeni kayıp ruhları yönlendirmek için..."
-          },
-          20: {
-            greeting: "Tebrikler kahraman. 20 seviyelik kabusu aştın ve son kapının önündesin!",
-            q1: "Kaçış kapısının şifresi nedir?",
-            a1: "Duvar parşömenlerini okudun. Son şifreyi gir ve özgürlüğüne kavuş!",
-            q2: "Elveda bilge kişi...",
-            a2: "Elveda kayıp ruh. Işığın hiç sönmesin..."
+          sub: {
+            back: "Geri Dön"
           }
         }
       },

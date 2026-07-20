@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=51";
-import { AudioEngine } from "./audio.js?v=51";
-import { CanvasRenderer } from "./canvas.js?v=51";
-import { translations } from "./translations.js?v=51";
-import { randomEvents, deathEvents } from "./events.js?v=51";
-import { getSeededRandom } from "./prng.js?v=51";
+import { generateMaze } from "./maze.js?v=52";
+import { AudioEngine } from "./audio.js?v=52";
+import { CanvasRenderer } from "./canvas.js?v=52";
+import { translations } from "./translations.js?v=52";
+import { randomEvents, deathEvents } from "./events.js?v=52";
+import { getSeededRandom } from "./prng.js?v=52";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -1353,62 +1353,93 @@ export class Game {
       }
     } else if (npc.id === "traveler") {
       title = this.t("npc.traveler.name");
-      const lvl = Math.min(20, Math.max(1, this.currentLevel));
-      const lvlData = (translations[this.lang]?.npc?.traveler?.levels?.[lvl]) || (translations["en"]?.npc?.traveler?.levels?.[lvl]);
+      const travelerTrans = (translations[this.lang]?.npc?.traveler) || (translations["en"]?.npc?.traveler);
+      const stages = travelerTrans?.stages || {};
 
-      text = npc.currentText || (lvlData ? lvlData.greeting : this.t("npc.traveler.greeting"));
+      if (!npc.dialogueStage) {
+        npc.dialogueStage = "start";
+      }
 
-      if (lvlData) {
-        if (lvlData.q1 && lvlData.a1) {
-          choices.push({
-            text: lvlData.q1,
-            action: () => {
-              npc.currentText = lvlData.a1;
-              this.triggerNPCInteraction(cell);
-            }
-          });
-        }
-        if (lvlData.q2 && lvlData.a2) {
-          choices.push({
-            text: lvlData.q2,
-            action: () => {
-              npc.currentText = lvlData.a2;
-              this.triggerNPCInteraction(cell);
-            }
-          });
-        }
-        if (lvlData.q3 && lvlData.a3) {
-          choices.push({
-            text: lvlData.q3,
-            action: () => {
-              npc.currentText = lvlData.a3;
-              this.triggerNPCInteraction(cell);
-            }
-          });
-        }
-      } else {
+      text = npc.currentText || travelerTrans.greeting;
+
+      if (npc.dialogueStage === "start") {
         choices.push({
-          text: this.t("npc.traveler.askWho"),
+          text: stages.start?.q1 || "Ben kimim? Sen kimsin?",
           action: () => {
-            npc.currentText = this.t("npc.traveler.replyWho");
+            npc.currentText = stages.start?.a1;
+            npc.dialogueStage = "who_are_you";
             this.triggerNPCInteraction(cell);
           }
         });
         choices.push({
-          text: this.t("npc.traveler.askEscape"),
+          text: stages.start?.q2 || "Buradan nasıl kaçarım?",
           action: () => {
-            npc.currentText = this.t("npc.traveler.replyEscape");
+            npc.currentText = stages.start?.a2;
+            npc.dialogueStage = "how_to_escape";
+            this.triggerNPCInteraction(cell);
+          }
+        });
+      } else if (npc.dialogueStage === "who_are_you") {
+        choices.push({
+          text: stages.who_are_you?.q1 || "Bu labirent nasıl yaratıldı?",
+          action: () => {
+            npc.currentText = stages.who_are_you?.a1;
+            npc.dialogueStage = "sub";
+            this.triggerNPCInteraction(cell);
+          }
+        });
+        choices.push({
+          text: stages.who_are_you?.q2 || "Karanlıktaki o mahluk nereden geldi?",
+          action: () => {
+            npc.currentText = stages.who_are_you?.a2;
+            npc.dialogueStage = "sub";
+            this.triggerNPCInteraction(cell);
+          }
+        });
+        choices.push({
+          text: stages.who_are_you?.back || "Geri Dön",
+          action: () => {
+            npc.currentText = travelerTrans.greeting;
+            npc.dialogueStage = "start";
+            this.triggerNPCInteraction(cell);
+          }
+        });
+      } else if (npc.dialogueStage === "how_to_escape") {
+        choices.push({
+          text: stages.how_to_escape?.q1 || "Alt katlarda bizi ne bekliyor?",
+          action: () => {
+            npc.currentText = stages.how_to_escape?.a1;
+            npc.dialogueStage = "sub";
+            this.triggerNPCInteraction(cell);
+          }
+        });
+        choices.push({
+          text: stages.how_to_escape?.back || "Geri Dön",
+          action: () => {
+            npc.currentText = travelerTrans.greeting;
+            npc.dialogueStage = "start";
+            this.triggerNPCInteraction(cell);
+          }
+        });
+      } else if (npc.dialogueStage === "sub") {
+        choices.push({
+          text: stages.sub?.back || "Geri Dön",
+          action: () => {
+            npc.currentText = travelerTrans.greeting;
+            npc.dialogueStage = "start";
             this.triggerNPCInteraction(cell);
           }
         });
       }
 
       choices.push({
-        text: this.t("npc.traveler.farewell") || "Sohbeti Bitir",
+        text: travelerTrans.farewell || "Sohbeti Bitir",
         action: () => {
           this.state.gameState = "playing";
           npc.hasSpoken = true;
           npc.dialogueClosedTime = Date.now();
+          npc.dialogueStage = "start"; // Reset for next interaction
+          npc.currentText = null;
           if (this.onStateChange) this.onStateChange();
         }
       });

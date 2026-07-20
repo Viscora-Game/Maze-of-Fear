@@ -140,46 +140,17 @@ export class CanvasRenderer {
       console.warn("Loading manager encountered error:", url);
     };
 
-    const loader = new THREE.TextureLoader();
-
-    this.brickTexture = loader.load("https://threejs.org/examples/textures/brick_diffuse.jpg");
-    this.brickTexture.wrapS = THREE.RepeatWrapping;
-    this.brickTexture.wrapT = THREE.RepeatWrapping;
-    this.brickTexture.repeat.set(1.5, 1.5);
-
-    this.brickBump = loader.load("https://threejs.org/examples/textures/brick_bump.jpg");
-    this.brickBump.wrapS = THREE.RepeatWrapping;
-    this.brickBump.wrapT = THREE.RepeatWrapping;
-    this.brickBump.repeat.set(1.5, 1.5);
-
-    this.hedgeTexture = loader.load("https://threejs.org/examples/textures/terrain/grasslight-big.jpg");
-    this.hedgeTexture.wrapS = THREE.RepeatWrapping;
-    this.hedgeTexture.wrapT = THREE.RepeatWrapping;
-    this.hedgeTexture.repeat.set(1.5, 1.5);
-
-    this.hedgeNormal = loader.load("https://threejs.org/examples/textures/terrain/grasslight-big-nm.jpg");
-    this.hedgeNormal.wrapS = THREE.RepeatWrapping;
-    this.hedgeNormal.wrapT = THREE.RepeatWrapping;
-    this.hedgeNormal.repeat.set(1.5, 1.5);
-
-    this.woodTexture = loader.load("https://threejs.org/examples/textures/hardwood2_diffuse.jpg");
-    this.woodTexture.wrapS = THREE.RepeatWrapping;
-    this.woodTexture.wrapT = THREE.RepeatWrapping;
-    this.woodTexture.repeat.set(1.0, 1.0);
-
-    this.woodBump = loader.load("https://threejs.org/examples/textures/hardwood2_bump.jpg");
-    this.woodBump.wrapS = THREE.RepeatWrapping;
-    this.woodBump.wrapT = THREE.RepeatWrapping;
-    this.woodBump.repeat.set(1.0, 1.0);
-
-    // Use brick texture tinted slate grey for the floor paths
-    this.floorTexture = loader.load("https://threejs.org/examples/textures/brick_diffuse.jpg");
-    this.floorTexture.wrapS = THREE.RepeatWrapping;
-    this.floorTexture.wrapT = THREE.RepeatWrapping;
-    this.floorTexture.repeat.set(2.0, 2.0);
+    this.brickTexture = this.buildBrickTexture();
+    this.brickBump = null;
+    this.hedgeTexture = this.buildHedgeTexture();
+    this.hedgeNormal = null;
+    this.woodTexture = this.buildWoodTexture();
+    this.woodBump = null;
+    this.floorTexture = this.buildFloorTexture();
 
     // Load jumpscare texture directly using URL constructor for Vite asset resolution compatibility
     const jumpscareUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
+    const loader = new THREE.TextureLoader();
     this.jumpscareTexture = loader.load(jumpscareUrl);
 
     // Precompiled Shadow Monster Geometries and Materials (prevents WebGL compile-time lag spikes during gameplay)
@@ -989,6 +960,249 @@ export class CanvasRenderer {
     const texture = new THREE.CanvasTexture(canvas);
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.ClampToEdgeWrapping;
+    return texture;
+  }
+
+  buildBrickTexture() {
+    const canvas = document.createElement("canvas");
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext("2d");
+
+    // Base stone color
+    ctx.fillStyle = "#334155"; // Slate gray base
+    ctx.fillRect(0, 0, 256, 256);
+
+    // Draw stone brick pattern
+    const rows = 8;
+    const cols = 4;
+    const rh = 256 / rows;
+    const cw = 256 / cols;
+
+    for (let r = 0; r < rows; r++) {
+      const y = r * rh;
+      const offset = (r % 2 === 0) ? 0 : cw / 2;
+      
+      // Horizontal mortar line
+      ctx.strokeStyle = "#1e293b";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(256, y);
+      ctx.stroke();
+
+      for (let c = -1; c <= cols; c++) {
+        const x = c * cw + offset;
+        
+        // Vertical mortar line
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x, y + rh);
+        ctx.stroke();
+
+        // Add subtle shading/noise inside each brick
+        ctx.save();
+        ctx.rect(x + 2, y + 2, cw - 4, rh - 4);
+        ctx.clip();
+        
+        // Randomized shading gradient
+        const brickSeed = (r * 13 + c * 37) % 100;
+        const shade = -15 + (brickSeed % 30); // offset brightness
+        const color = `rgba(${51 + shade}, ${65 + shade}, ${85 + shade}, 0.8)`;
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, cw, rh);
+
+        // Noise overlay
+        for (let i = 0; i < 40; i++) {
+          const nx = x + ((brickSeed * i + 17) % Math.floor(cw));
+          const ny = y + ((brickSeed * i + 79) % Math.floor(rh));
+          const nr = 1 + (i % 2);
+          ctx.fillStyle = (i % 2 === 0) ? "rgba(0,0,0,0.15)" : "rgba(255,255,255,0.08)";
+          ctx.beginPath();
+          ctx.arc(nx, ny, nr, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(1.5, 1.5);
+    return texture;
+  }
+
+  buildHedgeTexture() {
+    const canvas = document.createElement("canvas");
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext("2d");
+
+    // Deep dark forest green base
+    ctx.fillStyle = "#064e3b"; 
+    ctx.fillRect(0, 0, 256, 256);
+
+    // Generate leaf clumps / organic noise
+    const colors = [
+      "#064e3b", // Deep forest green
+      "#065f46", // Dark green
+      "#0f766e", // Tealish green
+      "#115e59", // Muted green-teal
+      "#047857", // Bright emerald shadow
+      "#022c22"  // Absolute shadow dark green
+    ];
+
+    let seed = 9876;
+    const rng = () => {
+      seed = (seed * 9301 + 49297) % 233280;
+      return seed / 233280;
+    };
+
+    // Draw overlapping leaves
+    for (let i = 0; i < 2000; i++) {
+      const x = rng() * 256;
+      const y = rng() * 256;
+      const size = 3 + rng() * 6;
+      const col = colors[Math.floor(rng() * colors.length)];
+
+      ctx.fillStyle = col;
+      ctx.beginPath();
+      // Ellipse/leaf shape
+      ctx.ellipse(x, y, size, size * 0.6, rng() * Math.PI, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Shadow stroke
+      ctx.strokeStyle = "rgba(0, 0, 0, 0.2)";
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(1.5, 1.5);
+    return texture;
+  }
+
+  buildWoodTexture() {
+    const canvas = document.createElement("canvas");
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext("2d");
+
+    // Base rich warm brown wood color
+    ctx.fillStyle = "#451a03"; // Dark rich brown
+    ctx.fillRect(0, 0, 256, 256);
+
+    // Draw wood planks
+    const numPlanks = 5;
+    const pw = 256 / numPlanks;
+
+    for (let i = 0; i < numPlanks; i++) {
+      const x = i * pw;
+      
+      // Base variation for each plank
+      ctx.fillStyle = (i % 2 === 0) ? "#451a03" : "#3b1702";
+      ctx.fillRect(x, 0, pw, 256);
+
+      // Wood grain lines
+      ctx.strokeStyle = "rgba(0, 0, 0, 0.4)";
+      ctx.lineWidth = 1;
+      
+      for (let j = 0; j < 6; j++) {
+        ctx.beginPath();
+        // Draw wavy lines using quadratic curves to simulate wood grains
+        ctx.moveTo(x + (pw * 0.1) + (j * pw * 0.15), 0);
+        ctx.quadraticCurveTo(
+          x + (pw * 0.1) + (j * pw * 0.15) + Math.sin(j + i) * 15,
+          128,
+          x + (pw * 0.1) + (j * pw * 0.15) + Math.cos(j * 2) * 5,
+          256
+        );
+        ctx.stroke();
+      }
+
+      // Plank separator lines (dark grout/shadows)
+      ctx.strokeStyle = "#170500";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, 256);
+      ctx.stroke();
+
+      // Knots in the wood
+      if (i % 2 === 0) {
+        ctx.fillStyle = "rgba(23, 5, 0, 0.6)";
+        ctx.beginPath();
+        ctx.arc(x + pw / 2, 60 + i * 40, 8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(1.0, 1.0);
+    return texture;
+  }
+
+  buildFloorTexture() {
+    const canvas = document.createElement("canvas");
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext("2d");
+
+    // Slate stone base color
+    ctx.fillStyle = "#1e293b"; // Slate grey
+    ctx.fillRect(0, 0, 256, 256);
+
+    // Draw square floor stone tiles
+    const rows = 4;
+    const cols = 4;
+    const tileSize = 256 / rows;
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const x = c * tileSize;
+        const y = r * tileSize;
+
+        // Base tile tone variations
+        const tileSeed = (r * 17 + c * 23) % 100;
+        const shade = -10 + (tileSeed % 20); // slightly lighter/darker
+        ctx.fillStyle = `rgba(${30 + shade}, ${41 + shade}, ${59 + shade}, 1)`;
+        ctx.fillRect(x + 2, y + 2, tileSize - 4, tileSize - 4);
+
+        // Mortar grout lines
+        ctx.strokeStyle = "#0f172a";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(x, y, tileSize, tileSize);
+
+        // Tonal cracks/details on stones
+        if (tileSeed % 4 === 0) {
+          ctx.strokeStyle = "rgba(0, 0, 0, 0.35)";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(x + 5, y + 5);
+          ctx.lineTo(x + tileSize * 0.4, y + tileSize * 0.35);
+          ctx.lineTo(x + tileSize * 0.45, y + tileSize * 0.7);
+          ctx.stroke();
+        }
+
+        // Noise spots
+        ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
+        for (let i = 0; i < 5; i++) {
+          const nx = x + 4 + ((tileSeed * i + 11) % (tileSize - 8));
+          const ny = y + 4 + ((tileSeed * i + 43) % (tileSize - 8));
+          ctx.fillRect(nx, ny, 2, 2);
+        }
+      }
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(2.0, 2.0);
     return texture;
   }
 

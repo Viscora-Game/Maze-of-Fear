@@ -4204,7 +4204,37 @@ export class CanvasRenderer {
           handGroup.add(fallbackFl);
         }
         
+        // 5. Glowing Flashlight Lens & Volumetric Light Beam Cone for Partner
+        const lensMat = new THREE.MeshBasicMaterial({
+          color: "#fef08a",
+          transparent: true,
+          opacity: 0.0
+        });
+        const lensMesh = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.022, 0.022, 0.005, 12),
+          lensMat
+        );
+        lensMesh.rotation.x = Math.PI / 2;
+        lensMesh.position.set(0, 0, 0.12);
+        handGroup.add(lensMesh);
+
+        // Volumetric Light Cone extending from flashlight lens
+        const coneGeom = new THREE.ConeGeometry(0.65, 3.5, 16, 1, true);
+        coneGeom.rotateX(-Math.PI / 2);
+        coneGeom.translate(0, 0, 1.75);
+
+        const beamMat = new THREE.MeshBasicMaterial({
+          color: "#fef08a",
+          transparent: true,
+          opacity: 0.0,
+          side: THREE.DoubleSide,
+          depthWrite: false
+        });
+        const beamMesh = new THREE.Mesh(coneGeom, beamMat);
+        handGroup.add(beamMesh);
+
         ghostGroup.add(handGroup);
+        ghostGroup.userData = { lensMat, beamMat };
         
         this.otherPlayerMesh = ghostGroup;
         this.otherPlayerGroup.add(this.otherPlayerMesh);
@@ -4213,11 +4243,9 @@ export class CanvasRenderer {
       
       const op = state.otherPlayer;
       const localDist = Math.hypot(op.x - player.x, op.y - player.y);
-      const showOther = (op.floor === currentFloor && !op.isDead && localDist > 0.35);
+      const isPartnerOnFloor = (op.floor === currentFloor && !op.isDead);
       
-      this.otherPlayerGroup.visible = showOther;
-      
-      if (showOther) {
+      if (isPartnerOnFloor) {
         if (op.visualX === undefined || op.visualX === null) {
           op.visualX = op.x;
           op.visualY = op.y;
@@ -4230,27 +4258,41 @@ export class CanvasRenderer {
         const hoverY = 0.08 + Math.sin(Date.now() * 0.004) * 0.035;
         this.otherPlayerGroup.position.set(op.visualX, hoverY, op.visualY);
         
-        // Orient the character model Y-axis to match their angle
+        // Orient character model to match look angle
         this.otherPlayerGroup.rotation.y = -op.angle + Math.PI / 2;
-        
-        // Position the SpotLight source around their flashlight height (e.g. Y = hoverY + 0.35)
-        this.otherPlayerLight.position.set(op.visualX, hoverY + 0.35, op.visualY);
-        
-        // Position the SpotLight target along their look direction vector
-        const lookDirX = Math.cos(op.angle);
-        const lookDirY = Math.sin(op.angle);
-        const targetPitch = op.pitch || 0;
-        
-        this.otherPlayerLight.target.position.set(
-          op.visualX + lookDirX * 5.0,
-          hoverY + 0.35 + Math.sin(targetPitch) * 5.0,
-          op.visualY + lookDirY * 5.0
-        );
-        
-        this.otherPlayerLight.intensity = op.lanternOn ? 4.5 : 0.0;
-        this.otherPlayerLight.updateMatrixWorld(true);
-        this.otherPlayerLight.target.updateMatrixWorld(true);
+
+        // Hide ghost mesh only if camera is literally clipping inside body (<0.35m)
+        this.otherPlayerGroup.visible = (localDist > 0.35);
+
+        // Update Flashlight Lens Bulb Glow and Light Beam Cone opacity
+        if (this.otherPlayerMesh && this.otherPlayerMesh.userData) {
+          const { lensMat, beamMat } = this.otherPlayerMesh.userData;
+          if (lensMat) lensMat.opacity = op.lanternOn ? 1.0 : 0.0;
+          if (beamMat) beamMat.opacity = op.lanternOn ? 0.22 : 0.0;
+        }
+
+        // Spotlight ALWAYS stays active when lanternOn is true, regardless of localDist!
+        if (op.lanternOn) {
+          this.otherPlayerLight.position.set(op.visualX, hoverY + 0.35, op.visualY);
+          
+          const lookDirX = Math.cos(op.angle);
+          const lookDirY = Math.sin(op.angle);
+          const targetPitch = op.pitch || 0;
+          
+          this.otherPlayerLight.target.position.set(
+            op.visualX + lookDirX * 5.0,
+            hoverY + 0.35 + Math.sin(targetPitch) * 5.0,
+            op.visualY + lookDirY * 5.0
+          );
+          
+          this.otherPlayerLight.intensity = 5.5;
+          this.otherPlayerLight.updateMatrixWorld(true);
+          this.otherPlayerLight.target.updateMatrixWorld(true);
+        } else {
+          this.otherPlayerLight.intensity = 0.0;
+        }
       } else {
+        this.otherPlayerGroup.visible = false;
         if (this.otherPlayerLight) {
           this.otherPlayerLight.intensity = 0.0;
         }

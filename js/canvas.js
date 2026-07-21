@@ -1121,34 +1121,46 @@ export class CanvasRenderer {
     canvas.height = 512;
     const ctx = canvas.getContext("2d");
 
-    // Very dark base green for deep background shadows
-    ctx.fillStyle = "#05120a"; 
+    // Start with a rich, dark organic green background representing deep shadow
+    ctx.fillStyle = "#0c1a10";
     ctx.fillRect(0, 0, 512, 512);
 
-    const colors = [
-      "#081b0e", // Deep background shadow
-      "#0f2c16", // Shadow leaf green
-      "#15401f", // Forest dark green
-      "#1d572b", // Classic hedge green
-      "#267339", // Rich medium green
-      "#32994c", // Healthy bright green
-      "#4cb366", // Sunlight green highlight
-      "#7ecc8f"  // Fresh new growth (light tips)
+    const leafColors = [
+      { start: "#112e1a", end: "#1b4d2c" }, // Dark forest green
+      { start: "#183e23", end: "#28663b" }, // Medium forest green
+      { start: "#1d4f2b", end: "#388c4d" }, // Rich green
+      { start: "#236335", end: "#41a357" }, // Vibrant leafy green
+      { start: "#2d7f45", end: "#55bf71" }, // Bright green
+      { start: "#3da65a", end: "#7ad98e" }, // Yellow-green new growth
+      { start: "#4b8c3f", end: "#8bbd78" }  // Olive/yellow-green spring leaf
     ];
 
-    let seed = 8844;
+    let seed = 7711;
     const rng = () => {
       seed = (seed * 9301 + 49297) % 233280;
       return seed / 233280;
     };
 
-    const drawLeafShape = (cCtx, lx, ly, lSize, lAngle, lColor) => {
+    const drawSoftLeaf = (cCtx, lx, ly, lSize, lAngle, colors) => {
       cCtx.save();
       cCtx.translate(lx, ly);
       cCtx.rotate(lAngle);
-      cCtx.fillStyle = lColor;
-      
-      // Beautiful boxwood leaf shape: oval, slightly pointed, but mostly rounded
+
+      // Create a smooth linear gradient along the length of the leaf (from stem to tip)
+      const grad = cCtx.createLinearGradient(0, lSize, 0, -lSize);
+      grad.addColorStop(0.0, colors.start);
+      grad.addColorStop(0.7, colors.end);
+      grad.addColorStop(1.0, colors.end === "#7ad98e" || colors.end === "#8bbd78" ? "#b2f2b4" : colors.end);
+
+      cCtx.fillStyle = grad;
+
+      // Soft drop shadow built-in using transparent dark green shape beneath the leaf
+      cCtx.shadowColor = "rgba(4, 15, 8, 0.4)";
+      cCtx.shadowBlur = 4;
+      cCtx.shadowOffsetX = 1;
+      cCtx.shadowOffsetY = 2;
+
+      // Rounded oval boxwood leaf geometry
       cCtx.beginPath();
       cCtx.moveTo(0, -lSize);
       cCtx.bezierCurveTo(lSize * 0.65, -lSize * 0.7, lSize * 0.65, lSize * 0.7, 0, lSize);
@@ -1156,147 +1168,128 @@ export class CanvasRenderer {
       cCtx.closePath();
       cCtx.fill();
 
-      // Leaf margin border (gives structure and separation under light!)
-      cCtx.strokeStyle = "rgba(0, 0, 0, 0.15)";
-      cCtx.lineWidth = 1.0;
-      cCtx.stroke();
+      // Clear shadows for details
+      cCtx.shadowColor = "transparent";
 
-      // Soft light-green edge highlight for boxwood tips
-      cCtx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+      // Subtle light-colored leaf midrib (vein) - very thin and soft
+      cCtx.strokeStyle = "rgba(255, 255, 255, 0.15)";
       cCtx.lineWidth = 0.8;
       cCtx.beginPath();
-      cCtx.moveTo(0, -lSize);
-      cCtx.bezierCurveTo(lSize * 0.5, -lSize * 0.6, lSize * 0.5, lSize * 0.6, 0, lSize);
+      cCtx.moveTo(0, lSize * 0.8);
+      cCtx.lineTo(0, -lSize * 0.7);
       cCtx.stroke();
 
-      // Darker center vein
-      cCtx.strokeStyle = "rgba(0, 0, 0, 0.25)";
-      cCtx.lineWidth = 1.2;
-      cCtx.beginPath();
-      cCtx.moveTo(0, -lSize * 0.85);
-      cCtx.lineTo(0, lSize * 0.85);
-      cCtx.stroke();
       cCtx.restore();
     };
 
-    // Draw 1000 overlapping leaves
-    for (let i = 0; i < 1000; i++) {
+    // Layer 1200 leaves to build a dense, bushy boxwood structure
+    for (let i = 0; i < 1200; i++) {
       const x = rng() * 512;
       const y = rng() * 512;
-      const size = 11.0 + rng() * 11.0; // Perfect scale
-      const angle = rng() * Math.PI * 2;
-      const colRand = rng();
+      const size = 10.0 + rng() * 12.0;
+      const angle = (rng() * 360) * Math.PI / 180;
+      
+      const layerProgress = i / 1200;
+      const colorIndex = Math.floor(rng() * leafColors.length * (0.4 + layerProgress * 0.6));
+      const colPair = leafColors[Math.min(leafColors.length - 1, colorIndex)];
 
-      // Weighted color choice: leaves drawn later (on top) are slightly brighter/lighter
-      // to simulate realistic light catching outer canopy
-      const colorProgress = i / 1000;
-      const colIdx = Math.floor(colRand * colors.length * (0.55 + colorProgress * 0.45));
-      const col = colors[Math.min(colors.length - 1, colIdx)];
+      drawSoftLeaf(ctx, x, y, size, angle, colPair);
 
-      drawLeafShape(ctx, x, y, size, angle, col);
-
-      // Support repeat wrapping seams by duplicating leaves that cross borders (512x512)
       const offsets = [];
       if (x < size) offsets.push([512, 0]);
       if (x > 512 - size) offsets.push([-512, 0]);
       if (y < size) offsets.push([0, 512]);
       if (y > 512 - size) offsets.push([0, -512]);
-      
-      // Diagonals for corners
+
       if (x < size && y < size) offsets.push([512, 512]);
       if (x > 512 - size && y < size) offsets.push([-512, 512]);
       if (x < size && y > 512 - size) offsets.push([512, -512]);
       if (x > 512 - size && y > 512 - size) offsets.push([-512, -512]);
 
       for (const [ox, oy] of offsets) {
-        drawLeafShape(ctx, x + ox, y + oy, size, angle, col);
+        drawSoftLeaf(ctx, x + ox, y + oy, size, angle, colPair);
       }
     }
+
+    // Add photographic grain overlay (noise) to eliminate flat digital gradients
+    const imgData = ctx.getImageData(0, 0, 512, 512);
+    const data = imgData.data;
+    for (let i = 0; i < data.length; i += 4) {
+      const noise = (rng() - 0.5) * 12;
+      data[i] = Math.max(0, Math.min(255, data[i] + noise));     // Red
+      data[i+1] = Math.max(0, Math.min(255, data[i+1] + noise * 1.1)); // Green
+      data[i+2] = Math.max(0, Math.min(255, data[i+2] + noise * 0.9)); // Blue
+    }
+    ctx.putImageData(imgData, 0, 0);
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(1.5, 1.5); // Slightly repeat for high detail tiling
+    texture.repeat.set(1.5, 1.5);
     return texture;
   }
 
-  // Procedural grayscale hedge bump map for organic 3D leaf relief
   buildHedgeBump() {
     const canvas = document.createElement("canvas");
     canvas.width = 512;
     canvas.height = 512;
     const ctx = canvas.getContext("2d");
 
-    // Base middle-gray (mid level bump)
-    ctx.fillStyle = "#555555"; 
+    // Base neutral gray (mid level bump)
+    ctx.fillStyle = "#808080"; 
     ctx.fillRect(0, 0, 512, 512);
 
-    let seed = 8844; // Match texture seed exactly
+    let seed = 7711; // Match seed for coordinate alignment
     const rng = () => {
       seed = (seed * 9301 + 49297) % 233280;
       return seed / 233280;
     };
 
-    const drawLeafBumpShape = (cCtx, lx, ly, lSize, lAngle, lShade) => {
-      cCtx.save();
-      cCtx.translate(lx, ly);
-      cCtx.rotate(lAngle);
-
-      // Radial gradient so the leaf is convex (puffed up in the center)
-      const grad = cCtx.createRadialGradient(0, 0, 0, 0, 0, lSize);
-      grad.addColorStop(0, `rgb(${lShade}, ${lShade}, ${lShade})`);
-      grad.addColorStop(0.75, `rgb(${Math.max(50, lShade - 35)}, ${Math.max(50, lShade - 35)}, ${Math.max(50, lShade - 35)})`);
-      grad.addColorStop(1, "rgb(65, 65, 65)"); // fade to shadow level at leaf edge
-
-      cCtx.fillStyle = grad;
-      cCtx.beginPath();
-      cCtx.moveTo(0, -lSize);
-      cCtx.bezierCurveTo(lSize * 0.65, -lSize * 0.7, lSize * 0.65, lSize * 0.7, 0, lSize);
-      cCtx.bezierCurveTo(-lSize * 0.65, lSize * 0.7, -lSize * 0.65, -lSize * 0.7, 0, -lSize);
-      cCtx.closePath();
-      cCtx.fill();
-      cCtx.restore();
-    };
-
-    // Draw 1000 overlapping leaf bumps at the identical coordinates
-    for (let i = 0; i < 1000; i++) {
+    // Draw soft, pillowy humps instead of sharp leaf outlines
+    // This creates natural light diffusion without harsh specular glares!
+    for (let i = 0; i < 900; i++) {
       const x = rng() * 512;
       const y = rng() * 512;
-      const size = 11.0 + rng() * 11.0;
-      const angle = rng() * Math.PI * 2;
-      const colRand = rng(); // Consume the RNG token to keep seeds perfectly aligned
+      const size = 15.0 + rng() * 25.0; // Larger, softer humps
+      const colRand = rng(); // Keep RNG sequence aligned
+      
+      const progress = i / 900;
+      const shade = 100 + Math.floor(progress * 60); // Max range 100-160 (low contrast, extremely smooth!)
 
-      // Grayscale shade representing height. Later leaves (drawn on top) are brighter (higher)
-      const progress = i / 1000;
-      const baseShade = 110 + Math.floor(progress * 115); // ranges from 110 (lower) to 225 (higher surface)
-      const shadeNoise = Math.floor(colRand * 25);
-      const finalShade = Math.min(255, baseShade + shadeNoise);
+      const grad = ctx.createRadialGradient(x, y, 0, x, y, size);
+      grad.addColorStop(0.0, `rgba(${shade}, ${shade}, ${shade}, 0.25)`);
+      grad.addColorStop(1.0, "rgba(128, 128, 128, 0)"); // fade out
 
-      drawLeafBumpShape(ctx, x, y, size, angle, finalShade);
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(x, y, size, 0, Math.PI * 2);
+      ctx.fill();
 
-      // Repeat seam wrapping to align with color texture
+      // Wrap seams
       const offsets = [];
       if (x < size) offsets.push([512, 0]);
       if (x > 512 - size) offsets.push([-512, 0]);
       if (y < size) offsets.push([0, 512]);
       if (y > 512 - size) offsets.push([0, -512]);
-      
-      if (x < size && y < size) offsets.push([512, 512]);
-      if (x > 512 - size && y < size) offsets.push([-512, 512]);
-      if (x < size && y > 512 - size) offsets.push([512, -512]);
-      if (x > 512 - size && y > 512 - size) offsets.push([-512, -512]);
 
       for (const [ox, oy] of offsets) {
-        drawLeafBumpShape(ctx, x + ox, y + oy, size, angle, finalShade);
+        const wrapGrad = ctx.createRadialGradient(x + ox, y + oy, 0, x + ox, y + oy, size);
+        wrapGrad.addColorStop(0.0, `rgba(${shade}, ${shade}, ${shade}, 0.25)`);
+        wrapGrad.addColorStop(1.0, "rgba(128, 128, 128, 0)");
+        ctx.fillStyle = wrapGrad;
+        ctx.beginPath();
+        ctx.arc(x + ox, y + oy, size, 0, Math.PI * 2);
+        ctx.fill();
       }
     }
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(1.5, 1.5); // Match repeat mapping exactly
+    texture.repeat.set(1.5, 1.5);
     return texture;
   }
+
 
   buildWoodTexture() {
     const canvas = document.createElement("canvas");
@@ -2046,9 +2039,9 @@ export class CanvasRenderer {
     const hedgeMat = new THREE.MeshStandardMaterial({ 
       map: this.hedgeTexture, 
       bumpMap: this.hedgeBump,
-      bumpScale: 0.022,
+      bumpScale: 0.04,
       color: "#ffffff", 
-      roughness: 0.88 
+      roughness: 0.95 
     });
 
     const capMat = new THREE.MeshStandardMaterial({

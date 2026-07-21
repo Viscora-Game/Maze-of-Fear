@@ -156,17 +156,19 @@
         <div class="settings-card" id="coop-host-panel" style="width: 100%;">
           <div class="settings-card-title">🔑 <span data-t="hostRoom">Oda Oluştur</span></div>
           
+          <!-- Difficulty Selection -->
           <div class="settings-group" style="margin-bottom: 15px;">
             <div class="settings-label" data-t="difficulty" style="margin-bottom: 8px;">Zorluk Derecesi</div>
             <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px;">
-              <button class="btn btn-toggle active" id="btn-coop-diff-easy" data-t="diffEasy" style="padding: 6px 2px; font-size: 0.75rem;">Easy</button>
-              <button class="btn btn-toggle" id="btn-coop-diff-medium" data-t="diffMedium" style="padding: 6px 2px; font-size: 0.75rem;">Medium</button>
-              <button class="btn btn-toggle" id="btn-coop-diff-hard" data-t="diffHard" style="padding: 6px 2px; font-size: 0.75rem;">Hard</button>
-              <button class="btn btn-toggle" id="btn-coop-diff-nightmare" data-t="diffNightmare" style="padding: 6px 2px; font-size: 0.75rem;">Nightmare</button>
-              <button class="btn btn-toggle" id="btn-coop-diff-peaceful" data-t="diffPeaceful" style="padding: 6px 2px; font-size: 0.75rem;">Peaceful</button>
+              <button class="btn btn-toggle" id="btn-coop-diff-peaceful" data-t="diffPeaceful" style="padding: 6px 2px; font-size: 0.72rem;">☮️ Barışçıl</button>
+              <button class="btn btn-toggle active" id="btn-coop-diff-easy" data-t="diffEasy" style="padding: 6px 2px; font-size: 0.72rem;">🟢 Kolay</button>
+              <button class="btn btn-toggle" id="btn-coop-diff-medium" data-t="diffMedium" style="padding: 6px 2px; font-size: 0.72rem;">🟡 Orta</button>
+              <button class="btn btn-toggle" id="btn-coop-diff-hard" data-t="diffHard" style="padding: 6px 2px; font-size: 0.72rem;">🔴 Zor</button>
+              <button class="btn btn-toggle" id="btn-coop-diff-nightmare" data-t="diffNightmare" style="padding: 6px 2px; font-size: 0.72rem; --nightmare-glow: 0;">💀 Kabus</button>
             </div>
           </div>
 
+          <!-- Map Size Selection -->
           <div class="settings-group" style="margin-bottom: 15px;">
             <div class="settings-label" data-t="coopMapSize" style="margin-bottom: 8px;">Harita Boyutu</div>
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
@@ -177,6 +179,7 @@
             <div style="margin-top: 6px; font-size: 0.7rem; color: var(--gray); text-align: center;" id="coop-map-desc" data-t="mapSmallDesc">1 Katlı Labirent</div>
           </div>
 
+          <!-- Host Button & Room Code -->
           <div class="settings-group" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 0;">
             <button class="btn btn-primary w-full glow-box" id="btn-coop-host" data-t="btnHost">Yeni Oda Kur</button>
             <div id="coop-host-details" class="hidden" style="margin-top: 10px; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; border: 1px solid var(--border-light); text-align: center;">
@@ -226,11 +229,11 @@
           <div class="settings-group" style="margin-bottom: 0;">
             <div class="settings-label" data-t="difficulty">Difficulty</div>
             <div style="display: flex; flex-direction: column; gap: 8px;">
-              <button class="btn btn-toggle w-full active" id="btn-diff-easy" data-t="diffEasy">Easy</button>
-              <button class="btn btn-toggle w-full" id="btn-diff-medium" data-t="diffMedium">Medium</button>
-              <button class="btn btn-toggle w-full" id="btn-diff-hard" data-t="diffHard">Hard</button>
-              <button class="btn btn-toggle w-full" id="btn-diff-nightmare" data-t="diffNightmare">Nightmare</button>
-              <button class="btn btn-toggle w-full" id="btn-diff-peaceful" data-t="diffPeaceful">Peaceful</button>
+              <button class="btn btn-toggle w-full" id="btn-diff-peaceful" data-t="diffPeaceful">☮️ Barışçıl</button>
+              <button class="btn btn-toggle w-full active" id="btn-diff-easy" data-t="diffEasy">🟢 Kolay</button>
+              <button class="btn btn-toggle w-full" id="btn-diff-medium" data-t="diffMedium">🟡 Orta</button>
+              <button class="btn btn-toggle w-full" id="btn-diff-hard" data-t="diffHard">🔴 Zor</button>
+              <button class="btn btn-toggle w-full" id="btn-diff-nightmare" data-t="diffNightmare">💀 Kabus</button>
             </div>
           </div>
         </div>

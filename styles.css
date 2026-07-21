@@ -584,6 +584,25 @@ h1, h2, h3, h4 {
   box-shadow: 0 0 10px var(--violet-glow);
 }
 
+/* Nightmare difficulty special glow effect */
+.btn-toggle.nightmare-active {
+  background: linear-gradient(135deg, #7f1d1d, #991b1b, #450a0a) !important;
+  border-color: #dc2626 !important;
+  color: #fca5a5 !important;
+  animation: nightmare-pulse 1.5s ease-in-out infinite;
+  text-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+}
+
+.btn-toggle.nightmare-active.active {
+  background: linear-gradient(135deg, #991b1b, #dc2626, #7f1d1d) !important;
+  box-shadow: 0 0 20px rgba(220, 38, 38, 0.6), 0 0 40px rgba(220, 38, 38, 0.3) !important;
+}
+
+@keyframes nightmare-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(220, 38, 38, 0.4), 0 0 16px rgba(220, 38, 38, 0.2); }
+  50% { box-shadow: 0 0 16px rgba(220, 38, 38, 0.7), 0 0 32px rgba(220, 38, 38, 0.4), 0 0 48px rgba(220, 38, 38, 0.15); }
+}
+
 /* HUD Editor Workspace active preview backdrop */
 .hud-editor-active {
   background: radial-gradient(circle, #100d23 0%, #030209 100%) !important;

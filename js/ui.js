@@ -712,6 +712,15 @@ function setupUI(game) {
       const descKeys = { small: "mapSmallDesc", medium: "mapMediumDesc", large: "mapLargeDesc" };
       descEl.textContent = game.t(descKeys[currentMapSize]);
     }
+
+    // Apply nightmare glow effect if nightmare is selected
+    const nightmareBtn = document.getElementById("btn-coop-diff-nightmare");
+    if (nightmareBtn) {
+      nightmareBtn.classList.toggle("nightmare-active", game.difficulty === "nightmare");
+    }
+
+    // Apply translations to the co-op screen
+    translateUI();
   });
 
   // Co-op difficulty button listeners
@@ -727,6 +736,11 @@ function setupUI(game) {
             else b.classList.remove("active");
           }
         });
+        // Toggle nightmare glow effect
+        const nightmareBtn = document.getElementById("btn-coop-diff-nightmare");
+        if (nightmareBtn) {
+          nightmareBtn.classList.toggle("nightmare-active", diff === "nightmare");
+        }
       });
     }
   });

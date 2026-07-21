@@ -3351,6 +3351,56 @@ export class CanvasRenderer {
           const wallRand = Math.abs(Math.sin(x * 37.129 + y * 91.83) * 43758.54) % 1;
           const isFloor = (tx, ty) => (tx >= 0 && tx < width && ty >= 0 && ty < height && grid[ty][tx].type !== "wall");
 
+          if (currentFloor === 0) {
+            // Add organic volumetric foliage puffs to break the flat box silhouette
+            // of the hedge walls. We only add them to faces facing open corridor cells to keep polycount low.
+            const directions = [
+              { dx: -1, dy: 0, nx: -1, nz: 0 }, // West
+              { dx: 1, dy: 0, nx: 1, nz: 0 },  // East
+              { dx: 0, dy: -1, nx: 0, nz: -1 }, // North
+              { dx: 0, dy: 1, nx: 0, nz: 1 }   // South
+            ];
+
+            let wSeed = x * 17.53 + y * 23.87;
+            const wRng = () => {
+              wSeed = Math.sin(wSeed) * 10000;
+              return wSeed - Math.floor(wSeed);
+            };
+
+            for (const dir of directions) {
+              if (isFloor(x + dir.dx, y + dir.dy)) {
+                // Spawn 4 to 6 overlapping organic leaf spheres on this face
+                const numPuffs = 4 + Math.floor(wRng() * 3);
+                for (let p = 0; p < numPuffs; p++) {
+                  const puffRad = 0.20 + wRng() * 0.14;
+                  const puffGeo = new THREE.SphereGeometry(puffRad, 6, 5);
+                  puffGeo.scale(1.0, 0.75 + wRng() * 0.5, 1.0 + wRng() * 0.4);
+                  
+                  const puffMesh = new THREE.Mesh(puffGeo, activeWallMat);
+                  
+                  const u = (wRng() - 0.5) * 0.72; // tangent along wall width
+                  const v = 0.20 + wRng() * 0.88;   // height along wall
+                  
+                  if (dir.nx !== 0) {
+                    puffMesh.position.set(
+                      dir.nx * (0.5 + puffRad * 0.20),
+                      v,
+                      u
+                    );
+                  } else {
+                    puffMesh.position.set(
+                      u,
+                      v,
+                      dir.nz * (0.5 + puffRad * 0.20)
+                    );
+                  }
+                  
+                  colGroup.add(puffMesh);
+                }
+              }
+            }
+          }
+
           let wallProp = null;
 
           if (!isUnderground) {

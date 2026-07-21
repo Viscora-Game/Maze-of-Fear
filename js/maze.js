@@ -1,4 +1,4 @@
-export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math.random) {
+export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math.random, currentLevel = 1) {
   const Math = Object.create(globalThis.Math);
   Math.random = rng;
 
@@ -494,6 +494,59 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
     return filtered;
   };
 
+  const getFreeCellsInRegionAndFloor = (rNum, targetFloor) => {
+    const list = [];
+    const listWithWall = [];
+    for (let y = 1; y < height - 1; y++) {
+      for (let x = 1; x < width - 1; x++) {
+        const c = floors[targetFloor][y][x];
+        if (c.type === "floor" && 
+            c.region === rNum && 
+            !c.isEntrance && 
+            !c.isExit && 
+            !c.obstacle && 
+            !c.chest && 
+            !c.npc && 
+            !c.staircase && 
+            !c.puzzleClue &&
+            !c.loreParchment) {
+          list.push(c);
+          const hasWall = floors[targetFloor][y-1][x].type === "wall" ||
+                          floors[targetFloor][y+1][x].type === "wall" ||
+                          floors[targetFloor][y][x-1].type === "wall" ||
+                          floors[targetFloor][y][x+1].type === "wall";
+          if (hasWall) {
+            listWithWall.push(c);
+          }
+        }
+      }
+    }
+    return listWithWall.length > 0 ? listWithWall : list;
+  };
+
+  const getFarFreeCellsForFloor = (floorNum, rNum, minDist = 3, requireWall = false) => {
+    let list = getFreeCellsInRegionAndFloor(rNum, floorNum);
+    if (requireWall) {
+      list = list.filter(c => {
+        return floors[c.floor][c.y-1][c.x].type === "wall" ||
+               floors[c.floor][c.y+1][c.x].type === "wall" ||
+               floors[c.floor][c.y][c.x-1].type === "wall" ||
+               floors[c.floor][c.y][c.x+1].type === "wall";
+      });
+    }
+    let filtered = list.filter(c => {
+      return occupiedCells.every(pos => {
+        if (pos.floor !== c.floor) return true;
+        const dist = Math.abs(pos.x - c.x) + Math.abs(pos.y - c.y);
+        return dist >= minDist;
+      });
+    });
+    if (filtered.length === 0 && minDist > 1) {
+      return getFarFreeCellsForFloor(floorNum, rNum, minDist - 1, requireWall);
+    }
+    return filtered;
+  };
+
   const placeItemInRegion = (rNum, itemConfig, minDist = 3, requireWall = false) => {
     let list = getDeadEndsInRegion(rNum);
     
@@ -628,27 +681,75 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
     }
   }
 
-  // Scatter exactly 3 Lore Parchments across the regions (strictly on walls!)
-  // Lore 1 in Region 0 or 1
-  const lore1Free = getFarFreeCells(Math.random() < 0.5 ? 0 : 1, 4, true);
-  if (lore1Free.length > 0) {
-    const c = lore1Free[Math.floor(Math.random() * lore1Free.length)];
-    c.loreParchment = "lore_1";
-    occupiedCells.push({ x: c.x, y: c.y, floor: c.floor });
+  // Scatter dynamic Lore Parchments across the floors based on Level and Floor count
+  let totalParchments = 3;
+  let floorDistribution = [3]; // default: all 3 on floor 0 for 1-floor levels (Levels 1-6)
+
+  if (numFloors === 2) {
+    totalParchments = 5;
+    floorDistribution = [3, 2]; // 3 on Floor 0, 2 on Floor 1 (Levels 7-13)
+  } else if (numFloors === 3) {
+    totalParchments = 10;
+    floorDistribution = [4, 3, 3]; // 4 on Floor 0, 3 on Floor 1, 3 on Floor 2 (Levels 14-20)
   }
-  // Lore 2 in Region 2
-  const lore2Free = getFarFreeCells(2, 4, true);
-  if (lore2Free.length > 0) {
-    const c = lore2Free[Math.floor(Math.random() * lore2Free.length)];
-    c.loreParchment = "lore_2";
-    occupiedCells.push({ x: c.x, y: c.y, floor: c.floor });
+
+  // Choose chapter based on current level (Level 1-10 is Chapter 1, 11-20 is Chapter 2)
+  const chapter = (currentLevel <= 10) ? "ch1" : "ch2";
+
+  // Pick unique random indices from 1 to 10 for lore entries (e.g. "lore_ch1_5")
+  const loreIndices = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  // Shuffle using the seeded PRNG
+  for (let i = loreIndices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const temp = loreIndices[i];
+    loreIndices[i] = loreIndices[j];
+    loreIndices[j] = temp;
   }
-  // Lore 3 in Region 3
-  const lore3Free = getFarFreeCells(3, 4, true);
-  if (lore3Free.length > 0) {
-    const c = lore3Free[Math.floor(Math.random() * lore3Free.length)];
-    c.loreParchment = "lore_3";
-    occupiedCells.push({ x: c.x, y: c.y, floor: c.floor });
+
+  let parchmentIndex = 0;
+  for (let f = 0; f < floorDistribution.length; f++) {
+    const countOnFloor = floorDistribution[f];
+    for (let p = 0; p < countOnFloor; p++) {
+      if (parchmentIndex >= totalParchments) break;
+
+      const loreId = `lore_${chapter}_${loreIndices[parchmentIndex]}`;
+      parchmentIndex++;
+
+      // Distribute sequentially across regions (0, 1, 2, 3) to spread them nicely in the maze
+      const region = (p % 4);
+      const freeCells = getFarFreeCellsForFloor(f, region, 4, true);
+
+      if (freeCells.length > 0) {
+        const c = freeCells[Math.floor(Math.random() * freeCells.length)];
+        c.loreParchment = loreId;
+        occupiedCells.push({ x: c.x, y: c.y, floor: c.floor });
+      } else {
+        // Fallback: try any region on that floor with wall requirement
+        let placed = false;
+        for (let r = 0; r < 4; r++) {
+          const backupCells = getFarFreeCellsForFloor(f, r, 2, true);
+          if (backupCells.length > 0) {
+            const c = backupCells[Math.floor(Math.random() * backupCells.length)];
+            c.loreParchment = loreId;
+            occupiedCells.push({ x: c.x, y: c.y, floor: c.floor });
+            placed = true;
+            break;
+          }
+        }
+        // Last-resort fallback: any free cell in any region on that floor
+        if (!placed) {
+          for (let r = 0; r < 4; r++) {
+            const backupCells = getFarFreeCellsForFloor(f, r, 1, false);
+            if (backupCells.length > 0) {
+              const c = backupCells[Math.floor(Math.random() * backupCells.length)];
+              c.loreParchment = loreId;
+              occupiedCells.push({ x: c.x, y: c.y, floor: c.floor });
+              break;
+            }
+          }
+        }
+      }
+    }
   }
 
   // 11. Populate remaining dead-end chests with gold, fuel, or non-repeating unique rewards

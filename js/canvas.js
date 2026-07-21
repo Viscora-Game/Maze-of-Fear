@@ -3204,15 +3204,7 @@ export class CanvasRenderer {
           let wallProp = null;
 
           if (!isUnderground) {
-            // Floor 0 (Ruins & Hedge Maze): Mossy Stone Rune Plaques only
-            if (wallRand < 0.10) { // 10% chance
-              if (!this.runePlaqueTex) this.runePlaqueTex = this.buildRunePlaqueTexture();
-              const plaqueMesh = new THREE.Mesh(
-                new THREE.BoxGeometry(0.32, 0.32, 0.03),
-                new THREE.MeshStandardMaterial({ map: this.runePlaqueTex, roughness: 0.85 })
-              );
-              wallProp = plaqueMesh;
-            }
+            // Floor 0 (Ruins & Hedge Maze): No random wall decorations (parchments are placed via maze generator)
           } else if (currentFloor === 1) {
             // Floor 1 (Stone Dungeon): Haunted Paintings, Rusted Iron Shackles/Chains, Iron Ventilation Grates
             if (wallRand < 0.22) { // 22% chance

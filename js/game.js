@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=54";
-import { AudioEngine } from "./audio.js?v=54";
-import { CanvasRenderer } from "./canvas.js?v=54";
-import { translations } from "./translations.js?v=54";
-import { randomEvents, deathEvents } from "./events.js?v=54";
-import { getSeededRandom } from "./prng.js?v=54";
+import { generateMaze } from "./maze.js?v=55";
+import { AudioEngine } from "./audio.js?v=55";
+import { CanvasRenderer } from "./canvas.js?v=55";
+import { translations } from "./translations.js?v=55";
+import { randomEvents, deathEvents } from "./events.js?v=55";
+import { getSeededRandom } from "./prng.js?v=55";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -171,7 +171,7 @@ export class Game {
     // Generate seeded deterministic maze
     const seed = (this.currentLevel * 100) + this.currentVariation;
     const rng = getSeededRandom(seed);
-    const mazeData = generateMaze(size, size, numFloors, rng);
+    const mazeData = generateMaze(size, size, numFloors, rng, this.currentLevel);
     
     // Visited Map tracker (per floor)
     const visited = [];
@@ -1192,7 +1192,11 @@ export class Game {
     if (this.state && this.state.readLore) {
       if (!this.state.readLore.includes(loreId)) {
         this.state.readLore.push(loreId);
-        if (this.state.readLore.length >= 3) {
+        let targetLoreCount = 3;
+        if (this.state.numFloors === 2) targetLoreCount = 5;
+        else if (this.state.numFloors === 3) targetLoreCount = 10;
+
+        if (this.state.readLore.length >= targetLoreCount) {
           this.unlockAchievement("read_all_lore");
         }
       }

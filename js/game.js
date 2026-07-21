@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=62";
-import { AudioEngine } from "./audio.js?v=62";
-import { CanvasRenderer } from "./canvas.js?v=62";
-import { translations } from "./translations.js?v=62";
-import { randomEvents, deathEvents } from "./events.js?v=62";
-import { getSeededRandom } from "./prng.js?v=62";
+import { generateMaze } from "./maze.js?v=65";
+import { AudioEngine } from "./audio.js?v=65";
+import { CanvasRenderer } from "./canvas.js?v=65";
+import { translations } from "./translations.js?v=65";
+import { randomEvents, deathEvents } from "./events.js?v=65";
+import { getSeededRandom } from "./prng.js?v=65";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -2292,7 +2292,7 @@ export class Game {
           this.lastBurnSoundTime = Date.now();
         }
 
-        if (sm.burnTime >= 2.0) {
+        if (sm.burnTime >= 0.85) {
           sm.active = false;
           
           let minRespawn = 30.0;
@@ -2325,7 +2325,7 @@ export class Game {
           return;
         }
       } else {
-        sm.burnTime = Math.max(0, sm.burnTime - dt * 0.5);
+        sm.burnTime = Math.max(0, sm.burnTime - dt * 2.0);
       }
 
       const grid = s.floors[s.currentFloor];

@@ -37,17 +37,23 @@ export class MultiplayerManager {
     this.cleanup();
 
     try {
+      const iceConfig = {
+        iceServers: [
+          { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:stun1.l.google.com:19302" },
+          { urls: "stun:stun2.l.google.com:19302" },
+          { urls: "stun:stun3.l.google.com:19302" },
+          { urls: "stun:stun4.l.google.com:19302" },
+          { urls: "stun:global.stun.twilio.com:3478" },
+          { urls: "stun:stun.cloudflare.com:3478" },
+          { urls: "stun:stun.services.mozilla.com" }
+        ],
+        sdpSemantics: 'unified-plan'
+      };
+
       this.peer = new Peer(peerId, {
         debug: 1,
-        config: {
-          iceServers: [
-            { urls: "stun:stun.l.google.com:19302" },
-            { urls: "stun:stun1.l.google.com:19302" },
-            { urls: "stun:stun2.l.google.com:19302" },
-            { urls: "stun:stun3.l.google.com:19302" },
-            { urls: "stun:stun4.l.google.com:19302" }
-          ]
-        }
+        config: iceConfig
       });
 
       this.peer.on("open", (id) => {
@@ -109,17 +115,23 @@ export class MultiplayerManager {
 
     try {
       // Create peer with random ID and STUN configs
+      const iceConfig = {
+        iceServers: [
+          { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:stun1.l.google.com:19302" },
+          { urls: "stun:stun2.l.google.com:19302" },
+          { urls: "stun:stun3.l.google.com:19302" },
+          { urls: "stun:stun4.l.google.com:19302" },
+          { urls: "stun:global.stun.twilio.com:3478" },
+          { urls: "stun:stun.cloudflare.com:3478" },
+          { urls: "stun:stun.services.mozilla.com" }
+        ],
+        sdpSemantics: 'unified-plan'
+      };
+
       this.peer = new Peer({
         debug: 1,
-        config: {
-          iceServers: [
-            { urls: "stun:stun.l.google.com:19302" },
-            { urls: "stun:stun1.l.google.com:19302" },
-            { urls: "stun:stun2.l.google.com:19302" },
-            { urls: "stun:stun3.l.google.com:19302" },
-            { urls: "stun:stun4.l.google.com:19302" }
-          ]
-        }
+        config: iceConfig
       });
 
       this.peer.on("open", (id) => {

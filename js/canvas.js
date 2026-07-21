@@ -192,14 +192,14 @@ export class CanvasRenderer {
             texelColor = mapTexelToLinear( texelColor );
             diffuseColor *= texelColor;
 
-            // Discard black background to remove the card edges (same logic as before)
-            if (diffuseColor.r < 0.12 && diffuseColor.g < 0.12 && diffuseColor.b < 0.12) {
+            // Discard transparent edges while preserving dark facial features
+            if (diffuseColor.a < 0.05) {
               discard;
             }
 
             // Smooth circular edge vignette fade
             float dist = distance(vUv, vec2(0.5, 0.5));
-            float edgeFade = 1.0 - smoothstep(0.32, 0.50, dist);
+            float edgeFade = 1.0 - smoothstep(0.38, 0.50, dist);
             diffuseColor.a *= edgeFade;
           #endif
           `
@@ -3715,12 +3715,12 @@ export class CanvasRenderer {
 
     this.playerMesh = new THREE.Group();
     
-    // Position viewmodel closer to camera (eliminating floating look)
-    this.playerMesh.position.set(0.08, -0.09, -0.12);
-    this.playerMesh.rotation.y = -Math.PI / 10;
-    this.playerMesh.scale.set(0.8, 0.8, 0.8);
+    // Position viewmodel on the right side in the right hand
+    this.playerMesh.position.set(0.13, -0.11, -0.15);
+    this.playerMesh.rotation.y = Math.PI / 20;
+    this.playerMesh.scale.set(0.85, 0.85, 0.85);
 
-    // D. Tactical Sleeve & Glove (Procedural hand holding the flashlight)
+    // D. Tactical Sleeve & Glove (Procedural right hand holding the flashlight)
     const sleeveMat = new THREE.MeshStandardMaterial({ color: "#1e293b", roughness: 0.85 }); // Slate dark sleeve
     const gloveMat = new THREE.MeshStandardMaterial({ color: "#0f172a", roughness: 0.9, metalness: 0.1 }); // Matte dark grey/black glove
 
@@ -3730,8 +3730,8 @@ export class CanvasRenderer {
       sleeveMat
     );
     sleeve.rotation.x = Math.PI / 2.3;
-    sleeve.rotation.y = -Math.PI / 12;
-    sleeve.position.set(0.03, -0.01, 0.05);
+    sleeve.rotation.y = Math.PI / 16;
+    sleeve.position.set(0.01, -0.01, 0.05);
     this.playerMesh.add(sleeve);
 
     // 2. Glove Palm (main grip body)
@@ -4554,7 +4554,8 @@ export class CanvasRenderer {
           
           const faceMesh = new THREE.Mesh(this.monsterFaceGeom, this.createMonsterFaceMat());
           faceMesh.name = "face";
-          faceMesh.position.set(0, 0.75, 0.25);
+          faceMesh.position.set(0, 0.75, 0.15);
+          faceMesh.renderOrder = 999;
           mesh.add(faceMesh);
           
           const smokeGroup = new THREE.Group();

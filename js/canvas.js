@@ -4242,6 +4242,11 @@ export class CanvasRenderer {
       }
       
       const op = state.otherPlayer;
+      if (!op || op.x === undefined || op.y === undefined) {
+        if (this.otherPlayerGroup) this.otherPlayerGroup.visible = false;
+        if (this.otherPlayerLight) this.otherPlayerLight.intensity = 0.0;
+        return;
+      }
       const localDist = Math.hypot(op.x - player.x, op.y - player.y);
       const isPartnerOnFloor = (op.floor === currentFloor && !op.isDead);
       

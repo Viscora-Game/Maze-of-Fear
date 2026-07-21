@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=75";
-import { MultiplayerManager } from "./multiplayer.js?v=75";
+import { Game } from "./game.js?v=76";
+import { MultiplayerManager } from "./multiplayer.js?v=76";
 
 const init = () => {
   const game = new Game();
@@ -2848,6 +2848,15 @@ function setupUI(game) {
       ctx.fillText(p2Text, legendX + 16, legendY + 18);
     }
   };
+
+  // Unlock Web Audio API context on first user pointerdown / touch interaction for mobile browsers
+  const unlockAudio = () => {
+    if (game.audio && game.audio.ctx && game.audio.ctx.state === "suspended") {
+      game.audio.ctx.resume();
+    }
+  };
+  document.addEventListener("pointerdown", unlockAudio, { passive: true });
+  document.addEventListener("touchstart", unlockAudio, { passive: true });
 
   // Prevent context menus (long-press popups on mobile, right-click on PC) globally for a pure native app experience
   document.addEventListener("contextmenu", (e) => {

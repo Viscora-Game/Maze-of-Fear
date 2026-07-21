@@ -303,6 +303,7 @@ export class MultiplayerManager {
         state.otherPlayer.angle = data.angle;
         state.otherPlayer.pitch = data.pitch;
         state.otherPlayer.lanternOn = data.lanternOn;
+        state.otherPlayer.fuel = data.fuel;
         state.otherPlayer.health = data.health;
         state.otherPlayer.isDead = data.isDead;
         
@@ -344,6 +345,10 @@ export class MultiplayerManager {
             : `Your friend sent you a ${itemTransName}!`
         );
         this.game.updateInventoryUI();
+        break;
+
+      case "JUMPSCARE":
+        this.game.showJumpscareForSpectator();
         break;
 
       case "REVIVE_PLAYER":

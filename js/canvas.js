@@ -4264,15 +4264,19 @@ export class CanvasRenderer {
         // Hide ghost mesh only if camera is literally clipping inside body (<0.35m)
         this.otherPlayerGroup.visible = (localDist > 0.35);
 
-        // Update Flashlight Lens Bulb Glow and Light Beam Cone opacity
-        if (this.otherPlayerMesh && this.otherPlayerMesh.userData) {
-          const { lensMat, beamMat } = this.otherPlayerMesh.userData;
-          if (lensMat) lensMat.opacity = op.lanternOn ? 1.0 : 0.0;
-          if (beamMat) beamMat.opacity = op.lanternOn ? 0.22 : 0.0;
-        }
-
         // Spotlight ALWAYS stays active when lanternOn is true, regardless of localDist!
         if (op.lanternOn) {
+          let baseIntensity = 5.5;
+          // Dynamic low battery (<20%) flickering for partner's flashlight
+          if (op.fuel !== undefined && op.fuel < 20) {
+            const rand = Math.random();
+            if (rand < 0.20) {
+              baseIntensity = 0.5 + Math.random() * 1.5;
+            } else if (rand < 0.40) {
+              baseIntensity = 2.5 + Math.random() * 1.5;
+            }
+          }
+
           this.otherPlayerLight.position.set(op.visualX, hoverY + 0.35, op.visualY);
           
           const lookDirX = Math.cos(op.angle);
@@ -4285,11 +4289,24 @@ export class CanvasRenderer {
             op.visualY + lookDirY * 5.0
           );
           
-          this.otherPlayerLight.intensity = 5.5;
+          this.otherPlayerLight.intensity = baseIntensity;
           this.otherPlayerLight.updateMatrixWorld(true);
           this.otherPlayerLight.target.updateMatrixWorld(true);
+
+          // Update Flashlight Lens Bulb Glow and Light Beam Cone opacity with flickering sync
+          if (this.otherPlayerMesh && this.otherPlayerMesh.userData) {
+            const { lensMat, beamMat } = this.otherPlayerMesh.userData;
+            const isFlickerDim = baseIntensity < 2.0;
+            if (lensMat) lensMat.opacity = isFlickerDim ? 0.2 : 1.0;
+            if (beamMat) beamMat.opacity = isFlickerDim ? 0.04 : 0.22;
+          }
         } else {
           this.otherPlayerLight.intensity = 0.0;
+          if (this.otherPlayerMesh && this.otherPlayerMesh.userData) {
+            const { lensMat, beamMat } = this.otherPlayerMesh.userData;
+            if (lensMat) lensMat.opacity = 0.0;
+            if (beamMat) beamMat.opacity = 0.0;
+          }
         }
       } else {
         this.otherPlayerGroup.visible = false;

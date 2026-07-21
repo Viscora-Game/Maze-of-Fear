@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=68";
-import { AudioEngine } from "./audio.js?v=68";
-import { CanvasRenderer } from "./canvas.js?v=68";
-import { translations } from "./translations.js?v=68";
-import { randomEvents, deathEvents } from "./events.js?v=68";
-import { getSeededRandom } from "./prng.js?v=68";
+import { generateMaze } from "./maze.js?v=69";
+import { AudioEngine } from "./audio.js?v=69";
+import { CanvasRenderer } from "./canvas.js?v=69";
+import { translations } from "./translations.js?v=69";
+import { randomEvents, deathEvents } from "./events.js?v=69";
+import { getSeededRandom } from "./prng.js?v=69";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -546,6 +546,7 @@ export class Game {
               angle: p.angle,
               pitch: p.pitch,
               lanternOn: this.state.lanternOn,
+              fuel: p.fuel,
               health: p.health,
               isDead: p.isDead || false
             });
@@ -2182,18 +2183,21 @@ export class Game {
             sm.soundTimer = 0.5; // Play sound immediately after spawn
             this.audio.playShadowSpawn();
             
-            // Choose closest target player in co-op
+            // Choose target player in co-op (must target living player!)
             if (isCoop) {
-              const p2 = s.otherPlayer;
-              let target = "Player1";
-              if (p2 && !p2.isDead) {
+              const p1Alive = p && !p.isDead;
+              const p2Alive = s.otherPlayer && !s.otherPlayer.isDead;
+              
+              if (p1Alive && p2Alive) {
                 const distHost = Math.hypot(sm.x - p.x, sm.y - p.y);
-                const distGuest = Math.hypot(sm.x - p2.x, sm.y - p2.y);
-                if (distGuest < distHost) {
-                  target = "Player2";
-                }
+                const distGuest = Math.hypot(sm.x - s.otherPlayer.x, sm.y - s.otherPlayer.y);
+                sm.targetPlayer = (distGuest < distHost) ? "Player2" : "Player1";
+              } else if (p2Alive) {
+                sm.targetPlayer = "Player2";
+              } else {
+                sm.targetPlayer = "Player1";
               }
-              sm.targetPlayer = target;
+            }
               
               // Broadcast spawn and target alert
               this.multiplayer.send({
@@ -2366,14 +2370,24 @@ export class Game {
         if (canMoveTo(nextX, sm.y)) sm.x = nextX;
         if (canMoveTo(sm.x, nextY)) sm.y = nextY;
       } else {
-        // Chase player
-        let targetX = p.x;
-        let targetY = p.y;
-        
-        if (isCoop && sm.targetPlayer === "Player2" && s.otherPlayer) {
-          targetX = s.otherPlayer.x;
-          targetY = s.otherPlayer.y;
+        // Chase player: automatically switch target to surviving alive player if target died!
+        let targetObj = p;
+        if (isCoop) {
+          const p1Alive = p && !p.isDead;
+          const p2Alive = s.otherPlayer && !s.otherPlayer.isDead;
+          
+          if (!p1Alive && p2Alive) {
+            sm.targetPlayer = "Player2";
+            targetObj = s.otherPlayer;
+          } else if (!p2Alive && p1Alive) {
+            sm.targetPlayer = "Player1";
+            targetObj = p;
+          } else if (sm.targetPlayer === "Player2" && s.otherPlayer) {
+            targetObj = s.otherPlayer;
+          }
         }
+        let targetX = targetObj.x;
+        let targetY = targetObj.y;
 
         sm.pathRecalcTimer = (sm.pathRecalcTimer || 0) - dt;
         if (sm.pathRecalcTimer <= 0 || !sm.lastNextStep) {
@@ -2463,6 +2477,11 @@ export class Game {
     
     this.audio.playJumpscare();
     
+    const isCoop = this.multiplayer && this.multiplayer.isConnected;
+    if (isCoop) {
+      this.multiplayer.send({ type: "JUMPSCARE" });
+    }
+
     this.showJumpscare("normal");
     const overlay = document.getElementById("modal-jumpscare");
     if (overlay) {
@@ -2505,6 +2524,18 @@ export class Game {
       }, 1500);
     } else {
       s.gameState = "playing";
+    }
+  }
+
+  showJumpscareForSpectator() {
+    this.audio.playJumpscare();
+    this.showJumpscare("normal");
+    const overlay = document.getElementById("modal-jumpscare");
+    if (overlay) {
+      overlay.classList.remove("hidden");
+      setTimeout(() => {
+        overlay.classList.add("hidden");
+      }, 1500);
     }
   }
 

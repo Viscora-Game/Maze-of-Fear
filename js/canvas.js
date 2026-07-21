@@ -1090,18 +1090,18 @@ export class CanvasRenderer {
     canvas.height = 256;
     const ctx = canvas.getContext("2d");
 
-    // Very deep dark green base
-    ctx.fillStyle = "#031f15"; 
+    // Very dark base green for background shadow
+    ctx.fillStyle = "#010c08"; 
     ctx.fillRect(0, 0, 256, 256);
 
-    // Dense organic leaf clump colors
     const colors = [
-      "#03200f", // Shadow green
-      "#052e16", // Deep forest
-      "#083d1f", // Dark emerald
-      "#0a4225", // Mid forest
-      "#021a0e", // Nearly black green
-      "#041e12"  // Very dark olive
+      "#021a0f", // Deep forest shadow
+      "#042614", // Dark pine
+      "#06351b", // Rich moss
+      "#0a4725", // Classic hedge green
+      "#0e5c30", // Bright leaf green
+      "#13753d", // Sunlight reflection green
+      "#1a8c4b"  // Leaf highlight
     ];
 
     let seed = 9876;
@@ -1110,34 +1110,66 @@ export class CanvasRenderer {
       return seed / 233280;
     };
 
-    // Draw smaller, denser leaf clumps for more realistic foliage
-    for (let i = 0; i < 1200; i++) {
+    const drawLeafShape = (cCtx, lx, ly, lSize, lAngle, lColor) => {
+      cCtx.save();
+      cCtx.translate(lx, ly);
+      cCtx.rotate(lAngle);
+      cCtx.fillStyle = lColor;
+      cCtx.beginPath();
+      cCtx.moveTo(0, -lSize);
+      cCtx.quadraticCurveTo(lSize * 0.45, -lSize * 0.2, 0, lSize);
+      cCtx.quadraticCurveTo(-lSize * 0.45, -lSize * 0.2, 0, -lSize);
+      cCtx.closePath();
+      cCtx.fill();
+
+      // Delicate darker center vein
+      cCtx.strokeStyle = "rgba(0, 0, 0, 0.18)";
+      cCtx.lineWidth = 0.8;
+      cCtx.beginPath();
+      cCtx.moveTo(0, -lSize * 0.8);
+      cCtx.lineTo(0, lSize * 0.8);
+      cCtx.stroke();
+      cCtx.restore();
+    };
+
+    // Draw 1800 overlapping leaves
+    for (let i = 0; i < 1800; i++) {
       const x = rng() * 256;
       const y = rng() * 256;
-      const size = 2 + rng() * 4;
-      const col = colors[Math.floor(rng() * colors.length)];
+      const size = 3.5 + rng() * 5.5;
+      const angle = rng() * Math.PI * 2;
+      const colRand = rng();
 
-      ctx.fillStyle = col;
-      ctx.beginPath();
-      ctx.arc(x, y, size, 0, Math.PI * 2);
-      ctx.fill();
-    }
+      // Weighted color choice: leaves drawn later (on top) are slightly brighter/lighter
+      // to simulate realistic light catching outer canopy
+      const colorProgress = i / 1800;
+      const colIdx = Math.floor(colRand * colors.length * (0.6 + colorProgress * 0.4));
+      const col = colors[Math.min(colors.length - 1, colIdx)];
 
-    // Subtle depth variation overlay
-    for (let i = 0; i < 300; i++) {
-      const x = rng() * 256;
-      const y = rng() * 256;
-      const size = 1 + rng() * 2;
-      ctx.fillStyle = (i % 3 === 0) ? "rgba(0,0,0,0.25)" : "rgba(20,40,20,0.15)";
-      ctx.beginPath();
-      ctx.arc(x, y, size, 0, Math.PI * 2);
-      ctx.fill();
+      drawLeafShape(ctx, x, y, size, angle, col);
+
+      // Support repeat wrapping seams by duplicating leaves that cross borders
+      const offsets = [];
+      if (x < size) offsets.push([256, 0]);
+      if (x > 256 - size) offsets.push([-256, 0]);
+      if (y < size) offsets.push([0, 256]);
+      if (y > 256 - size) offsets.push([0, -256]);
+      
+      // Diagonals for corners
+      if (x < size && y < size) offsets.push([256, 256]);
+      if (x > 256 - size && y < size) offsets.push([-256, 256]);
+      if (x < size && y > 256 - size) offsets.push([256, -256]);
+      if (x > 256 - size && y > 256 - size) offsets.push([-256, -256]);
+
+      for (const [ox, oy] of offsets) {
+        drawLeafShape(ctx, x + ox, y + oy, size, angle, col);
+      }
     }
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(2.0, 2.0);
+    texture.repeat.set(2.5, 2.5); // Slightly repeat for high detail tiling
     return texture;
   }
 
@@ -1148,42 +1180,74 @@ export class CanvasRenderer {
     canvas.height = 256;
     const ctx = canvas.getContext("2d");
 
-    ctx.fillStyle = "#808080";
+    // Base middle-gray (mid level bump)
+    ctx.fillStyle = "#555555"; 
     ctx.fillRect(0, 0, 256, 256);
 
-    let seed = 5432;
+    let seed = 9876; // Match texture seed exactly
     const rng = () => {
       seed = (seed * 9301 + 49297) % 233280;
       return seed / 233280;
     };
 
-    // Organic bump patches
-    for (let i = 0; i < 600; i++) {
-      const x = rng() * 256;
-      const y = rng() * 256;
-      const size = 2 + rng() * 5;
-      const shade = 100 + Math.floor(rng() * 80);
-      ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade})`;
-      ctx.beginPath();
-      ctx.arc(x, y, size, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    const drawLeafBumpShape = (cCtx, lx, ly, lSize, lAngle, lShade) => {
+      cCtx.save();
+      cCtx.translate(lx, ly);
+      cCtx.rotate(lAngle);
 
-    // Deep shadow patches
-    for (let i = 0; i < 200; i++) {
+      // Radial gradient so the leaf leaf is convex (puffed up in the center)
+      const grad = cCtx.createRadialGradient(0, 0, 0, 0, 0, lSize);
+      grad.addColorStop(0, `rgb(${lShade}, ${lShade}, ${lShade})`);
+      grad.addColorStop(0.85, `rgb(${Math.max(50, lShade - 45)}, ${Math.max(50, lShade - 45)}, ${Math.max(50, lShade - 45)})`);
+      grad.addColorStop(1, "rgb(60, 60, 60)"); // fade to shadow level at leaf edge
+
+      cCtx.fillStyle = grad;
+      cCtx.beginPath();
+      cCtx.moveTo(0, -lSize);
+      cCtx.quadraticCurveTo(lSize * 0.45, -lSize * 0.2, 0, lSize);
+      cCtx.quadraticCurveTo(-lSize * 0.45, -lSize * 0.2, 0, -lSize);
+      cCtx.closePath();
+      cCtx.fill();
+      cCtx.restore();
+    };
+
+    // Draw 1800 overlapping leaf bumps at the identical coordinates
+    for (let i = 0; i < 1800; i++) {
       const x = rng() * 256;
       const y = rng() * 256;
-      const size = 1 + rng() * 3;
-      ctx.fillStyle = "rgba(0,0,0,0.2)";
-      ctx.beginPath();
-      ctx.arc(x, y, size, 0, Math.PI * 2);
-      ctx.fill();
+      const size = 3.5 + rng() * 5.5;
+      const angle = rng() * Math.PI * 2;
+      const colRand = rng(); // Consume the RNG token to keep seeds perfectly aligned
+
+      // Grayscale shade representing height. Later leaves (drawn on top) are brighter (higher)
+      const progress = i / 1800;
+      const baseShade = 110 + Math.floor(progress * 115); // ranges from 110 (lower) to 225 (higher surface)
+      const shadeNoise = Math.floor(colRand * 25);
+      const finalShade = Math.min(255, baseShade + shadeNoise);
+
+      drawLeafBumpShape(ctx, x, y, size, angle, finalShade);
+
+      // Repeat seam wrapping to align with color texture
+      const offsets = [];
+      if (x < size) offsets.push([256, 0]);
+      if (x > 256 - size) offsets.push([-256, 0]);
+      if (y < size) offsets.push([0, 256]);
+      if (y > 256 - size) offsets.push([0, -256]);
+      
+      if (x < size && y < size) offsets.push([256, 256]);
+      if (x > 256 - size && y < size) offsets.push([-256, 256]);
+      if (x < size && y > 256 - size) offsets.push([256, -256]);
+      if (x > 256 - size && y > 256 - size) offsets.push([-256, -256]);
+
+      for (const [ox, oy] of offsets) {
+        drawLeafBumpShape(ctx, x + ox, y + oy, size, angle, finalShade);
+      }
     }
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(2.0, 2.0);
+    texture.repeat.set(2.5, 2.5); // Match repeat mapping exactly
     return texture;
   }
 
@@ -1875,8 +1939,8 @@ export class CanvasRenderer {
     const hedgeMat = new THREE.MeshStandardMaterial({ 
       map: this.hedgeTexture, 
       bumpMap: this.hedgeBump,
-      bumpScale: 0.08,
-      color: "#162016", 
+      bumpScale: 0.06,
+      color: "#ffffff", 
       roughness: 0.98 
     });
 

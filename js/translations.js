@@ -196,9 +196,13 @@ export const translations = {
       lore_ch1_7: "Lost Journal — Entry VII:\n\n\"The exit exists — I have seen it! A massive iron gate at the far end of the labyrinth. But it is locked with a 4-digit combination. The code fragments are scattered on blood-stained parchments somewhere in these corridors. I must find them all.\"",
       lore_ch1_8: "Lost Journal — Entry VIII:\n\n\"Time has stopped meaning anything. My watch says 3:47 AM. It has said 3:47 AM for as long as I can remember. The stars above don't move. The rain falls but nothing gets wet. This place is a wound in reality itself.\"",
       lore_ch1_9: "Lost Journal — Entry IX:\n\n\"I have a theory about the Shadow Monster. It is not a creature — it is the accumulated despair of every soul that was consumed here. Every person who lost their light became part of it. If my lantern dies... I will become part of it too.\"",
-      lore_ch1_10: "Lost Journal — Final Entry:\n\n\"If you are reading this, there may still be hope for you. I left everything I know in these pages. Find the code fragments. Keep your lantern burning. And whatever you do, do not trust the silence. The silence means it is right behind you. Run.\"",
+      lore_ch1_10: "Lost Journal — Entry X:\n\n\"If you are reading this, there may still be hope for you. I left everything I know in these pages. Find the code fragments. Keep your lantern burning. And whatever you do, do not trust the silence. The silence means it is right behind you. Run.\"",
+      lore_ch1_11: "Lost Journal — Entry XI:\n\n\"The rumbles are getting louder. Not from the walls, but from below. It's like the ground itself is digesting me. I found a well with clean water today. It felt so real, but when I drank, it tasted like ash. My senses are lying to me.\"",
+      lore_ch1_12: "Lost Journal — Entry XII:\n\n\"The Child... I met a child today. He was crying, asking for his toy. How could a child survive here? I tried to lead him, but the moment I looked away and back, he was gone, replaced by a wall. Was he ever there, or am I finally losing my mind?\"",
+      lore_ch1_13: "Lost Journal — Entry XIII:\n\n\"The Mouse... it spoke. It asked for cheese. I laughed, a hysterical sound that echoed forever. But I gave it cheese. It whispered something in return: 'The Sage is not who you think he is.' What does that mean? The Sage is the only one who helped me!\"",
+      lore_ch1_14: "Lost Journal — Final Entry:\n\n\"My lantern is dying. The merchant refuses to sell to me anymore. He says my gold is 'worn out', like my soul. The Sage is gone. If you find this page, know that I didn't make it to the gate. But you... you must run.\"",
 
-      // Chapter 2: "The Shadow Guardian's Sermons" (Level 11-20) — The labyrinth's own dark perspective
+      // Chapter 2: "The Shadow Guardian's Sermons" (Level 11-20) — The Labyrinth's own perspective
       lore_ch2_1: "The Guardian's Sermon — I:\n\n\"You think this maze was built to trap you? No. It was built to protect the world from what lies at its center. I am the Guardian. The walls are not your prison — they are everyone else's shield. You wandered in willingly. Now you understand.\"",
       lore_ch2_2: "The Guardian's Sermon — II:\n\n\"The explorer who left those journal pages... he understood so little. The walls do not move — reality bends around them. This labyrinth exists in the space between nightmares, where geometry itself is afraid to hold its shape.\"",
       lore_ch2_3: "The Guardian's Sermon — III:\n\n\"They call me the Shadow Monster. How quaint. I was the first Guardian — the first to sacrifice my form to keep the darkness contained. I do not consume souls. I collect them, so they do not wander into something far worse.\"",
@@ -208,7 +212,38 @@ export const translations = {
       lore_ch2_7: "The Guardian's Sermon — VII:\n\n\"The combination lock on the gate... a cruel joke left by my predecessor. The code changes with every soul that enters. The parchments rewrite themselves. Even if you escape, you will carry the maze with you. It lives in the space behind your eyelids.\"",
       lore_ch2_8: "The Guardian's Sermon — VIII:\n\n\"Time does not pass here because time is afraid of this place. The rain falls upward when no one is watching. The stars in the sky are not stars — they are the eyes of those who escaped and still dream of these corridors every night.\"",
       lore_ch2_9: "The Guardian's Sermon — IX:\n\n\"There is something beneath the deepest floor. Something older than the maze, older than the shadows. I was placed here to ensure no one reaches it. Every Guardian before me failed. The thing below is patient. It has been waiting since before time began.\"",
-      lore_ch2_10: "The Guardian's Final Sermon:\n\n\"You have read all my words and still you press forward. Brave or foolish — in this place, they are the same thing. The truth you seek is this: the maze is not a place. It is a mirror. Every wall, every shadow, every whisper — it is all you. You built this prison from your own fears. And you are the only one who can tear it down.\""
+      lore_ch2_10: "The Guardian's Sermon — X:\n\n\"You have read all my words and still you press forward. Brave or foolish — in this place, they are the same thing. The truth you seek is this: the maze is not a place. It is a mirror. Every wall, every shadow, every whisper — it is all you. You built this prison from your own fears. And you are the only one who can tear it down.\"",
+      lore_ch2_11: "The Guardian's Sermon — XI:\n\n\"The well of fresh water he drank from... it was not ash he tasted, but his own decaying memories. The maze gives you what you need to survive, but it extracts a price in return. Every sip costs a piece of your past.\"",
+      lore_ch2_12: "The Guardian's Sermon — XII:\n\n\"The Child... he is the manifestation of the child you once were, before fear took root in your heart. You cannot save him. You can only watch him vanish back into the stone, a relic of a life you can never return to.\"",
+      lore_ch2_13: "The Guardian's Sermon — XIII:\n\n\"The Mouse is the labyrinth's oldest witness. It knows the truth about the Sage. The Sage is the one who designed the gate, the one who locked the lock. He guides you only to watch the cycle repeat. He is the architect of your despair.\"",
+      lore_ch2_14: "The Guardian's Sermon — XIV:\n\n\"Why do you keep walking? Each step only prints your feet deeper into the dust. You are building the very path that leads to your demise. The labyrinth does not expand; it merely folds you deeper within its creases.\"",
+      lore_ch2_15: "The Guardian's Sermon — XV:\n\n\"The gold coins you find are not currency. They are fragments of willpower lost by those who came before. The merchant hoards them because they are the only things that still have weight in this dreamscape.\"",
+      lore_ch2_16: "The Guardian's Sermon — XVI:\n\n\"Your heart beats so loudly. I can hear it from across the floors. A rhythm of panic. You think it is keeping you alive, but it is actually a countdown. Every beat is one less moment you have left before the dark.\"",
+      lore_ch2_17: "The Guardian's Sermon — XVII:\n\n\"The keypads and the gates... they are not barriers, they are filters. Only those with enough resolve to solve the riddles are allowed to descend to the deeper floors. The weak are consumed early. The strong are reserved for the deep.\"",
+      lore_ch2_18: "The Guardian's Sermon — XVIII:\n\n\"Do you remember the sun? The warmth of it on your skin? Try to recall it. You will find only a cold grey circle. The maze has already eaten your sky. Soon, it will eat your shadow.\"",
+      lore_ch2_19: "The Guardian's Sermon — XIX:\n\n\"The rain that falls here does not come from clouds. It is the tears of the architect, weeping for the prison he created and can never destroy. He is trapped here with us, wandering the corridors in a different form.\"",
+      lore_ch2_20: "The Guardian's Sermon — XX:\n\n\"I watched the explorer's light go out. He did not scream. He simply sighed as the shadows embraced him. He is part of me now. I know his name. I know his childhood dreams. They are quite beautiful.\"",
+      lore_ch2_21: "The Guardian's Sermon — XXI:\n\n\"The third floor... the Crimson Horror Vault. It is paved with the blood of those who thought they were brave. The walls there do not hide their intent. They are hungry, and they are waiting for you.\"",
+      lore_ch2_22: "The Guardian's Sermon — XXII:\n\n\"You think you are different from the ones who failed. That is the initial stage of the curse: hope. Hope is the bait. If you had no hope, you would lie down and make my job easier. But you run, and so the game continues.\"",
+      lore_ch2_23: "The Guardian's Sermon — XXIII:\n\n\"The Compass you hold... it points to the exit, yes, but only because the exit is the place where your fear is loudest. It does not guide you to safety. It guides you to the climax of your nightmare.\"",
+      lore_ch2_24: "The Guardian's Sermon — XXIV:\n\n\"There are no monsters here except the ones you brought with you. I am merely the reflection of your own self-loathing. If you loved yourself, I would cease to exist. But you do not, and so I am solid.\"",
+      lore_ch2_25: "The Guardian's Sermon — XXV:\n\n\"The Sage's true name is written on the underside of the gate. But you will never see it, because to look down is to invite the shadow. He watches you right now, smiling from the darkness.\"",
+      lore_ch2_26: "The Guardian's Sermon — XXVI:\n\n\"We are reaching the end of the pages. The paper is running out. Soon you will have no words to guide you, only the silence. Are you ready to walk without my voice? Or will you join me here?\"",
+      lore_ch2_27: "The Guardian's Final Sermon:\n\n\"The gate is open. But look behind you. The labyrinth has grown into your mind. Even if you step through the iron doors, you will still be walking these hedges. You are the Maze. And the Maze of Fear has no exit.\"",
+
+      // Spooky Whispers (Atmospheric notes)
+      lore_whisper_1: "Whisper:\n\n\"I can hear something crawling in the hedges...\"",
+      lore_whisper_2: "Whisper:\n\n\"Do not let the flame die.\"",
+      lore_whisper_3: "Whisper:\n\n\"The walls are watching.\"",
+      lore_whisper_4: "Whisper:\n\n\"There is no escape from the dark.\"",
+      lore_whisper_5: "Whisper:\n\n\"Stay quiet. It listens.\"",
+      lore_whisper_6: "Whisper:\n\n\"Follow the light, ignore the cold.\"",
+      lore_whisper_7: "Whisper:\n\n\"They all fell here.\"",
+      lore_whisper_8: "Whisper:\n\n\"Is this reality or a dream?\"",
+      lore_whisper_9: "Whisper:\n\n\"Trust no one. Not even yourself.\"",
+      lore_whisper_10: "Whisper:\n\n\"The exit is close, but the end is closer.\"",
+      lore_whisper_11: "Whisper:\n\n\"The shadows grow longer.\"",
+      lore_whisper_12: "Whisper:\n\n\"Can you hear the heartbeat?\""
     },
 
     // Random Events
@@ -467,6 +502,10 @@ export const translations = {
       lore_ch1_8: "Kayıp Günlük — Giriş VIII:\n\n\"Zamanın artık hiçbir anlamı kalmadı. Saatim 3:47'yi gösteriyor. Hatırlayabildiğim kadarıyla hep 3:47'yi gösteriyordu. Gökyüzündeki yıldızlar hareket etmiyor. Yağmur yağıyor ama hiçbir şey ıslanmıyor. Burası gerçekliğin kendisinde açılmış bir yara.\"",
       lore_ch1_9: "Kayıp Günlük — Giriş IX:\n\n\"Gölge Canavarı hakkında bir teorim var. O bir yaratık değil — burada yutulmuş her ruhun birikmiş umutsuzluğu. Işığını kaybeden herkes onun bir parçası oldu. Eğer fenerim sönerse... ben de onun bir parçası olacağım.\"",
       lore_ch1_10: "Kayıp Günlük — Son Giriş:\n\n\"Bunu okuyorsan, belki senin için hâlâ umut vardır. Bildiğim her şeyi bu sayfalarda bıraktım. Şifre parçalarını bul. Fenerini yanan tut. Ve ne yaparsan yap, sessizliğe güvenme. Sessizlik, onun tam arkanda olduğu anlamına gelir. Koş.\"",
+      lore_ch1_11: "Kayıp Günlük — Giriş XI:\n\n\"Uğultular giderek artıyor. Duvarlardan değil, aşağıdan geliyor. Sanki yer beni sindiriyormuş gibi. Bugün temiz suyu olan bir kuyu buldum. Çok gerçekçi görünüyordu ama içtiğimde tadı kül gibiydi. Duyularım bana yalan söylüyor.\"",
+      lore_ch1_12: "Kayıp Günlük — Giriş XII:\n\n\"Çocuk... Bugün bir çocukla karşılaştım. Ağlıyordu, oyuncağını istiyordu. Bir çocuk burada nasıl hayatta kalabilir? Ona yol göstermeye çalıştım ama kafamı çevirip tekrar baktığımda gitmişti, yerinde bir duvar vardı. Gerçekten orada mıydı, yoksa aklımı mı yitiriyorum?\"",
+      lore_ch1_13: "Kayıp Günlük — Giriş XIII:\n\n\"Fare... konuştu. Peynir istedi. Delice güldüm, sesim sonsuza dek yankılandı. Ama ona peynir verdim. Karşılığında bir şey fısıldadı: 'Bilge sandığın kişi değil.' Bu ne anlama geliyor? Bana yardım eden tek kişi Bilge'ydi!\"",
+      lore_ch1_14: "Kayıp Günlük — Son Giriş:\n\n\"Fenerim sönüyor. Tüccar artık bana satış yapmayı reddediyor. Altınlarımın ruhum gibi 'eskimiş' olduğunu söylüyor. Bilge de gitti. Eğer bu sayfayı bulursan, kapıya ulaşamadığımı bil. Ama sen... koşmalısın.\"",
 
       // Bölüm 2: "Gölge Muhafızının Vaazları" (Level 11-20)
       lore_ch2_1: "Muhafızın Vaazı — I:\n\n\"Bu labirentin seni hapsetmek için inşa edildiğini mi sanıyorsun? Hayır. Merkezinde yatan şeyden dünyayı korumak için inşa edildi. Ben Muhafız'ım. Duvarlar senin hapisanen değil — herkesin kalkanı. Sen kendi isteğinle içeri girdin. Şimdi anlıyorsun.\"",
@@ -478,7 +517,38 @@ export const translations = {
       lore_ch2_7: "Muhafızın Vaazı — VII:\n\n\"Kapıdaki şifre kilidi... selefimin bıraktığı acımasız bir şaka. Şifre her giren ruhla değişir. Parşömenler kendilerini yeniden yazar. Kaçsan bile labirenti seninle taşıyacaksın. Göz kapaklarının arkasındaki karanlıkta yaşıyor.\"",
       lore_ch2_8: "Muhafızın Vaazı — VIII:\n\n\"Burada zaman geçmiyor çünkü zaman bu yerden korkuyor. Kimse bakmadığında yağmur yukarı doğru yağar. Gökyüzündeki yıldızlar yıldız değil — buradan kaçıp her gece bu koridorları rüyasında gören insanların gözleri.\"",
       lore_ch2_9: "Muhafızın Vaazı — IX:\n\n\"En derin katın altında bir şey var. Labirentten daha eski, gölgelerden daha eski bir şey. Kimsenin ona ulaşmaması için buraya kondum. Benden önceki her Muhafız başarısız oldu. Aşağıdaki şey sabırlı. Zaman başlamadan önce beri bekliyor.\"",
-      lore_ch2_10: "Muhafızın Son Vaazı:\n\n\"Tüm sözlerimi okudun ve hâlâ ilerliyorsun. Cesur mu aptal mı — bu yerde ikisi de aynı şey. Aradığın gerçek şu: labirent bir yer değil. Bir ayna. Her duvar, her gölge, her fısıltı — hepsi sensin. Bu hapishaneyi kendi korkularından inşa ettin. Ve onu yıkabilecek tek kişi de sensin.\""
+      lore_ch2_10: "Muhafızın Son Vaazı:\n\n\"Tüm sözlerimi okudun ve hâlâ ilerliyorsun. Cesur mu aptal mı — bu yerde ikisi de aynı şey. Aradığın gerçek şu: labirent bir yer değil. Bir ayna. Her duvar, her gölge, her fısıltı — hepsi sensin. Bu hapishaneyi kendi korkularından inşa ettin. Ve onu yıkabilecek tek kişi de sensin.\"",
+      lore_ch2_11: "Muhafızın Vaazı — XI:\n\n\"İçtiği o taze su kuyusu... ağzına gelen kül tadı kuyuya ait değildi, kendi çürüyen anılarınındı. Labirent hayatta kalman için gerekeni verir ama karşılığında bir bedel alır. Her yudum geçmişinden bir parça götürür.\"",
+      lore_ch2_12: "Muhafızın Vaazı — XII:\n\n\"Çocuk... kalbine korku yerleşmeden önceki çocukluğunun yansımasıdır. Onu kurtaramazsın. Sadece taşların arasında yok oluşunu izleyebilirsin, asla geri dönemeyeceğin bir hayatın kalıntısıdır o.\"",
+      lore_ch2_13: "Muhafızın Vaazı — XIII:\n\n\"Fare, labirentin en eski tanığıdır. Bilge hakkındaki gerçeği bilir. Kapıyı tasarlayan, kilidi kilitleyen Bilge'nin ta kendisidir. Döngünün tekrarlanışını izlemek için sana rehberlik eder. O senin çaresizliğinin mimarıdır.\"",
+      lore_ch2_14: "Muhafızın Vaazı — XIV:\n\n\"Neden yürümeye devam ediyorsun? Her adım sadece ayak izlerini toza daha derin kazıyor. Kendi sonuna giden yolu kendin inşa ediyorsun. Labirent genişlemez; sadece seni kıvrımlarının daha derinine katlar.\"",
+      lore_ch2_15: "Muhafızın Vaazı — XV:\n\n\"Bulduğun altınlar para birimi değildir. Senden önce gelenlerin kaybettiği irade parçalarıdır. Tüccar onları biriktiriyor çünkü bu düş dünyasında ağırlığı olan tek şey onlardır.\"",
+      lore_ch2_16: "Muhafızın Vaazı — XVI:\n\n\"Kalbin çok hızlı atıyor. Katların ötesinden duyabiliyorum. Panik ritmi. Seni hayatta tuttuğunu sanıyorsun ama aslında bu bir geri sayım. Her atış, karanlıktan önceki son anlarındır.\"",
+      lore_ch2_17: "Muhafızın Vaazı — XVII:\n\n\"Şifre panelleri ve kapılar... onlar engel değil, filtredir. Sadece bilmeceleri çözecek kararlılığa sahip olanların daha derin katlara inmesine izin verilir. Zayıflar erkenden yutulur. Güçlüler derinlikler için saklanır.\"",
+      lore_ch2_18: "Muhafızın Vaazı — XVIII:\n\n\"Güneşi hatırlıyor musun? Tenindeki sıcaklığını? Hatırlamaya çalış. Sadece soğuk, gri bir daire bulacaksın. Labirent gökyüzünü çoktan yedi. Yakında gölgeni de yiyecek.\"",
+      lore_ch2_19: "Muhafızın Vaazı — XIX:\n\n\"Buraya yağan yağmur bulutlardan gelmiyor. Yarattığı ve asla yok edemediği hapishane için ağlayan mimarın gözyaşlarıdır. O da bizimle burada tutsak, koridorlarda farklı bir biçimde dolaşıyor.\"",
+      lore_ch2_20: "Muhafızın Vaazı — XX:\n\n\"Kâşifin ışığının sönüşünü izledim. Çığlık atmadı. Gölgeler onu kucaklarken sadece içini çekti. Artık benim bir parçam. Adını biliyorum. Çocukluk hayallerini biliyorum. Oldukça güzeller.\"",
+      lore_ch2_21: "Muhafızın Vaazı — XXI:\n\n\"Üçüncü kat... Derin Kızıl Korku Mahzeni. Cesur olduğunu sananların kanıyla kaplıdır. Oradaki duvarlar niyetlerini gizlemez. Açlar ve seni bekliyorlar.\"",
+      lore_ch2_22: "Muhafızın Vaazı — XXII:\n\n\"Başarısız olanlardan farklı olduğunu düşünüyorsun. Lanetin ilk aşaması budur: umut. Umut yemdir. Umudun olmasaydı, uzanıp işimi kolaylaştırırdın. Ama koşuyorsun, oyun devam ediyor.\"",
+      lore_ch2_23: "Muhafızın Vaazı — XXIII:\n\n\"Elindeki Pusula... çıkışı gösteriyor, evet, ama sadece çıkış korkunun en yüksek olduğu yer olduğu için. Seni güvenliğe götürmez. Kabusunun zirvesine götürür.\"",
+      lore_ch2_24: "Muhafızın Vaazı — XXIV:\n\n\"Burada getirdiğin korkulardan başka canavar yok. Ben sadece kendi kendinden nefret edişinin yansımasıyım. Kendini sevseydin ben yok olurdum. Ama sevmiyorsun, bu yüzden gerçeğim.\"",
+      lore_ch2_25: "Muhafızın Vaazı — XXV:\n\n\"Bilge'nin gerçek adı kapının altında yazılı. Ama asla göremeyeceksin, çünkü aşağı bakmak gölgeyi davet etmektir. O şu anda seni izliyor, karanlıktan gülümsüyor.\"",
+      lore_ch2_26: "Muhafızın Vaazı — XXVI:\n\n\"Sayfaların sonuna geliyoruz. Kağıt tükeniyor. Yakında sana rehberlik edecek hiçbir kelime kalmayacak, sadece sessizlik. Sesim olmadan yürümeye hazır mısın? Yoksa bana katılacak mısın?\"",
+      lore_ch2_27: "Muhafızın Son Vaazı:\n\n\"Kapı açık. Ama arkana bak. Labirent zihninin içinde büyüdü. Demir kapılardan geçsen bile, hâlâ bu çitlerin arasında yürüyor olacaksın. Labirent sensin. Ve Korku Labirenti'nin çıkışı yok.\"",
+
+      // Fısıltılar (Atmosferik notlar)
+      lore_whisper_1: "Fısıltı:\n\n\"Çitlerin arasında bir şeyin süründüğünü duyabiliyorum...\"",
+      lore_whisper_2: "Fısıltı:\n\n\"Alevin sönmesine izin verme.\"",
+      lore_whisper_3: "Fısıltı:\n\n\"Duvarlar bizi izliyor.\"",
+      lore_whisper_4: "Fısıltı:\n\n\"Karanlıktan kaçış yok.\"",
+      lore_whisper_5: "Fısıltı:\n\n\"Sessiz ol. O dinliyor.\"",
+      lore_whisper_6: "Fısıltı:\n\n\"Işığı takip et, soğuğu görmezden gel.\"",
+      lore_whisper_7: "Fısıltı:\n\n\"Hepsi burada düştü.\"",
+      lore_whisper_8: "Fısıltı:\n\n\"Bu gerçek mi yoksa bir rüya mı?\"",
+      lore_whisper_9: "Fısıltı:\n\n\"Kimseye güvenme. Kendine bile.\"",
+      lore_whisper_10: "Fısıltı:\n\n\"Çıkış yakın ama son daha yakın.\"",
+      lore_whisper_11: "Fısıltı:\n\n\"Gölgeler uzuyor.\"",
+      lore_whisper_12: "Fısıltı:\n\n\"Kalp atışını duyabiliyor musun?\""
     },
 
     // Random Events

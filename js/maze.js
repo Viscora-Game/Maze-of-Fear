@@ -693,38 +693,51 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
     floorDistribution = [4, 3, 3]; // 4 on Floor 0, 3 on Floor 1, 3 on Floor 2 (Levels 14-20)
   }
 
-  // Choose chapter based on current level (Level 1-10 is Chapter 1, 11-20 is Chapter 2)
-  const chapter = (currentLevel <= 10) ? "ch1" : "ch2";
-
-  // Deterministic offset based on currentLevel to avoid reading the same stories as they progress
-  let startOffset = 0;
-  if (currentLevel <= 10) {
-    // Cumulative offsets for Chapter 1:
-    // Level 1: [1,2,3], Level 2: [4,5,6], Level 3: [7,8,9], Level 4: [10,1,2], Level 5: [3,4,5], Level 6: [6,7,8]
-    // Level 7: [9,10,1,2,3], Level 8: [4,5,6,7,8], Level 9: [9,10,1,2,3], Level 10: [4,5,6,7,8]
-    const offsets = [0, 0, 3, 6, 9, 12, 15, 18, 23, 28, 33];
-    startOffset = offsets[currentLevel] || 0;
-  } else {
-    // Chapter 2 offsets (Levels 11-20):
-    // Level 11: [1,2,3,4,5], Level 12: [6,7,8,9,10], Level 13: [1,2,3,4,5]
-    // Levels 14-20: Always 10 papers, meaning they will get all 10 entries (1 to 10)
-    const offsets = [0, 0, 5, 10, 0, 0, 0, 0, 0, 0, 0];
-    const idx = currentLevel - 10;
-    startOffset = offsets[idx] || 0;
+  // Choose main story entries for this level to ensure no duplicates and pure progression
+  const mainStoryKeys = [];
+  if (currentLevel <= 6) {
+    // 1 main entry per level
+    mainStoryKeys.push(`lore_ch1_${currentLevel}`);
+  } else if (currentLevel >= 7 && currentLevel <= 10) {
+    // 2 main entries per level
+    const offset = 7 + (currentLevel - 7) * 2;
+    mainStoryKeys.push(`lore_ch1_${offset}`);
+    mainStoryKeys.push(`lore_ch1_${offset + 1}`);
+  } else if (currentLevel >= 11 && currentLevel <= 13) {
+    // 2 main entries per level
+    const offset = 1 + (currentLevel - 11) * 2;
+    mainStoryKeys.push(`lore_ch2_${offset}`);
+    mainStoryKeys.push(`lore_ch2_${offset + 1}`);
+  } else if (currentLevel >= 14 && currentLevel <= 20) {
+    // 3 main entries per level
+    const offset = 7 + (currentLevel - 14) * 3;
+    mainStoryKeys.push(`lore_ch2_${offset}`);
+    mainStoryKeys.push(`lore_ch2_${offset + 1}`);
+    mainStoryKeys.push(`lore_ch2_${offset + 2}`);
   }
 
-  // Generate sequence of indices from startOffset to startOffset + totalParchments
-  const loreIndices = [];
-  for (let i = 0; i < totalParchments; i++) {
-    loreIndices.push(((startOffset + i) % 10) + 1); // 1-based index (1 to 10)
-  }
-
-  // Shuffle selected indices using seeded random so they appear randomly placed physically inside the level
-  for (let i = loreIndices.length - 1; i > 0; i--) {
+  // Fill the remaining level parchments with spooky atmospheric whispers (no duplicates on the same level)
+  const loreIds = [...mainStoryKeys];
+  const whisperCount = totalParchments - loreIds.length;
+  
+  const whisperIndices = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+  // Seeded shuffle of whispers
+  for (let i = whisperIndices.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    const temp = loreIndices[i];
-    loreIndices[i] = loreIndices[j];
-    loreIndices[j] = temp;
+    const temp = whisperIndices[i];
+    whisperIndices[i] = whisperIndices[j];
+    whisperIndices[j] = temp;
+  }
+  for (let i = 0; i < whisperCount; i++) {
+    loreIds.push(`lore_whisper_${whisperIndices[i % whisperIndices.length]}`);
+  }
+
+  // Shuffle final list of loreIds so the main story and whispers are physically mixed randomly in the maze
+  for (let i = loreIds.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const temp = loreIds[i];
+    loreIds[i] = loreIds[j];
+    loreIds[j] = temp;
   }
 
   let parchmentIndex = 0;
@@ -733,7 +746,7 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
     for (let p = 0; p < countOnFloor; p++) {
       if (parchmentIndex >= totalParchments) break;
 
-      const loreId = `lore_${chapter}_${loreIndices[parchmentIndex]}`;
+      const loreId = loreIds[parchmentIndex];
       parchmentIndex++;
 
       // Distribute sequentially across regions (0, 1, 2, 3) to spread them nicely in the maze

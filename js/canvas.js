@@ -238,6 +238,7 @@ export class CanvasRenderer {
 
     // Trackers
     this.currentFloorId = null;
+    this.occupiedWallFaces = new Set();
     this.cellGroups = [];
     this.chestGoldMeshes = {};
     this.chestLidGroups = {}; // store lid group references for opening animation
@@ -1910,6 +1911,7 @@ export class CanvasRenderer {
     this.camZ = null;
     this.lookX = null;
     this.lookZ = null;
+    this.occupiedWallFaces = new Set();
     // Traverse and dispose all geometry and material buffers to prevent WebGL VRAM memory leaks
     this.scene.traverse((node) => {
       if (node.isMesh) {
@@ -2409,13 +2411,14 @@ export class CanvasRenderer {
             if (wallN || wallS || wallE || wallW) {
               if (Math.random() < 0.055) { // 5.5% probability per path cell adjacent to a wall
                 const walls = [];
-                if (wallN) walls.push({ x: 0, z: -0.478, rotationY: 0 }); // mounts on North wall, faces South
-                if (wallS) walls.push({ x: 0, z: 0.478, rotationY: Math.PI }); // mounts on South wall, faces North
-                if (wallE) walls.push({ x: 0.478, z: 0, rotationY: -Math.PI / 2 }); // mounts on East wall, faces West
-                if (wallW) walls.push({ x: -0.478, z: 0, rotationY: Math.PI / 2 }); // mounts on West wall, faces East
+                if (wallN && !this.occupiedWallFaces.has(`${x},${y - 1},S`)) walls.push({ x: 0, z: -0.478, rotationY: 0, wx: x, wy: y - 1, face: "S" }); // mounts on North wall, faces South
+                if (wallS && !this.occupiedWallFaces.has(`${x},${y + 1},N`)) walls.push({ x: 0, z: 0.478, rotationY: Math.PI, wx: x, wy: y + 1, face: "N" }); // mounts on South wall, faces North
+                if (wallE && !this.occupiedWallFaces.has(`${x + 1},${y},W`)) walls.push({ x: 0.478, z: 0, rotationY: -Math.PI / 2, wx: x + 1, wy: y, face: "W" }); // mounts on East wall, faces West
+                if (wallW && !this.occupiedWallFaces.has(`${x - 1},${y},E`)) walls.push({ x: -0.478, z: 0, rotationY: Math.PI / 2, wx: x - 1, wy: y, face: "E" }); // mounts on West wall, faces East
 
                 if (walls.length > 0) {
                   const mount = walls[Math.floor(Math.random() * walls.length)];
+                  this.occupiedWallFaces.add(`${mount.wx},${mount.wy},${mount.face}`);
 
                   const torchGroup = new THREE.Group();
                   torchGroup.name = "torch";
@@ -3097,6 +3100,7 @@ export class CanvasRenderer {
             ];
             
             let mounted = false;
+            let mountedDir = null;
             for (const d of dirs) {
               const nx = x + d.dx;
               const ny = y + d.dy;
@@ -3106,6 +3110,7 @@ export class CanvasRenderer {
                   offsetZ = d.oz;
                   rotY = d.r;
                   mounted = true;
+                  mountedDir = d;
                   break;
                 }
               }
@@ -3151,6 +3156,13 @@ export class CanvasRenderer {
               noteGroup.position.set(offsetX, 0.64, offsetZ);
               noteGroup.rotation.y = rotY;
               clueSubGroup.add(noteGroup);
+
+              if (mountedDir) {
+                const nx = x + mountedDir.dx;
+                const ny = y + mountedDir.dy;
+                const face = mountedDir.dy === -1 ? "S" : mountedDir.dy === 1 ? "N" : mountedDir.dx === 1 ? "W" : "E";
+                this.occupiedWallFaces.add(`${nx},${ny},${face}`);
+              }
             }
 
             cellGroup.add(clueSubGroup);
@@ -3171,6 +3183,7 @@ export class CanvasRenderer {
             ];
             
             let mounted = false;
+            let mountedDir = null;
             for (const d of dirs) {
               const nx = x + d.dx;
               const ny = y + d.dy;
@@ -3180,6 +3193,7 @@ export class CanvasRenderer {
                   offsetZ = d.oz;
                   rotY = d.r;
                   mounted = true;
+                  mountedDir = d;
                   break;
                 }
               }
@@ -3224,6 +3238,13 @@ export class CanvasRenderer {
               noteGroup.position.set(offsetX, 0.64, offsetZ);
               noteGroup.rotation.y = rotY;
               loreSubGroup.add(noteGroup);
+
+              if (mountedDir) {
+                const nx = x + mountedDir.dx;
+                const ny = y + mountedDir.dy;
+                const face = mountedDir.dy === -1 ? "S" : mountedDir.dy === 1 ? "N" : mountedDir.dx === 1 ? "W" : "E";
+                this.occupiedWallFaces.add(`${nx},${ny},${face}`);
+              }
             }
 
             cellGroup.add(loreSubGroup);
@@ -3640,22 +3661,26 @@ export class CanvasRenderer {
 
           if (wallProp) {
             let mounted = false;
-            if (isFloor(x, y + 1)) {
+            if (isFloor(x, y + 1) && !this.occupiedWallFaces.has(`${x},${y},S`)) {
               wallProp.position.set(0, 0.65, 0.51);
               wallProp.rotation.y = 0;
               mounted = true;
-            } else if (isFloor(x, y - 1)) {
+              this.occupiedWallFaces.add(`${x},${y},S`);
+            } else if (isFloor(x, y - 1) && !this.occupiedWallFaces.has(`${x},${y},N`)) {
               wallProp.position.set(0, 0.65, -0.51);
               wallProp.rotation.y = Math.PI;
               mounted = true;
-            } else if (isFloor(x + 1, y)) {
+              this.occupiedWallFaces.add(`${x},${y},N`);
+            } else if (isFloor(x + 1, y) && !this.occupiedWallFaces.has(`${x},${y},E`)) {
               wallProp.position.set(0.51, 0.65, 0);
               wallProp.rotation.y = Math.PI / 2;
               mounted = true;
-            } else if (isFloor(x - 1, y)) {
+              this.occupiedWallFaces.add(`${x},${y},E`);
+            } else if (isFloor(x - 1, y) && !this.occupiedWallFaces.has(`${x},${y},W`)) {
               wallProp.position.set(-0.51, 0.65, 0);
               wallProp.rotation.y = -Math.PI / 2;
               mounted = true;
+              this.occupiedWallFaces.add(`${x},${y},W`);
             }
 
             if (mounted) {

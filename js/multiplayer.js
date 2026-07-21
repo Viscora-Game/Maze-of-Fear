@@ -6,6 +6,10 @@ export class MultiplayerManager {
     this.isHost = false;
     this.isConnected = false;
     this.roomCode = null;
+    this.enableVoice = true;
+    this.localAudioStream = null;
+    this.activeCall = null;
+    this.isMicMuted = false;
     
     // Callbacks
     this.onStatusChange = null;
@@ -157,10 +161,26 @@ export class MultiplayerManager {
   setupConnection(onConnect) {
     if (!this.conn) return;
 
+    if (this.peer) {
+      this.peer.on("call", (call) => {
+        if (!this.enableVoice) return;
+        this.activeCall = call;
+        call.answer(this.localAudioStream || undefined);
+        call.on("stream", (remoteStream) => {
+          this.playRemoteAudio(remoteStream);
+        });
+      });
+    }
+
     this.conn.on("open", () => {
       this.isConnected = true;
       this.updateStatus("Bağlantı kuruldu! Oyun başlıyor...");
       
+      if (this.enableVoice) {
+        this.initVoiceChat();
+      }
+      this.updateMicUI();
+
       if (onConnect) onConnect();
       this.game.startCoopGame(this.isHost);
     });
@@ -184,7 +204,7 @@ export class MultiplayerManager {
       try {
         this.conn.send(JSON.stringify(data));
       } catch (e) {
-        console.error("Failed to send data:", e);
+        console.error("Error sending data:", e);
       }
     }
   }
@@ -192,16 +212,8 @@ export class MultiplayerManager {
   startHeartbeat() {
     this.stopHeartbeat();
     this.heartbeatInterval = setInterval(() => {
-      if (this.peer && !this.peer.destroyed) {
-        if (this.peer.socket && typeof this.peer.socket.send === "function") {
-          try {
-            this.peer.socket.send({ type: "PING" });
-          } catch (e) {
-            console.warn("Failed to send signaling heartbeat:", e);
-          }
-        }
-      }
-    }, 15000);
+      this.send({ type: "PING" });
+    }, 5000);
   }
 
   stopHeartbeat() {
@@ -214,6 +226,14 @@ export class MultiplayerManager {
   cleanup() {
     this.isConnected = false;
     this.stopHeartbeat();
+    if (this.localAudioStream) {
+      try { this.localAudioStream.getTracks().forEach(track => track.stop()); } catch(e){}
+      this.localAudioStream = null;
+    }
+    if (this.activeCall) {
+      try { this.activeCall.close(); } catch(e){}
+      this.activeCall = null;
+    }
     if (this.conn) {
       try { this.conn.close(); } catch(e){}
       this.conn = null;
@@ -222,6 +242,7 @@ export class MultiplayerManager {
       try { this.peer.destroy(); } catch(e){}
       this.peer = null;
     }
+    this.updateMicUI();
   }
 
   handleDisconnect() {
@@ -273,7 +294,14 @@ export class MultiplayerManager {
     }
 
     if (data && data.type === "SYNC_GAME") {
+      if (data.enableVoice !== undefined) {
+        this.enableVoice = data.enableVoice;
+      }
       this.game.initializeCoopGuestGame(data.seed, data.level, data.difficulty, data.variation);
+      if (this.enableVoice) {
+        this.initVoiceChat();
+      }
+      this.updateMicUI();
       return;
     }
 
@@ -414,6 +442,76 @@ export class MultiplayerManager {
       case "VICTORY":
         this.game.triggerLevelVictory(true);
         break;
+    }
+  }
+
+  async initVoiceChat() {
+    if (!this.enableVoice) return;
+    try {
+      if (!this.localAudioStream) {
+        this.localAudioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      }
+      this.isMicMuted = false;
+      this.updateMicUI();
+
+      if (this.conn && this.conn.peer && this.peer) {
+        const call = this.peer.call(this.conn.peer, this.localAudioStream);
+        this.activeCall = call;
+        call.on("stream", (remoteStream) => {
+          this.playRemoteAudio(remoteStream);
+        });
+      }
+    } catch (err) {
+      console.warn("Voice chat mic permission denied or unavailable:", err);
+      if (this.game && this.game.showToast) {
+        this.game.showToast(this.game.lang === "tr" ? "Mikrofon izni alınamadı." : "Microphone permission denied.");
+      }
+    }
+  }
+
+  playRemoteAudio(stream) {
+    const audioElem = document.getElementById("coop-remote-audio");
+    if (audioElem) {
+      audioElem.srcObject = stream;
+      audioElem.play().catch(e => console.warn("Remote audio autoplay blocked:", e));
+    }
+  }
+
+  toggleMicMute() {
+    if (!this.enableVoice) return;
+    if (!this.localAudioStream) {
+      this.initVoiceChat();
+      return;
+    }
+    this.isMicMuted = !this.isMicMuted;
+    this.localAudioStream.getAudioTracks().forEach(track => {
+      track.enabled = !this.isMicMuted;
+    });
+    this.updateMicUI();
+    if (this.game && this.game.showToast) {
+      const msg = this.isMicMuted 
+        ? (this.game.lang === "tr" ? "🔕 Mikrofonunuz Kapatıldı" : "🔕 Microphone Muted")
+        : (this.game.lang === "tr" ? "🎤 Mikrofonunuz Açıldı" : "🎤 Microphone Active");
+      this.game.showToast(msg);
+    }
+  }
+
+  updateMicUI() {
+    const btn = document.getElementById("btn-mic-toggle");
+    if (!btn) return;
+    if (!this.enableVoice || !this.isConnected) {
+      btn.classList.add("hidden");
+      return;
+    }
+    btn.classList.remove("hidden");
+    if (this.isMicMuted) {
+      btn.innerHTML = "🔇";
+      btn.style.borderColor = "var(--red)";
+      btn.style.background = "rgba(239, 68, 68, 0.35)";
+    } else {
+      btn.innerHTML = "🎤";
+      btn.style.borderColor = "var(--emerald)";
+      btn.style.background = "rgba(16, 185, 129, 0.35)";
     }
   }
 }

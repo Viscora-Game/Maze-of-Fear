@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=78";
-import { AudioEngine } from "./audio.js?v=78";
-import { CanvasRenderer } from "./canvas.js?v=78";
-import { translations } from "./translations.js?v=78";
-import { randomEvents, deathEvents } from "./events.js?v=78";
-import { getSeededRandom } from "./prng.js?v=78";
+import { generateMaze } from "./maze.js?v=79";
+import { AudioEngine } from "./audio.js?v=79";
+import { CanvasRenderer } from "./canvas.js?v=79";
+import { translations } from "./translations.js?v=79";
+import { randomEvents, deathEvents } from "./events.js?v=79";
+import { getSeededRandom } from "./prng.js?v=79";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -556,16 +556,6 @@ export class Game {
         }
       }
 
-  broadcastAudioEvent(sound, extra = {}) {
-    if (this.multiplayer && this.multiplayer.isConnected) {
-      this.multiplayer.send({
-        type: "AUDIO_EVENT",
-        sound: sound,
-        ...extra
-      });
-    }
-  }
-
       if (this.state && this.state.gameState !== "menu") {
         this.draw();
       }
@@ -577,6 +567,16 @@ export class Game {
 
   stopLoop() {
     this.loopRunning = false;
+  }
+
+  broadcastAudioEvent(sound, extra = {}) {
+    if (this.multiplayer && this.multiplayer.isConnected) {
+      this.multiplayer.send({
+        type: "AUDIO_EVENT",
+        sound: sound,
+        ...extra
+      });
+    }
   }
 
   resizeCanvas() {

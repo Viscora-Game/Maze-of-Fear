@@ -2566,7 +2566,6 @@ export class Game {
       });
     }
     
-    const isCoop = this.multiplayer && this.multiplayer.isConnected;
     const gameCompleted = !isCoop && this.currentLevel === 20;
     this.state.gameState = "victory";
     

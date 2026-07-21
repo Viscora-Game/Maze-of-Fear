@@ -141,9 +141,9 @@ export class CanvasRenderer {
     };
 
     this.brickTexture = this.buildBrickTexture();
-    this.brickBump = null;
+    this.brickBump = this.buildBrickBump();
     this.hedgeTexture = this.buildHedgeTexture();
-    this.hedgeNormal = null;
+    this.hedgeBump = this.buildHedgeBump();
     this.woodTexture = this.buildWoodTexture();
     this.woodBump = null;
     this.floorTexture = this.buildFloorTexture();
@@ -1033,24 +1033,75 @@ export class CanvasRenderer {
     return texture;
   }
 
+  // Procedural grayscale brick bump map for realistic 3D stone relief
+  buildBrickBump() {
+    const canvas = document.createElement("canvas");
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext("2d");
+
+    // Flat mid-gray base
+    ctx.fillStyle = "#808080";
+    ctx.fillRect(0, 0, 256, 256);
+
+    const rows = 8;
+    const cols = 4;
+    const rh = 256 / rows;
+    const cw = 256 / cols;
+
+    for (let r = 0; r < rows; r++) {
+      const y = r * rh;
+      const offset = (r % 2 === 0) ? 0 : cw / 2;
+      
+      // Dark mortar grooves (recessed)
+      ctx.fillStyle = "#333333";
+      ctx.fillRect(0, y, 256, 3);
+
+      for (let c = -1; c <= cols; c++) {
+        const x = c * cw + offset;
+        ctx.fillRect(x, y, 3, rh);
+
+        // Raised brick face (lighter = raised)
+        const brickSeed = (r * 13 + c * 37) % 100;
+        const shade = 140 + (brickSeed % 40);
+        ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade})`;
+        ctx.fillRect(x + 4, y + 4, cw - 8, rh - 8);
+
+        // Subtle surface noise on bricks
+        for (let i = 0; i < 15; i++) {
+          const nx = x + 4 + ((brickSeed * i + 17) % Math.max(1, Math.floor(cw - 8)));
+          const ny = y + 4 + ((brickSeed * i + 79) % Math.max(1, Math.floor(rh - 8)));
+          ctx.fillStyle = (i % 2 === 0) ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.08)";
+          ctx.fillRect(nx, ny, 2, 2);
+        }
+      }
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(1.5, 1.5);
+    return texture;
+  }
+
   buildHedgeTexture() {
     const canvas = document.createElement("canvas");
     canvas.width = 256;
     canvas.height = 256;
     const ctx = canvas.getContext("2d");
 
-    // Deep dark forest green base
-    ctx.fillStyle = "#064e3b"; 
+    // Very deep dark green base
+    ctx.fillStyle = "#031f15"; 
     ctx.fillRect(0, 0, 256, 256);
 
-    // Generate leaf clumps / organic noise
+    // Dense organic leaf clump colors
     const colors = [
-      "#064e3b", // Deep forest green
-      "#065f46", // Dark green
-      "#0f766e", // Tealish green
-      "#115e59", // Muted green-teal
-      "#047857", // Bright emerald shadow
-      "#022c22"  // Absolute shadow dark green
+      "#03200f", // Shadow green
+      "#052e16", // Deep forest
+      "#083d1f", // Dark emerald
+      "#0a4225", // Mid forest
+      "#021a0e", // Nearly black green
+      "#041e12"  // Very dark olive
     ];
 
     let seed = 9876;
@@ -1059,29 +1110,80 @@ export class CanvasRenderer {
       return seed / 233280;
     };
 
-    // Draw overlapping leaves
-    for (let i = 0; i < 2000; i++) {
+    // Draw smaller, denser leaf clumps for more realistic foliage
+    for (let i = 0; i < 1200; i++) {
       const x = rng() * 256;
       const y = rng() * 256;
-      const size = 3 + rng() * 6;
+      const size = 2 + rng() * 4;
       const col = colors[Math.floor(rng() * colors.length)];
 
       ctx.fillStyle = col;
       ctx.beginPath();
-      // Ellipse/leaf shape
-      ctx.ellipse(x, y, size, size * 0.6, rng() * Math.PI, 0, Math.PI * 2);
+      ctx.arc(x, y, size, 0, Math.PI * 2);
       ctx.fill();
-      
-      // Shadow stroke
-      ctx.strokeStyle = "rgba(0, 0, 0, 0.2)";
-      ctx.lineWidth = 0.5;
-      ctx.stroke();
+    }
+
+    // Subtle depth variation overlay
+    for (let i = 0; i < 300; i++) {
+      const x = rng() * 256;
+      const y = rng() * 256;
+      const size = 1 + rng() * 2;
+      ctx.fillStyle = (i % 3 === 0) ? "rgba(0,0,0,0.25)" : "rgba(20,40,20,0.15)";
+      ctx.beginPath();
+      ctx.arc(x, y, size, 0, Math.PI * 2);
+      ctx.fill();
     }
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(1.5, 1.5);
+    texture.repeat.set(2.0, 2.0);
+    return texture;
+  }
+
+  // Procedural grayscale hedge bump map for organic 3D leaf relief
+  buildHedgeBump() {
+    const canvas = document.createElement("canvas");
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext("2d");
+
+    ctx.fillStyle = "#808080";
+    ctx.fillRect(0, 0, 256, 256);
+
+    let seed = 5432;
+    const rng = () => {
+      seed = (seed * 9301 + 49297) % 233280;
+      return seed / 233280;
+    };
+
+    // Organic bump patches
+    for (let i = 0; i < 600; i++) {
+      const x = rng() * 256;
+      const y = rng() * 256;
+      const size = 2 + rng() * 5;
+      const shade = 100 + Math.floor(rng() * 80);
+      ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade})`;
+      ctx.beginPath();
+      ctx.arc(x, y, size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Deep shadow patches
+    for (let i = 0; i < 200; i++) {
+      const x = rng() * 256;
+      const y = rng() * 256;
+      const size = 1 + rng() * 3;
+      ctx.fillStyle = "rgba(0,0,0,0.2)";
+      ctx.beginPath();
+      ctx.arc(x, y, size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(2.0, 2.0);
     return texture;
   }
 
@@ -1595,10 +1697,7 @@ export class CanvasRenderer {
     } else if (isUnderground) {
       this.scene.background = new THREE.Color("#010103");
     } else {
-      if (!this.starrySkyTexture) {
-        this.starrySkyTexture = this.buildStarrySkyTexture();
-      }
-      this.scene.background = this.starrySkyTexture;
+      this.scene.background = new THREE.Color("#020206");
     }
 
     // Flashlight SpotLight - PRIMARY neutral white light source with realistic flashlight properties (decay = 1.1, range = 11.0m)
@@ -1639,6 +1738,46 @@ export class CanvasRenderer {
     this.rainParticles = new THREE.Points(rainGeo, rainMat);
     this.rainParticles.visible = !isUnderground; // Hide rain particles underground!
     this.scene.add(this.rainParticles);
+
+    // 1d. Creepier 3D Starfield Dome (only for outdoor ruins floor, no sliding!)
+    if (!isUnderground) {
+      const starCount = 180;
+      const starGeometry = new THREE.BufferGeometry();
+      const positions = new Float32Array(starCount * 3);
+
+      let seed = 12345;
+      const rng = () => {
+        seed = (seed * 9301 + 49297) % 233280;
+        return seed / 233280;
+      };
+
+      for (let i = 0; i < starCount; i++) {
+        const theta = rng() * Math.PI * 2;
+        const phi = rng() * Math.PI * 0.45; // hemisphere dome
+        const radius = 55.0 + rng() * 15.0; // lock in distant world space
+
+        const x = radius * Math.cos(theta) * Math.sin(phi);
+        const z = radius * Math.sin(theta) * Math.sin(phi);
+        const y = radius * Math.cos(phi) + 2.0;
+
+        positions[i * 3] = x;
+        positions[i * 3 + 1] = y;
+        positions[i * 3 + 2] = z;
+      }
+
+      starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      
+      const starMat = new THREE.PointsMaterial({
+        color: "#ffffff",
+        size: 0.35,
+        transparent: true,
+        opacity: 0.85,
+        sizeAttenuation: true
+      });
+
+      this.starField = new THREE.Points(starGeometry, starMat);
+      this.scene.add(this.starField);
+    }
 
     // 1c. Low-Lying Ground Fog Particles System (Infinite player-locked drifting mist - dynamically scaled for mobile)
     const fogCount = isMobile ? 20 : 65;
@@ -1733,7 +1872,9 @@ export class CanvasRenderer {
 
     const hedgeMat = new THREE.MeshStandardMaterial({ 
       map: this.hedgeTexture, 
-      color: "#1d261d", // Slightly lighter green so it is visible under fener
+      bumpMap: this.hedgeBump,
+      bumpScale: 0.08,
+      color: "#162016", 
       roughness: 0.98 
     });
 
@@ -3061,25 +3202,14 @@ export class CanvasRenderer {
           let wallProp = null;
 
           if (!isUnderground) {
-            // Floor 0 (Ruins & Hedge Maze): Mossy Stone Rune Plaques & Creeping Wall Ivy Sprouts
-            if (wallRand < 0.18) { // 18% chance
-              const propType = Math.floor(wallRand * 300) % 2;
-              if (propType === 0) {
-                // Mossy Ancient Rune Plaque
-                if (!this.runePlaqueTex) this.runePlaqueTex = this.buildRunePlaqueTexture();
-                const plaqueMesh = new THREE.Mesh(
-                  new THREE.BoxGeometry(0.32, 0.32, 0.03),
-                  new THREE.MeshStandardMaterial({ map: this.runePlaqueTex, roughness: 0.85 })
-                );
-                wallProp = plaqueMesh;
-              } else {
-                // Creeping Hedge Ivy Leaf Patch on Wall Face
-                const ivyMesh = new THREE.Mesh(
-                  new THREE.BoxGeometry(0.42, 0.65, 0.02),
-                  new THREE.MeshStandardMaterial({ map: this.hedgeTexture, color: "#142414", roughness: 0.95 })
-                );
-                wallProp = ivyMesh;
-              }
+            // Floor 0 (Ruins & Hedge Maze): Mossy Stone Rune Plaques only
+            if (wallRand < 0.10) { // 10% chance
+              if (!this.runePlaqueTex) this.runePlaqueTex = this.buildRunePlaqueTexture();
+              const plaqueMesh = new THREE.Mesh(
+                new THREE.BoxGeometry(0.32, 0.32, 0.03),
+                new THREE.MeshStandardMaterial({ map: this.runePlaqueTex, roughness: 0.85 })
+              );
+              wallProp = plaqueMesh;
             }
           } else if (currentFloor === 1) {
             // Floor 1 (Stone Dungeon): Haunted Paintings, Rusted Iron Shackles/Chains, Iron Ventilation Grates
@@ -3574,10 +3704,7 @@ export class CanvasRenderer {
     } else if (isUnderground) {
       this.scene.background = new THREE.Color("#010103");
     } else {
-      if (!this.starrySkyTexture) {
-        this.starrySkyTexture = this.buildStarrySkyTexture();
-      }
-      this.scene.background = this.starrySkyTexture;
+      this.scene.background = new THREE.Color("#020206");
     }
 
     // Keep light position synced with player

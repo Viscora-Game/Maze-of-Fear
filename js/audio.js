@@ -291,7 +291,7 @@ export class AudioEngine {
     scheduleNextAmbient();
     const environmentalSoundInterval = null; // dummy placeholder for windNode destructuring compatibility
 
-    // 5. Periodic Heartbeat Dread loop (Steady low double thuds to induce panic)
+    // 5. Periodic Heartbeat Dread loop (Very subtle low double thuds for tension)
     const heartbeatInterval = setInterval(() => {
       if (this.muted || !this.ctx) return;
       const now = this.ctx.currentTime;
@@ -304,24 +304,24 @@ export class AudioEngine {
         const gain = this.ctx.createGain();
         
         osc.type = "sine";
-        osc.frequency.setValueAtTime(55, now + delay); // very deep sub-bass thump
-        osc.frequency.exponentialRampToValueAtTime(30, now + delay + 0.12);
+        osc.frequency.setValueAtTime(45, now + delay); // deeper sub-bass
+        osc.frequency.exponentialRampToValueAtTime(25, now + delay + 0.10);
         
         filter.type = "lowpass";
-        filter.frequency.value = 70; // muffle all harmonics for raw chest impact
+        filter.frequency.value = 55; // even more muffled
         
         gain.gain.setValueAtTime(0, now + delay);
-        gain.gain.linearRampToValueAtTime(0.24, now + delay + 0.02); // quick punchy attack
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + delay + 0.12);
+        gain.gain.linearRampToValueAtTime(0.08, now + delay + 0.02); // much softer attack
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + delay + 0.10);
         
         osc.connect(filter);
         filter.connect(gain);
         gain.connect(this.masterGain);
         
         osc.start(now + delay);
-        osc.stop(now + delay + 0.15);
+        osc.stop(now + delay + 0.12);
       });
-    }, 1500); // Beats every 1.5 seconds (40 BPM slow tension heartbeat)
+    }, 3500); // Beats every 3.5 seconds (much slower, subtle tension)
 
     this.windNode = { lfo, noise, windGain, droneOsc1, droneOsc2, droneGain, creepyInterval, environmentalSoundInterval, heartbeatInterval };
   }

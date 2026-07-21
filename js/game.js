@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=53";
-import { AudioEngine } from "./audio.js?v=53";
-import { CanvasRenderer } from "./canvas.js?v=53";
-import { translations } from "./translations.js?v=53";
-import { randomEvents, deathEvents } from "./events.js?v=53";
-import { getSeededRandom } from "./prng.js?v=53";
+import { generateMaze } from "./maze.js?v=54";
+import { AudioEngine } from "./audio.js?v=54";
+import { CanvasRenderer } from "./canvas.js?v=54";
+import { translations } from "./translations.js?v=54";
+import { randomEvents, deathEvents } from "./events.js?v=54";
+import { getSeededRandom } from "./prng.js?v=54";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -526,6 +526,10 @@ export class Game {
       return { x: rx, y: ry };
     };
 
+    // Store pre-move position to detect actual displacement (prevents footstep sounds when stuck against walls)
+    const preX = p.x;
+    const preY = p.y;
+
     if (isMoving) {
       let nextX = p.x + inputX * speed * dt;
       let nextY = p.y + inputY * speed * dt;
@@ -542,6 +546,9 @@ export class Game {
       res = resolveCollisions(p.x, nextY);
       p.y = res.y;
     }
+
+    // Check if player actually moved (not blocked by wall collision)
+    const actuallyMoved = isMoving && (Math.abs(p.x - preX) > 0.001 || Math.abs(p.y - preY) > 0.001);
 
     // Sync visual coordinates directly
     p.visualX = p.x;
@@ -649,7 +656,7 @@ export class Game {
     }
 
     // 5. Steps & event decrement (fuel consumption disabled)
-    if (isMoving) {
+    if (actuallyMoved) {
       this.state.stepsTaken += dt * 15;
 
       // Footstep audio timing (runs faster when sprinting)

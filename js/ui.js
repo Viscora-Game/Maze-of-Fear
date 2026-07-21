@@ -1,4 +1,5 @@
 import { Game } from "./game.js?v=62";
+import { MultiplayerManager } from "./multiplayer.js?v=62";
 
 const init = () => {
   const game = new Game();
@@ -105,6 +106,7 @@ function setupUI(game) {
   // 1. DOM Element Cache
   const screens = {
     menu: document.getElementById("screen-menu"),
+    coop: document.getElementById("screen-coop"),
     settings: document.getElementById("screen-settings"),
     howtoplay: document.getElementById("screen-howtoplay"),
     achievements: document.getElementById("screen-achievements"),
@@ -134,6 +136,7 @@ function setupUI(game) {
     invItemDesc: document.getElementById("inv-item-desc"),
     btnInvUse: document.getElementById("btn-inv-use"),
     btnInvEquip: document.getElementById("btn-inv-equip"),
+    btnInvSend: document.getElementById("btn-inv-send"),
     equippedVal: document.getElementById("hud-equipped-val")
   };
 
@@ -662,6 +665,146 @@ function setupUI(game) {
 
   document.getElementById("btn-howtoplay").addEventListener("click", () => {
     showScreen("howtoplay");
+  });
+
+  // --- Co-op Lobby Screen Event Listeners ---
+  document.getElementById("btn-coop").addEventListener("click", () => {
+    showScreen("coop");
+    if (!game.multiplayer) {
+      game.multiplayer = new MultiplayerManager(game);
+      game.multiplayer.onStatusChange = (statusText, replacements = {}) => {
+        const statusEl = document.getElementById("coop-status");
+        if (statusEl) {
+          statusEl.textContent = statusText;
+        }
+        if (replacements.code) {
+          const codeEl = document.getElementById("coop-room-code");
+          if (codeEl) codeEl.textContent = replacements.code;
+        }
+      };
+    }
+    // Reset room code UI
+    document.getElementById("coop-room-code").textContent = "------";
+    document.getElementById("coop-host-details").classList.add("hidden");
+    document.getElementById("coop-status").textContent = "";
+    document.getElementById("coop-join-input").value = "";
+
+    // Sync Co-op lobby difficulty buttons with current game difficulty
+    ["easy", "medium", "hard", "nightmare", "peaceful"].forEach(d => {
+      const b = document.getElementById(`btn-coop-diff-${d}`);
+      if (b) {
+        if (d === game.difficulty) b.classList.add("active");
+        else b.classList.remove("active");
+      }
+    });
+
+    // Sync Co-op lobby map size buttons with current game coopMapSize
+    const currentMapSize = game.coopMapSize || "small";
+    ["small", "medium", "large"].forEach(s => {
+      const b = document.getElementById(`btn-coop-map-${s}`);
+      if (b) {
+        if (s === currentMapSize) b.classList.add("active");
+        else b.classList.remove("active");
+      }
+    });
+    const descEl = document.getElementById("coop-map-desc");
+    if (descEl) {
+      const descKeys = { small: "mapSmallDesc", medium: "mapMediumDesc", large: "mapLargeDesc" };
+      descEl.textContent = game.t(descKeys[currentMapSize]);
+    }
+  });
+
+  // Co-op difficulty button listeners
+  ["easy", "medium", "hard", "nightmare", "peaceful"].forEach(diff => {
+    const btn = document.getElementById(`btn-coop-diff-${diff}`);
+    if (btn) {
+      btn.addEventListener("click", () => {
+        game.difficulty = diff;
+        ["easy", "medium", "hard", "nightmare", "peaceful"].forEach(d => {
+          const b = document.getElementById(`btn-coop-diff-${d}`);
+          if (b) {
+            if (d === diff) b.classList.add("active");
+            else b.classList.remove("active");
+          }
+        });
+      });
+    }
+  });
+
+  // Co-op map size button listeners
+  const mapSizeDescriptions = {
+    small: () => game.t("mapSmallDesc"),
+    medium: () => game.t("mapMediumDesc"),
+    large: () => game.t("mapLargeDesc")
+  };
+
+  ["small", "medium", "large"].forEach(size => {
+    const btn = document.getElementById(`btn-coop-map-${size}`);
+    if (btn) {
+      btn.addEventListener("click", () => {
+        game.coopMapSize = size;
+        ["small", "medium", "large"].forEach(s => {
+          const b = document.getElementById(`btn-coop-map-${s}`);
+          if (b) {
+            if (s === size) b.classList.add("active");
+            else b.classList.remove("active");
+          }
+        });
+        const descEl = document.getElementById("coop-map-desc");
+        if (descEl) descEl.textContent = mapSizeDescriptions[size]();
+      });
+    }
+  });
+
+  document.getElementById("btn-coop-host").addEventListener("click", () => {
+    if (game.multiplayer) {
+      game.multiplayer.hostRoom(() => {
+        document.getElementById("coop-host-details").classList.remove("hidden");
+      });
+    }
+  });
+
+  document.getElementById("btn-coop-copy-link").addEventListener("click", () => {
+    if (game.multiplayer && game.multiplayer.roomCode) {
+      const link = `${window.location.origin}${window.location.pathname}?room=${game.multiplayer.roomCode}`;
+      navigator.clipboard.writeText(link).then(() => {
+        const isTr = game.lang === "tr";
+        alert(isTr ? "Davet linki kopyalandı!" : "Invite link copied to clipboard!");
+      });
+    }
+  });
+
+  document.getElementById("btn-coop-join").addEventListener("click", () => {
+    let inputVal = document.getElementById("coop-join-input").value.trim();
+    
+    // Extract room parameter if a full URL or query string is pasted
+    if (inputVal.includes("room=")) {
+      try {
+        const queryStart = inputVal.indexOf("?");
+        if (queryStart !== -1) {
+          const urlParams = new URLSearchParams(inputVal.substring(queryStart));
+          inputVal = urlParams.get("room") || inputVal;
+        } else {
+          const parts = inputVal.split("room=");
+          if (parts[1]) inputVal = parts[1].split("&")[0];
+        }
+      } catch (e) {
+        const parts = inputVal.split("room=");
+        if (parts[1]) inputVal = parts[1].split("&")[0];
+      }
+    }
+    
+    inputVal = inputVal.toUpperCase().trim();
+    if (inputVal && game.multiplayer) {
+      game.multiplayer.joinRoom(inputVal);
+    }
+  });
+
+  document.getElementById("btn-coop-back").addEventListener("click", () => {
+    if (game.multiplayer) {
+      game.multiplayer.cleanup();
+    }
+    showScreen("menu");
   });
 
   // --- Page Visibility / Background Auto-Pause Event Listeners ---
@@ -1261,6 +1404,16 @@ function setupUI(game) {
   // 7. Modal Callbacks
   // Dialogue Overlay (NPCs, Obstacles & Ancient Scrolls)
   game.onDialog = (config) => {
+    // Broadcast dialog opening to the co-op partner
+    if (game.multiplayer && game.multiplayer.isConnected && !config._isCoopReceived) {
+      game.multiplayer.send({
+        type: "SHOW_DIALOG",
+        title: config.title,
+        text: config.text,
+        isClue: config.isClue || false
+      });
+    }
+
     modals.dialog.innerHTML = "";
     modals.dialog.classList.remove("hidden");
 
@@ -1288,6 +1441,12 @@ function setupUI(game) {
         btn.textContent = c.text;
         btn.addEventListener("click", () => {
           modals.dialog.classList.add("hidden");
+          // Broadcast dialog closure
+          if (game.multiplayer && game.multiplayer.isConnected) {
+            game.multiplayer.send({
+              type: "CLOSE_DIALOG"
+            });
+          }
           c.action();
         });
         btnContainer.appendChild(btn);
@@ -1384,6 +1543,12 @@ function setupUI(game) {
           window._dialogTypewriterInterval = null;
         }
         modals.dialog.classList.add("hidden");
+        // Broadcast dialog closure
+        if (game.multiplayer && game.multiplayer.isConnected) {
+          game.multiplayer.send({
+            type: "CLOSE_DIALOG"
+          });
+        }
         c.action();
       });
       btnContainer.appendChild(btn);
@@ -1814,7 +1979,16 @@ function setupUI(game) {
 
     content.querySelector("#btn-restart").addEventListener("click", () => {
       modals.end.classList.add("hidden");
-      triggerLoadingAndStart(!isVictory);
+      const isCoop = game.multiplayer && game.multiplayer.isConnected;
+      if (isCoop && game.multiplayer.isHost) {
+        // Host: start a new co-op game with random level from same map size
+        game.startCoopGame(true);
+      } else if (isCoop && !game.multiplayer.isHost) {
+        // Guest: wait for host to start
+        game.showToast(game.lang === "tr" ? "Oda sahibinin yeni oyunu başlatması bekleniyor..." : "Waiting for host to start a new game...");
+      } else {
+        triggerLoadingAndStart(!isVictory);
+      }
     });
 
     content.querySelector("#btn-main-menu").addEventListener("click", () => {
@@ -1872,14 +2046,28 @@ function setupUI(game) {
     const p = game.state.player;
     hud.invDetailPanel.classList.remove("hidden");
     
-    const name = game.t(`items.${itemId}.name`);
-    const desc = game.t(`items.${itemId}.desc`);
+    let name = game.t(`items.${itemId}.name`);
+    let desc = game.t(`items.${itemId}.desc`);
+    
+    if (itemId === "revival_scroll") {
+      name = game.lang === "tr" ? "Diriltme Parşömeni" : "Revival Scroll";
+      desc = game.lang === "tr" 
+        ? "Ölen arkadaşınızı hayata döndüren karanlık bir ritüel parşömeni." 
+        : "A dark ritual parchment that can revive a deceased teammate.";
+    }
 
     hud.invItemTitle.textContent = name;
     hud.invItemDesc.textContent = desc;
 
     // Use Button
     const usableItems = ["fuel", "fuel_half", "map_piece", "compass"];
+    const isCoopActive = game.multiplayer && game.multiplayer.isConnected;
+    const isTeammateDead = isCoopActive && game.state.otherPlayer && game.state.otherPlayer.isDead;
+    
+    if (isCoopActive && isTeammateDead) {
+      usableItems.push("revival_scroll");
+    }
+
     if (usableItems.includes(itemId)) {
       hud.btnInvUse.style.display = "block";
       hud.btnInvUse.textContent = game.lang === "tr" ? "Kullan" : "Use";
@@ -1889,12 +2077,76 @@ function setupUI(game) {
       hud.btnInvUse = newUse;
       
       hud.btnInvUse.addEventListener("click", () => {
-        game.useInventoryItem(itemId);
+        if (itemId === "revival_scroll") {
+          if (p.inventory.revival_scroll > 0) {
+            p.inventory.revival_scroll--;
+            // Send revive packet
+            game.multiplayer.send({
+              type: "REVIVE_PLAYER",
+              spawnX: p.x,
+              spawnY: p.y
+            });
+            game.showToast(game.lang === "tr" ? "Diriltme ritüeli gerçekleştirildi!" : "Revival ritual performed!");
+            game.reviveOtherPlayerLocally();
+          }
+        } else {
+          game.useInventoryItem(itemId);
+        }
         renderInventory();
         game.onStateChange();
       });
     } else {
       hud.btnInvUse.style.display = "none";
+    }
+
+    // Trade / Send button (Co-op specific)
+    if (hud.btnInvSend) {
+      const otherPlayer = game.state.otherPlayer;
+      let canTrade = false;
+      if (isCoopActive && otherPlayer && !otherPlayer.isDead) {
+        const dist = Math.hypot(p.x - otherPlayer.x, p.y - otherPlayer.y);
+        if (dist <= 2.0) {
+          canTrade = true;
+        }
+      }
+      
+      if (canTrade && p.inventory[itemId] > 0) {
+        hud.btnInvSend.classList.remove("hidden");
+        hud.btnInvSend.textContent = game.lang === "tr" ? "Arkadaşına Gönder" : "Send to Friend";
+        
+        const newSend = hud.btnInvSend.cloneNode(true);
+        hud.btnInvSend.replaceWith(newSend);
+        hud.btnInvSend = newSend;
+        
+        hud.btnInvSend.addEventListener("click", () => {
+          if (p.inventory[itemId] > 0) {
+            p.inventory[itemId]--;
+            // Send to peer
+            game.multiplayer.send({
+              type: "RECEIVE_ITEM",
+              item: itemId,
+              amount: 1
+            });
+            
+            let itemLabel = itemId;
+            if (itemId === "revival_scroll") {
+              itemLabel = game.lang === "tr" ? "Diriltme Parşömeni" : "Revival Scroll";
+            } else {
+              itemLabel = game.t("items." + itemId + ".name") || itemId;
+            }
+            
+            game.showToast(
+              game.lang === "tr"
+                ? `${itemLabel} arkadaşına gönderildi.`
+                : `${itemLabel} sent to friend.`
+            );
+            renderInventory();
+            game.onStateChange();
+          }
+        });
+      } else {
+        hud.btnInvSend.classList.add("hidden");
+      }
     }
 
     // Equip button disabled (items are used automatically when interacting with obstacles)
@@ -2459,4 +2711,46 @@ function setupUI(game) {
   document.addEventListener("gesturechange", (e) => {
     e.preventDefault();
   });
+
+  // Check URL query parameters for room code to auto-join
+  const urlParams = new URLSearchParams(window.location.search);
+  const roomParam = urlParams.get("room");
+  if (roomParam) {
+    setTimeout(() => {
+      const coopBtn = document.getElementById("btn-coop");
+      if (coopBtn) coopBtn.click();
+      
+      const inputEl = document.getElementById("coop-join-input");
+      if (inputEl) {
+        inputEl.value = roomParam;
+        
+        // Add a pulsing effect to the Join button to prompt a physical user click
+        const joinBtn = document.getElementById("btn-coop-join");
+        if (joinBtn) {
+          joinBtn.classList.add("pulse-join-btn");
+          
+          if (!document.getElementById("style-pulse-join")) {
+            const style = document.createElement("style");
+            style.id = "style-pulse-join";
+            style.innerHTML = `
+              @keyframes pulse-join {
+                0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
+                70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+                100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+              }
+              .pulse-join-btn {
+                animation: pulse-join 1.5s infinite !important;
+              }
+            `;
+            document.head.appendChild(style);
+          }
+          
+          // Remove pulsing animation once physically clicked
+          joinBtn.addEventListener("click", () => {
+            joinBtn.classList.remove("pulse-join-btn");
+          }, { once: true });
+        }
+      }
+    }, 800);
+  }
 }

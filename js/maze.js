@@ -1,4 +1,4 @@
-export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math.random, currentLevel = 1) {
+export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math.random, currentLevel = 1, isCoop = false) {
   const Math = Object.create(globalThis.Math);
   Math.random = rng;
 
@@ -660,24 +660,26 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
     occupiedCells.push({ x: merchantCell.x, y: merchantCell.y, floor: merchantCell.floor });
   }
 
-  // Force the Old Sage to spawn at the start cell adjacent path on Floor 0
-  const startFloor = floors[0];
-  let sageCell = null;
-  if (startFloor[2] && startFloor[2][1] && startFloor[2][1].type === "floor") {
-    sageCell = startFloor[2][1];
-  } else if (startFloor[1] && startFloor[1][2] && startFloor[1][2].type === "floor") {
-    sageCell = startFloor[1][2];
-  }
-  if (sageCell) {
-    sageCell.npc = { id: "traveler", name: "Old Sage", spokenTo: false };
-    occupiedCells.push({ x: sageCell.x, y: sageCell.y, floor: sageCell.floor });
-  } else {
-    // Fallback if somehow path is not adjacent
-    const travelerFree = getFarFreeCells(0, 3);
-    if (travelerFree.length > 0) {
-      const travelerCell = travelerFree[Math.floor(Math.random() * travelerFree.length)];
-      travelerCell.npc = { id: "traveler", name: "Old Sage", spokenTo: false };
-      occupiedCells.push({ x: travelerCell.x, y: travelerCell.y, floor: travelerCell.floor });
+  // Force the Old Sage to spawn at the start cell adjacent path on Floor 0 (Disabled in Co-op to avoid player model confusion)
+  if (!isCoop) {
+    const startFloor = floors[0];
+    let sageCell = null;
+    if (startFloor[2] && startFloor[2][1] && startFloor[2][1].type === "floor") {
+      sageCell = startFloor[2][1];
+    } else if (startFloor[1] && startFloor[1][2] && startFloor[1][2].type === "floor") {
+      sageCell = startFloor[1][2];
+    }
+    if (sageCell) {
+      sageCell.npc = { id: "traveler", name: "Old Sage", spokenTo: false };
+      occupiedCells.push({ x: sageCell.x, y: sageCell.y, floor: sageCell.floor });
+    } else {
+      // Fallback if somehow path is not adjacent
+      const travelerFree = getFarFreeCells(0, 3);
+      if (travelerFree.length > 0) {
+        const travelerCell = travelerFree[Math.floor(Math.random() * travelerFree.length)];
+        travelerCell.npc = { id: "traveler", name: "Old Sage", spokenTo: false };
+        occupiedCells.push({ x: travelerCell.x, y: travelerCell.y, floor: travelerCell.floor });
+      }
     }
   }
 
@@ -789,6 +791,9 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
   // 11. Populate remaining dead-end chests with gold, fuel, or non-repeating unique rewards
   const placedUniqueItems = new Set();
   const uniqueItemsPool = ["compass", "map_piece", "cheese"];
+  if (isCoop) {
+    uniqueItemsPool.push("revival_scroll");
+  }
 
   for (let r = 0; r < 4; r++) {
     const deadEnds = getDeadEndsInRegion(r).filter(c => !c.chest && !c.npc && !c.puzzleClue && !c.isEntrance && !c.isExit);

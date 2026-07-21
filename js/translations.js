@@ -5,6 +5,21 @@ export const translations = {
     play: "Play",
     settings: "Settings",
     howToPlay: "How to Play",
+    coop: "Co-op Mode",
+    coopTitle: "Co-op Lobby",
+    hostRoom: "Host Room",
+    btnHost: "Create New Room",
+    roomCodeLabel: "Your Room Code:",
+    btnCopyLink: "Copy Invite Link",
+    coopMapSize: "Map Size",
+    mapSmall: "🏚️ Small",
+    mapMedium: "🏰 Medium",
+    mapLarge: "🏯 Large",
+    mapSmallDesc: "1-Floor Labyrinth",
+    mapMediumDesc: "2-Floor Labyrinth",
+    mapLargeDesc: "3-Floor Labyrinth",
+    joinRoom: "Join Room",
+    btnJoin: "Join",
     achievements: "Achievements",
     achGroupEasy: "Kolay Mod Başarımları (Easy)",
     achGroupMedium: "Orta Mod Başarımları (Medium)",
@@ -86,7 +101,8 @@ export const translations = {
       map_piece: { name: "Map Fragment", desc: "Reveals a section of the maze when consumed." },
       fuel: { name: "Battery", desc: "Replenishes 30% of flashlight power." },
       fuel_half: { name: "Half-used Battery", desc: "Replenishes 15% of flashlight power." },
-      cheese: { name: "Old Cheese", desc: "Slightly smelly. Might interest a rodent." }
+      cheese: { name: "Old Cheese", desc: "Slightly smelly. Might interest a rodent." },
+      revival_scroll: { name: "Revival Scroll", desc: "A dark ritual parchment that can revive a deceased teammate." }
     },
 
     // Obstacles
@@ -310,6 +326,21 @@ export const translations = {
     play: "Oyna",
     settings: "Ayarlar",
     howToPlay: "Nasıl Oynanır",
+    coop: "Co-op Modu",
+    coopTitle: "Co-op Lobisi",
+    hostRoom: "Oda Kur",
+    btnHost: "Yeni Oda Oluştur",
+    roomCodeLabel: "Oda Kodunuz:",
+    btnCopyLink: "Davet Linkini Kopyala",
+    coopMapSize: "Harita Boyutu",
+    mapSmall: "🏚️ Küçük",
+    mapMedium: "🏰 Orta",
+    mapLarge: "🏯 Büyük",
+    mapSmallDesc: "1 Katlı Labirent",
+    mapMediumDesc: "2 Katlı Labirent",
+    mapLargeDesc: "3 Katlı Labirent",
+    joinRoom: "Odaya Katıl",
+    btnJoin: "Katıl",
     achievements: "Başarımlar",
     achGroupEasy: "Kolay Mod Başarımları (Easy)",
     achGroupMedium: "Orta Mod Başarımları (Medium)",
@@ -391,7 +422,8 @@ export const translations = {
       map_piece: { name: "Harita Parçası", desc: "Kullanıldığında labirentin bir kısmını açar." },
       fuel: { name: "Pil", desc: "El feneri gücünü %30 doldurur." },
       fuel_half: { name: "Yarım Pil", desc: "El feneri gücünü %15 doldurur." },
-      cheese: { name: "Eski Peynir", desc: "Biraz kokulu. Bir kemirgenin ilgisini çekebilir." }
+      cheese: { name: "Eski Peynir", desc: "Biraz kokulu. Bir kemirgenin ilgisini çekebilir." },
+      revival_scroll: { name: "Diriltme Parşömeni", desc: "Ölen arkadaşınızı hayata döndürebilen karanlık bir ritüel parşömeni." }
     },
 
     // Obstacles
@@ -432,7 +464,7 @@ export const translations = {
         giveCheese: "Peyniri Ver",
         declineCheese: "Peyniri Sakla",
         thanks: "Nefis! Arkamdaki duvara bak—kestirme yolu açmak için buraya bas! Ciyak!",
-        finalQuote: "Ciyak... Bugün bu labirentten çıkabilirsin belki koca adam, ama unutma; bu dehlizlerin sonu her zaman en başına çıkar..."
+        finalQuote: "Ciyak... Bugün bu labirentten çıkabilirsin belki koca adam, ama unutma: bu dehlizlerin sonu her zaman en başına çıkar..."
       },
       traveler: {
         name: "Yaşlı Bilge",
@@ -441,7 +473,7 @@ export const translations = {
         stages: {
           start: {
             q1: "Ben kimim? Sen kimsin?",
-            a1: "Sen korkularına teslim olup buraya sürüklenen bir faniyisin. Ben ise bu arafın ilk kurbanı, kayıp ruhlara rehberlik etme cezasıyla buraya bağlanmış bir bilgeyim. Burası senin zihninin hapishanesi...",
+            a1: "Sen korkularına teslim olup buraya sürüklenen bir fânisin. Ben ise bu arafın ilk kurbanı, kayıp ruhlara rehberlik etme cezasıyla buraya bağlanmış bir bilgeyim. Burası senin zihninin hapishanesi...",
             q2: "Buradan nasıl kaçarım?",
             a2: "Yalnızca daha derine inerek. 20 kat boyunca ilerlemeli, kapı şifrelerini duvarlardaki parşömenlerden öğrenmeli ve en önemlisi... fenerinin ışığını asla söndürmemelisin."
           },
@@ -478,7 +510,7 @@ export const translations = {
         giveWater: "Suyu Ver",
         declineWater: "Suyu Sakla",
         thanks: "Teşekkürler! Çok daha iyi hissediyorum. Yerde bulduğum bu yarım pili al, işine yarayabilir! (Pil envanterine eklendi!)",
-        finalQuote: "Ruhlar senin iyiliğini asla unutmayacak... Ama bilmelisin ki, bu labirentte karşılaştığın her çocuk ben değilim. Biz sadece bu lanetli döngüde farklı bedenlerde sıkışıp kalmış aynı kayıp ruhlarız..."
+        finalQuote: "Ruhlar senin iyiliğini asla unutmayacak... Ama bilmelisin ki bu labirentte karşılaştığın her çocuk ben değilim. Biz sadece bu lanetli döngüde farklı bedenlerde sıkışıp kalmış aynı kayıp ruhlarız..."
       },
       well: {
         name: "Derin Kuyu",
@@ -501,7 +533,7 @@ export const translations = {
       lore_ch1_7: "Kayıp Günlük — Giriş VII:\n\n\"Çıkış var — onu gördüm! Labirentin en ucunda devasa bir demir kapı. Ama 4 haneli bir şifreyle kilitli. Şifre parçaları bu koridorlarda bir yerlerde, kanlı parşömenlerin üzerinde dağılmış. Hepsini bulmalıyım.\"",
       lore_ch1_8: "Kayıp Günlük — Giriş VIII:\n\n\"Zamanın artık hiçbir anlamı kalmadı. Saatim 3:47'yi gösteriyor. Hatırlayabildiğim kadarıyla hep 3:47'yi gösteriyordu. Gökyüzündeki yıldızlar hareket etmiyor. Yağmur yağıyor ama hiçbir şey ıslanmıyor. Burası gerçekliğin kendisinde açılmış bir yara.\"",
       lore_ch1_9: "Kayıp Günlük — Giriş IX:\n\n\"Gölge Canavarı hakkında bir teorim var. O bir yaratık değil — burada yutulmuş her ruhun birikmiş umutsuzluğu. Işığını kaybeden herkes onun bir parçası oldu. Eğer fenerim sönerse... ben de onun bir parçası olacağım.\"",
-      lore_ch1_10: "Kayıp Günlük — Son Giriş:\n\n\"Bunu okuyorsan, belki senin için hâlâ umut vardır. Bildiğim her şeyi bu sayfalarda bıraktım. Şifre parçalarını bul. Fenerini yanan tut. Ve ne yaparsan yap, sessizliğe güvenme. Sessizlik, onun tam arkanda olduğu anlamına gelir. Koş.\"",
+      lore_ch1_10: "Kayıp Günlük — Son Giriş:\n\n\"Bunu okuyorsan, belki senin için hâlâ umut vardır. Bildiğim her şeyi bu sayfalarda bıraktım. Şifre parçalarını bul. Fenerini yanık tut. Ve ne yaparsan yap, sessizliğe güvenme. Sessizlik, onun tam arkanda olduğu anlamına gelir. Koş.\"",
       lore_ch1_11: "Kayıp Günlük — Giriş XI:\n\n\"Uğultular giderek artıyor. Duvarlardan değil, aşağıdan geliyor. Sanki yer beni sindiriyormuş gibi. Bugün temiz suyu olan bir kuyu buldum. Çok gerçekçi görünüyordu ama içtiğimde tadı kül gibiydi. Duyularım bana yalan söylüyor.\"",
       lore_ch1_12: "Kayıp Günlük — Giriş XII:\n\n\"Çocuk... Bugün bir çocukla karşılaştım. Ağlıyordu, oyuncağını istiyordu. Bir çocuk burada nasıl hayatta kalabilir? Ona yol göstermeye çalıştım ama kafamı çevirip tekrar baktığımda gitmişti, yerinde bir duvar vardı. Gerçekten orada mıydı, yoksa aklımı mı yitiriyorum?\"",
       lore_ch1_13: "Kayıp Günlük — Giriş XIII:\n\n\"Fare... konuştu. Peynir istedi. Delice güldüm, sesim sonsuza dek yankılandı. Ama ona peynir verdim. Karşılığında bir şey fısıldadı: 'Bilge sandığın kişi değil.' Bu ne anlama geliyor? Bana yardım eden tek kişi Bilge'ydi!\"",
@@ -518,10 +550,10 @@ export const translations = {
       lore_ch2_8: "Muhafızın Vaazı — VIII:\n\n\"Burada zaman geçmiyor çünkü zaman bu yerden korkuyor. Kimse bakmadığında yağmur yukarı doğru yağar. Gökyüzündeki yıldızlar yıldız değil — buradan kaçıp her gece bu koridorları rüyasında gören insanların gözleri.\"",
       lore_ch2_9: "Muhafızın Vaazı — IX:\n\n\"En derin katın altında bir şey var. Labirentten daha eski, gölgelerden daha eski bir şey. Kimsenin ona ulaşmaması için buraya kondum. Benden önceki her Muhafız başarısız oldu. Aşağıdaki şey sabırlı. Zaman başlamadan önce beri bekliyor.\"",
       lore_ch2_10: "Muhafızın Son Vaazı:\n\n\"Tüm sözlerimi okudun ve hâlâ ilerliyorsun. Cesur mu aptal mı — bu yerde ikisi de aynı şey. Aradığın gerçek şu: labirent bir yer değil. Bir ayna. Her duvar, her gölge, her fısıltı — hepsi sensin. Bu hapishaneyi kendi korkularından inşa ettin. Ve onu yıkabilecek tek kişi de sensin.\"",
-      lore_ch2_11: "Muhafızın Vaazı — XI:\n\n\"İçtiği o taze su kuyusu... ağzına gelen kül tadı kuyuya ait değildi, kendi çürüyen anılarınındı. Labirent hayatta kalman için gerekeni verir ama karşılığında bir bedel alır. Her yudum geçmişinden bir parça götürür.\"",
-      lore_ch2_12: "Muhafızın Vaazı — XII:\n\n\"Çocuk... kalbine korku yerleşmeden önceki çocukluğunun yansımasıdır. Onu kurtaramazsın. Sadece taşların arasında yok oluşunu izleyebilirsin, asla geri dönemeyeceğin bir hayatın kalıntısıdır o.\"",
+      lore_ch2_11: "Muhafızın Vaazı — XI:\n\n\"İçtiği o taze su kuyusu... ağzına gelen kül tadı kuyuya ait değildi, kendi çürüyen anılarının tadıydı. Labirent hayatta kalman için gerekeni verir ama karşılığında bir bedel alır. Her yudum geçmişinden bir parça götürür.\"",
+      lore_ch2_12: "Muhafızın Vaazı — XII:\n\n\"Çocuk... kalbine korku yerleşmeden önceki çocukluğunun yansımasıdır. Onu kurtaramazsın. Sadece taşların arasında yok oluşunu izleyebilirsin; o, asla geri dönemeyeceğin bir hayatın kalıntısıdır...\"",
       lore_ch2_13: "Muhafızın Vaazı — XIII:\n\n\"Fare, labirentin en eski tanığıdır. Bilge hakkındaki gerçeği bilir. Kapıyı tasarlayan, kilidi kilitleyen Bilge'nin ta kendisidir. Döngünün tekrarlanışını izlemek için sana rehberlik eder. O senin çaresizliğinin mimarıdır.\"",
-      lore_ch2_14: "Muhafızın Vaazı — XIV:\n\n\"Neden yürümeye devam ediyorsun? Her adım sadece ayak izlerini toza daha derin kazıyor. Kendi sonuna giden yolu kendin inşa ediyorsun. Labirent genişlemez; sadece seni kıvrımlarının daha derinine katlar.\"",
+      lore_ch2_14: "Muhafızın Vaazı — XIV:\n\n\"Neden yürümeye devam ediyorsun? Her adım sadece ayak izlerini toza daha derin kazıyor. Kendi sonuna giden yolu kendin inşa ediyorsun. Labirent genişlemez, sadece seni kıvrımlarının daha derinine katlar.\"",
       lore_ch2_15: "Muhafızın Vaazı — XV:\n\n\"Bulduğun altınlar para birimi değildir. Senden önce gelenlerin kaybettiği irade parçalarıdır. Tüccar onları biriktiriyor çünkü bu düş dünyasında ağırlığı olan tek şey onlardır.\"",
       lore_ch2_16: "Muhafızın Vaazı — XVI:\n\n\"Kalbin çok hızlı atıyor. Katların ötesinden duyabiliyorum. Panik ritmi. Seni hayatta tuttuğunu sanıyorsun ama aslında bu bir geri sayım. Her atış, karanlıktan önceki son anlarındır.\"",
       lore_ch2_17: "Muhafızın Vaazı — XVII:\n\n\"Şifre panelleri ve kapılar... onlar engel değil, filtredir. Sadece bilmeceleri çözecek kararlılığa sahip olanların daha derin katlara inmesine izin verilir. Zayıflar erkenden yutulur. Güçlüler derinlikler için saklanır.\"",

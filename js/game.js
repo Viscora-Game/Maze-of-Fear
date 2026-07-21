@@ -45,6 +45,7 @@ export class Game {
     this.vibrationEnabled = localStorage.getItem("maze_vibration") !== "false";
     this.shadowsEnabled = localStorage.getItem("maze_shadows") !== "false";
     this.difficulty = localStorage.getItem("maze_diff") || "medium";
+    this.coopMapSize = "small"; // Default Co-op Map Size
 
     // Achievements definitions
     this.achievements = [
@@ -155,9 +156,13 @@ export class Game {
     return val;
   }
 
-  initNewGame(isRetry = false) {
+  initNewGame(isRetry = false, customSeed = null) {
+    const isCoop = this.multiplayer && this.multiplayer.isConnected;
+    
     // Always roll a random variation (0, 1, or 2) out of the 3 static level variations to keep it fresh and prevent simple memorization!
-    this.currentVariation = Math.floor(Math.random() * 3);
+    if (customSeed === null) {
+      this.currentVariation = Math.floor(Math.random() * 3);
+    }
 
     // 1. Calculate dimensions and floors based on 20 levels progression
     let size = 21 + (this.currentLevel - 1) * 2;
@@ -169,9 +174,10 @@ export class Game {
     else if (this.currentLevel >= 14) numFloors = 3;
 
     // Generate seeded deterministic maze
-    const seed = (this.currentLevel * 100) + this.currentVariation;
+    const seed = customSeed !== null ? customSeed : (this.currentLevel * 100) + this.currentVariation;
+    this.currentSeed = seed;
     const rng = getSeededRandom(seed);
-    const mazeData = generateMaze(size, size, numFloors, rng, this.currentLevel);
+    const mazeData = generateMaze(size, size, numFloors, rng, this.currentLevel, isCoop);
     
     // Visited Map tracker (per floor)
     const visited = [];
@@ -234,7 +240,8 @@ export class Game {
           map_piece: 0,
           fuel: 0,
           fuel_half: 0,
-          cheese: 0
+          cheese: 0,
+          revival_scroll: 0
         },
         hasCompass: false,
         equippedItem: null
@@ -252,6 +259,18 @@ export class Game {
         axe: { cost: 20, count: 1 }
       },
 
+      otherPlayer: isCoop ? {
+        x: 1.5,
+        y: 1.5,
+        visualX: 1.5,
+        visualY: 1.5,
+        floor: 0,
+        angle: Math.PI / 2,
+        pitch: 0,
+        lanternOn: false,
+        health: 100,
+        isDead: false
+      } : null,
       lastCheckPoint: { x: 1.5, y: 1.5, floor: 0 },
       shadowMonsters: (() => {
         if (this.difficulty === "peaceful") return [];
@@ -329,6 +348,169 @@ export class Game {
     this.startLoop();
   }
 
+  startCoopGame(isHost) {
+    if (isHost) {
+      this.currentVariation = Math.floor(Math.random() * 3);
+      const seed = Math.floor(100000 + Math.random() * 900000);
+      
+      // Determine the level index randomly based on the selected map size
+      let levelVal = 1;
+      const mapSize = this.coopMapSize || "small";
+      if (mapSize === "small") {
+        levelVal = 1 + Math.floor(Math.random() * 6); // Levels 1 to 6
+      } else if (mapSize === "medium") {
+        levelVal = 7 + Math.floor(Math.random() * 7); // Levels 7 to 13
+      } else if (mapSize === "large") {
+        levelVal = 14 + Math.floor(Math.random() * 7); // Levels 14 to 20
+      }
+      this.currentLevel = levelVal;
+      
+      this.multiplayer.send({
+        type: "SYNC_GAME",
+        seed: seed,
+        level: this.currentLevel,
+        difficulty: this.difficulty,
+        variation: this.currentVariation
+      });
+
+      this.initNewGame(false, seed);
+      
+      const coopScreen = document.getElementById("screen-coop");
+      if (coopScreen) coopScreen.classList.add("hidden");
+      const gameScreen = document.getElementById("screen-game");
+      if (gameScreen) gameScreen.classList.remove("hidden");
+      
+      this.state.gameState = "playing";
+      this.resizeCanvas();
+      this.startLoop();
+      this.draw();
+    }
+  }
+
+  initializeCoopGuestGame(seed, level, difficulty, variation) {
+    this.currentLevel = level;
+    this.difficulty = difficulty;
+    this.currentVariation = variation;
+    
+    this.initNewGame(false, seed);
+    
+    const coopScreen = document.getElementById("screen-coop");
+    if (coopScreen) coopScreen.classList.add("hidden");
+    const gameScreen = document.getElementById("screen-game");
+    if (gameScreen) gameScreen.classList.remove("hidden");
+    
+    // Hide any active victory/game over end modal
+    const endModal = document.getElementById("modal-end");
+    if (endModal) endModal.classList.add("hidden");
+    
+    this.state.gameState = "playing";
+    this.resizeCanvas();
+    this.startLoop();
+    this.draw();
+  }
+
+  revivePlayerFromCoop(spawnX, spawnY) {
+    const p = this.state.player;
+    p.health = 100;
+    p.isDead = false;
+    
+    p.x = spawnX;
+    p.y = spawnY;
+    p.visualX = spawnX;
+    p.visualY = spawnY;
+    
+    if (this.state.otherPlayer) {
+      this.state.currentFloor = this.state.otherPlayer.floor;
+    }
+    
+    this.revealArea(Math.floor(p.x), Math.floor(p.y));
+    
+    this.audio.playShadowSpawn();
+    
+    this.showToast(this.lang === "tr" ? "Ritüel tamamlandı! Hayata döndün!" : "Ritual complete! You have been revived!");
+    
+    if (this.onStateChange) this.onStateChange();
+    this.draw();
+  }
+
+  reviveOtherPlayerLocally() {
+    if (this.state.otherPlayer) {
+      this.state.otherPlayer.isDead = false;
+      this.state.otherPlayer.health = 100;
+    }
+    if (this.onStateChange) this.onStateChange();
+    this.draw();
+  }
+
+  syncRemotePlayerVisited(rx, ry, rFloor) {
+    if (this.state && this.state.visitedMap && this.state.visitedMap[rFloor]) {
+      const cx = Math.floor(rx);
+      const cy = Math.floor(ry);
+      if (cx >= 0 && cx < this.state.width && cy >= 0 && cy < this.state.height) {
+        this.state.visitedMap[rFloor][cy][cx] = true;
+      }
+    }
+  }
+
+  triggerMonsterSpawnAlert(targetPlayer, monsterIndex) {
+    const isTarget = (targetPlayer === "Player1" && this.multiplayer.isHost) || 
+                     (targetPlayer === "Player2" && !this.multiplayer.isHost);
+                     
+    if (isTarget) {
+      this.audio.playShadowSpawn();
+      this.vibrateDevice("heavy");
+      
+      let alertEl = document.getElementById("coop-target-alert");
+      if (!alertEl) {
+        alertEl = document.createElement("div");
+        alertEl.id = "coop-target-alert";
+        alertEl.style.position = "fixed";
+        alertEl.style.top = "20%";
+        alertEl.style.left = "50%";
+        alertEl.style.transform = "translate(-50%, -50%)";
+        alertEl.style.color = "#ef4444";
+        alertEl.style.fontSize = "2rem";
+        alertEl.style.fontWeight = "bold";
+        alertEl.style.textShadow = "0 0 15px rgba(239, 68, 68, 0.8), 0 0 5px #000";
+        alertEl.style.zIndex = "2000";
+        alertEl.style.pointerEvents = "none";
+        alertEl.style.animation = "coop-pulse-alert 0.5s infinite alternate";
+        alertEl.style.fontFamily = "monospace";
+        
+        const style = document.createElement("style");
+        style.innerHTML = `
+          @keyframes coop-pulse-alert {
+            from { transform: translate(-50%, -50%) scale(1.0); opacity: 0.5; }
+            to { transform: translate(-50%, -50%) scale(1.15); opacity: 1.0; }
+          }
+        `;
+        document.head.appendChild(style);
+        document.body.appendChild(alertEl);
+      }
+      
+      alertEl.textContent = this.lang === "tr" ? "⚠️ CANAVAR SENİ HEDEFLİYOR!" : "⚠️ MONSTER IS TARGETING YOU!";
+      alertEl.style.display = "block";
+      
+      setTimeout(() => {
+        alertEl.style.display = "none";
+      }, 3500);
+    }
+  }
+
+  updateInventoryUI() {
+    if (this.onStateChange) this.onStateChange();
+    
+    const invModal = document.getElementById("modal-inventory");
+    if (invModal && !invModal.classList.contains("hidden")) {
+      const openInvBtn = document.getElementById("btn-open-inventory");
+      if (openInvBtn) {
+        const closeInvBtn = document.getElementById("btn-close-inventory");
+        if (closeInvBtn) closeInvBtn.click();
+        openInvBtn.click();
+      }
+    }
+  }
+
   startLoop() {
     if (this.loopRunning) return;
     this.loopRunning = true;
@@ -343,6 +525,26 @@ export class Game {
       if (this.state && this.state.gameState === "playing") {
         this.updatePhysics(dt);
         this.checkSageDisappearance();
+        
+        // Sync player coordinates to buddy in co-op mode (rate-limited to 22 updates/sec to keep framerate high)
+        if (this.multiplayer && this.multiplayer.isConnected) {
+          const nowMs = Date.now();
+          if (!this.lastSendTime || nowMs - this.lastSendTime > 45) {
+            this.lastSendTime = nowMs;
+            const p = this.state.player;
+            this.multiplayer.send({
+              type: "PLAYER_POS",
+              x: p.x,
+              y: p.y,
+              floor: this.state.currentFloor,
+              angle: p.angle,
+              pitch: p.pitch,
+              lanternOn: this.state.lanternOn,
+              health: p.health,
+              isDead: p.isDead || false
+            });
+          }
+        }
       }
 
       if (this.state && this.state.gameState !== "menu") {
@@ -397,6 +599,19 @@ export class Game {
   // Continuous Physics Loop
   updatePhysics(dt) {
     const p = this.state.player;
+    
+    if (p.isDead) {
+      if (this.state.otherPlayer) {
+        p.x = this.state.otherPlayer.x;
+        p.y = this.state.otherPlayer.y;
+        p.angle = this.state.otherPlayer.angle;
+        p.pitch = this.state.otherPlayer.pitch;
+        this.state.currentFloor = this.state.otherPlayer.floor;
+        this.state.lanternOn = this.state.otherPlayer.lanternOn; // Sync lantern state during spectating!
+      }
+      return;
+    }
+    
     const prevStamina = p.stamina;
     
     // 1. Keyboard rotation disabled (rotation is controlled solely by mouse movement / touch drags)
@@ -821,7 +1036,33 @@ export class Game {
     this.state.player.health = Math.max(0, this.state.player.health - amount);
     this.vibrateDevice("medium");
     if (this.state.player.health <= 0) {
-      this.triggerDeathChoice();
+      const isCoop = this.multiplayer && this.multiplayer.isConnected;
+      if (isCoop) {
+        this.state.player.isDead = true;
+        this.state.player.health = 0;
+        this.audio.playHazard();
+        
+        this.multiplayer.send({
+          type: "PLAYER_POS",
+          x: this.state.player.x,
+          y: this.state.player.y,
+          floor: this.state.currentFloor,
+          angle: this.state.player.angle,
+          pitch: this.state.player.pitch,
+          lanternOn: this.state.lanternOn,
+          health: 0,
+          isDead: true
+        });
+        
+        if (this.state.otherPlayer && this.state.otherPlayer.isDead) {
+          this.triggerGameOver();
+        } else {
+          this.showToast(this.lang === "tr" ? "Öldün! Arkadaşın seni diriltene kadar onu izliyorsun." : "You died! Spectating your friend until you are revived.");
+        }
+        if (this.onStateChange) this.onStateChange();
+      } else {
+        this.triggerDeathChoice();
+      }
     } else {
       if (this.onStateChange) this.onStateChange();
     }
@@ -844,6 +1085,32 @@ export class Game {
     this.state.solvedGatesCount = (this.state.solvedGatesCount || 0) + 1;
     if (this.state.solvedGatesCount >= 3) {
       this.unlockAchievement("solve_all_gates");
+    }
+    
+    // Sync obstacle resolving in co-op
+    const isCoop = this.multiplayer && this.multiplayer.isConnected;
+    if (isCoop) {
+      let foundX = -1, foundY = -1;
+      const grid = this.state.floors[this.state.currentFloor];
+      for (let y = 0; y < this.state.height; y++) {
+        for (let x = 0; x < this.state.width; x++) {
+          if (grid[y][x].obstacle === obstacle) {
+            foundX = x;
+            foundY = y;
+            break;
+          }
+        }
+        if (foundX !== -1) break;
+      }
+      
+      if (foundX !== -1) {
+        this.multiplayer.send({
+          type: "OBSTACLE_RESOLVED",
+          floor: this.state.currentFloor,
+          cellX: foundX,
+          cellY: foundY
+        });
+      }
     }
   }
 
@@ -1040,6 +1307,32 @@ export class Game {
 
     const executeChestOpen = () => {
       chest.opened = true;
+      
+      // Sync chest open in co-op
+      if (this.multiplayer && this.multiplayer.isConnected) {
+        let foundX = -1, foundY = -1;
+        const grid = this.state.floors[this.state.currentFloor];
+        for (let y = 0; y < this.state.height; y++) {
+          for (let x = 0; x < this.state.width; x++) {
+            if (grid[y][x].chest === chest) {
+              foundX = x;
+              foundY = y;
+              break;
+            }
+          }
+          if (foundX !== -1) break;
+        }
+        
+        if (foundX !== -1) {
+          this.multiplayer.send({
+            type: "CHEST_OPENED",
+            floor: this.state.currentFloor,
+            cellX: foundX,
+            cellY: foundY
+          });
+        }
+      }
+      
       let content = chest.content;
 
       // In peaceful mode, automatically convert traps/mimics to rewards (gold or map pieces)
@@ -1212,6 +1505,33 @@ export class Game {
 
     if (this.onDialog) {
       this.onDialog({ title, text, choices, isClue: true });
+    }
+  }
+
+  showCoopDialog(title, text, isClue) {
+    if (this.onDialog) {
+      this.onDialog({
+        title: title,
+        text: text,
+        isClue: isClue,
+        choices: [{
+          text: this.lang === "tr" ? "Kapat" : "Close",
+          action: () => {
+            this.state.gameState = "playing";
+            if (this.onStateChange) this.onStateChange();
+          }
+        }],
+        _isCoopReceived: true
+      });
+    }
+  }
+
+  closeCoopDialog() {
+    const dialogModal = document.getElementById("modal-dialog");
+    if (dialogModal) {
+      dialogModal.classList.add("hidden");
+      this.state.gameState = "playing";
+      if (this.onStateChange) this.onStateChange();
     }
   }
 
@@ -1773,9 +2093,17 @@ export class Game {
     const p = s.player;
     if (!p) return;
 
-    s.shadowMonsters.forEach((sm) => {
+    const isCoop = this.multiplayer && this.multiplayer.isConnected;
+    const isHost = isCoop && this.multiplayer.isHost;
+
+    s.shadowMonsters.forEach((sm, index) => {
       // Spawner logic
       if (!sm.active) {
+        if (isCoop && !isHost) {
+          // Guest does not run spawning logic; only waits for host sync
+          return;
+        }
+        
         sm.spawnTimer -= dt;
         if (sm.spawnTimer <= 0) {
           // Define difficulty-based spawn rates
@@ -1811,7 +2139,6 @@ export class Game {
             }
           }
 
-          // Fallback if no cells found in the safe range (e.g. at the edges of small floors)
           if (candidates.length === 0) {
             for (let dy = -10; dy <= 10; dy++) {
               for (let dx = -10; dx <= 10; dx++) {
@@ -1848,6 +2175,42 @@ export class Game {
             sm.speed = baseSpeed * (0.95 + Math.random() * 0.1);
             sm.soundTimer = 0.5; // Play sound immediately after spawn
             this.audio.playShadowSpawn();
+            
+            // Choose closest target player in co-op
+            if (isCoop) {
+              const p2 = s.otherPlayer;
+              let target = "Player1";
+              if (p2 && !p2.isDead) {
+                const distHost = Math.hypot(sm.x - p.x, sm.y - p.y);
+                const distGuest = Math.hypot(sm.x - p2.x, sm.y - p2.y);
+                if (distGuest < distHost) {
+                  target = "Player2";
+                }
+              }
+              sm.targetPlayer = target;
+              
+              // Broadcast spawn and target alert
+              this.multiplayer.send({
+                type: "MONSTER_SYNC",
+                index: index,
+                active: true,
+                x: sm.x,
+                y: sm.y,
+                floor: sm.floor,
+                targetPlayer: sm.targetPlayer,
+                spawnTimer: sm.spawnTimer,
+                speed: sm.speed,
+                burnTime: sm.burnTime
+              });
+              
+              this.multiplayer.send({
+                type: "MONSTER_SPAWN_ALERT",
+                targetPlayer: sm.targetPlayer,
+                monsterIndex: index
+              });
+              
+              this.triggerMonsterSpawnAlert(sm.targetPlayer, index);
+            }
           }
         }
         return;
@@ -1871,9 +2234,23 @@ export class Game {
         }
       }
 
+      // Guest client: skip movement and burn calculations, just update positions based on Host sync
+      if (isCoop && !isHost) {
+        // Run local jumpscare check using Host-synced monster coordinates
+        const grid = s.floors[s.currentFloor];
+        if (p.health > 0 && !p.isDead) {
+          const localDist = Math.hypot(sm.x - p.x, sm.y - p.y);
+          if (localDist < 0.65 && this.hasLineOfSight(p.x, p.y, sm.x, sm.y, grid, s.width, s.height)) {
+            this.triggerJumpscare();
+          }
+        }
+        return; // End loop item for Guest
+      }
+
+      // Host/Singleplayer client: run full pathfinding, movement, fleeing, and collision checks
       // Check if player's flashlight is shining on this shadow monster
       let isBurned = false;
-      if (s.lanternOn) {
+      if (s.lanternOn && p.health > 0 && !p.isDead) {
         if (dist < 8.0) {
           const lookX = Math.cos(p.angle);
           const lookY = Math.sin(p.angle);
@@ -1885,45 +2262,85 @@ export class Game {
             const grid = s.floors[s.currentFloor];
             if (this.hasLineOfSight(p.x, p.y, sm.x, sm.y, grid, s.width, s.height)) {
               isBurned = true;
-              sm.burnTime += dt;
-
-              if (!this.lastBurnSoundTime || Date.now() - this.lastBurnSoundTime > 300) {
-                this.audio.playShadowBurn();
-                this.lastBurnSoundTime = Date.now();
-              }
-
-              if (sm.burnTime >= 2.0) {
-                sm.active = false;
-                
-                let minRespawn = 30.0;
-                let maxRespawn = 45.0;
-                if (this.difficulty === "easy") { minRespawn = 50.0; maxRespawn = 70.0; }
-                else if (this.difficulty === "hard") { minRespawn = 15.0; maxRespawn = 25.0; }
-                else if (this.difficulty === "nightmare") { minRespawn = 12.0; maxRespawn = 20.0; }
-                
-                sm.spawnTimer = minRespawn + Math.random() * (maxRespawn - minRespawn);
-                this.audio.playShadowBurn();
-                if (this.difficulty !== "easy") {
-                  this.unlockAchievement("burn_monster");
-                }
-                if (this.onStateChange) this.onStateChange();
-                return;
-              }
+            }
+          }
+        }
+      }
+      
+      // Friend's flashlight can also burn it in co-op!
+      if (isCoop && s.otherPlayer && s.otherPlayer.lanternOn && !s.otherPlayer.isDead) {
+        const dist2 = Math.hypot(sm.x - s.otherPlayer.x, sm.y - s.otherPlayer.y);
+        if (dist2 < 8.0) {
+          const lookX = Math.cos(s.otherPlayer.angle);
+          const lookY = Math.sin(s.otherPlayer.angle);
+          const dirX = (sm.x - s.otherPlayer.x) / dist2;
+          const dirY = (sm.y - s.otherPlayer.y) / dist2;
+          const dot = lookX * dirX + lookY * dirY;
+          if (dot > 0.866) {
+            const grid = s.floors[s.currentFloor];
+            if (this.hasLineOfSight(s.otherPlayer.x, s.otherPlayer.y, sm.x, sm.y, grid, s.width, s.height)) {
+              isBurned = true;
             }
           }
         }
       }
 
-      if (!isBurned) {
+      if (isBurned) {
+        sm.burnTime += dt;
+        if (!this.lastBurnSoundTime || Date.now() - this.lastBurnSoundTime > 300) {
+          this.audio.playShadowBurn();
+          this.lastBurnSoundTime = Date.now();
+        }
+
+        if (sm.burnTime >= 2.0) {
+          sm.active = false;
+          
+          let minRespawn = 30.0;
+          let maxRespawn = 45.0;
+          if (this.difficulty === "easy") { minRespawn = 50.0; maxRespawn = 70.0; }
+          else if (this.difficulty === "hard") { minRespawn = 15.0; maxRespawn = 25.0; }
+          else if (this.difficulty === "nightmare") { minRespawn = 12.0; maxRespawn = 20.0; }
+          
+          sm.spawnTimer = minRespawn + Math.random() * (maxRespawn - minRespawn);
+          this.audio.playShadowBurn();
+          if (this.difficulty !== "easy") {
+            this.unlockAchievement("burn_monster");
+          }
+          if (isCoop) {
+            // Broadcast despawn
+            this.multiplayer.send({
+              type: "MONSTER_SYNC",
+              index: index,
+              active: false,
+              x: sm.x,
+              y: sm.y,
+              floor: sm.floor,
+              targetPlayer: "",
+              spawnTimer: sm.spawnTimer,
+              speed: sm.speed,
+              burnTime: 0
+            });
+          }
+          if (this.onStateChange) this.onStateChange();
+          return;
+        }
+      } else {
         sm.burnTime = Math.max(0, sm.burnTime - dt * 0.5);
       }
 
       const grid = s.floors[s.currentFloor];
 
       if (sm.burnTime > 0) {
-        // Flee away from player
-        let runX = sm.x - p.x;
-        let runY = sm.y - p.y;
+        // Flee away from the closest player who is burning it
+        let fTarget = p;
+        if (isCoop && s.otherPlayer && s.otherPlayer.lanternOn && !s.otherPlayer.isDead) {
+          const dist1 = Math.hypot(sm.x - p.x, sm.y - p.y);
+          const dist2 = Math.hypot(sm.x - s.otherPlayer.x, sm.y - s.otherPlayer.y);
+          if (dist2 < dist1) fTarget = s.otherPlayer;
+        }
+        
+        let runX = sm.x - fTarget.x;
+        let runY = sm.y - fTarget.y;
         const len = Math.hypot(runX, runY);
         if (len > 0.001) {
           runX = (runX / len) * sm.speed * 1.35 * dt;
@@ -1944,10 +2361,18 @@ export class Game {
         if (canMoveTo(sm.x, nextY)) sm.y = nextY;
       } else {
         // Chase player
+        let targetX = p.x;
+        let targetY = p.y;
+        
+        if (isCoop && sm.targetPlayer === "Player2" && s.otherPlayer) {
+          targetX = s.otherPlayer.x;
+          targetY = s.otherPlayer.y;
+        }
+
         sm.pathRecalcTimer = (sm.pathRecalcTimer || 0) - dt;
         if (sm.pathRecalcTimer <= 0 || !sm.lastNextStep) {
           sm.pathRecalcTimer = 0.20;
-          sm.lastNextStep = this.findPathToPlayer(sm.x, sm.y, p.x, p.y, grid, s.width, s.height);
+          sm.lastNextStep = this.findPathToPlayer(sm.x, sm.y, targetX, targetY, grid, s.width, s.height);
         }
 
         const nextStep = sm.lastNextStep;
@@ -1960,8 +2385,8 @@ export class Game {
             sm.y += (chaseY / len) * sm.speed * dt;
           }
         } else {
-          let chaseX = p.x - sm.x;
-          let chaseY = p.y - sm.y;
+          let chaseX = targetX - sm.x;
+          let chaseY = targetY - sm.y;
           const len = Math.hypot(chaseX, chaseY);
           if (len > 0.001) {
             sm.x += (chaseX / len) * sm.speed * dt;
@@ -1970,9 +2395,50 @@ export class Game {
         }
       }
 
-      // Check Jumpscare range — monster must have line of sight to player (can't kill through walls)
-      if (dist < 0.65 && this.hasLineOfSight(p.x, p.y, sm.x, sm.y, grid, s.width, s.height)) {
-        this.triggerJumpscare();
+      // Sync position updates from Host periodically using a time-based threshold (45ms ~ 22Hz)
+      if (isCoop) {
+        const nowMs = Date.now();
+        if (!sm.lastSyncTime || nowMs - sm.lastSyncTime > 45) {
+          sm.lastSyncTime = nowMs;
+          this.multiplayer.send({
+            type: "MONSTER_SYNC",
+            index: index,
+            active: sm.active,
+            x: sm.x,
+            y: sm.y,
+            floor: sm.floor,
+            targetPlayer: sm.targetPlayer,
+            spawnTimer: sm.spawnTimer,
+            speed: sm.speed,
+            burnTime: sm.burnTime
+          });
+        }
+      }
+
+      // Check Jumpscare range — each player checks collision for their own character!
+      if (p.health > 0 && !p.isDead) {
+        const localDist = Math.hypot(sm.x - p.x, sm.y - p.y);
+        if (localDist < 0.65 && this.hasLineOfSight(p.x, p.y, sm.x, sm.y, grid, s.width, s.height)) {
+          this.triggerJumpscare();
+          
+          if (isCoop) {
+            // Despawn monster on jumpscare so it doesn't immediately jumpscare the other player too
+            sm.active = false;
+            sm.spawnTimer = 15.0 + Math.random() * 10.0;
+            this.multiplayer.send({
+              type: "MONSTER_SYNC",
+              index: index,
+              active: false,
+              x: sm.x,
+              y: sm.y,
+              floor: sm.floor,
+              targetPlayer: "",
+              spawnTimer: sm.spawnTimer,
+              speed: sm.speed,
+              burnTime: 0
+            });
+          }
+        }
       }
     });
   }
@@ -2003,7 +2469,31 @@ export class Game {
         p.health = 0; // Instant death when caught by the shadow monster
         s.tookMonsterDamage = true;
         
-        this.triggerDeathChoice();
+        const isCoop = this.multiplayer && this.multiplayer.isConnected;
+        if (isCoop) {
+          p.isDead = true;
+          this.multiplayer.send({
+            type: "PLAYER_POS",
+            x: p.x,
+            y: p.y,
+            floor: this.state.currentFloor,
+            angle: p.angle,
+            pitch: p.pitch,
+            lanternOn: this.state.lanternOn,
+            health: 0,
+            isDead: true
+          });
+          
+          if (s.otherPlayer && s.otherPlayer.isDead) {
+            this.triggerGameOver();
+          } else {
+            this.showToast(this.lang === "tr" ? "Canavar seni yakaladı! Arkadaşın seni diriltene kadar onu izliyorsun." : "Monster caught you! Spectating your friend until you are revived.");
+            s.gameState = "playing";
+          }
+          if (this.onStateChange) this.onStateChange();
+        } else {
+          this.triggerDeathChoice();
+        }
         
         if (this.onStateChange) this.onStateChange();
       }, 1500);
@@ -2066,10 +2556,18 @@ export class Game {
     }
   }
 
-  triggerLevelVictory() {
+  triggerLevelVictory(fromNetwork = false) {
     this.stopLoop();
     
-    const gameCompleted = this.currentLevel === 20;
+    const isCoop = this.multiplayer && this.multiplayer.isConnected;
+    if (isCoop && !fromNetwork) {
+      this.multiplayer.send({
+        type: "VICTORY"
+      });
+    }
+    
+    const isCoop = this.multiplayer && this.multiplayer.isConnected;
+    const gameCompleted = !isCoop && this.currentLevel === 20;
     this.state.gameState = "victory";
     
     // Check and unlock end-level achievements
@@ -2088,19 +2586,30 @@ export class Game {
       this.unlockAchievement("gold_collector");
     }
 
-    if (gameCompleted) {
-      this.currentLevel = 1;
-      localStorage.setItem("maze_level", "1");
-    } else {
-      this.currentLevel = Math.min(20, this.currentLevel + 1);
-      localStorage.setItem("maze_level", this.currentLevel.toString());
+    // In co-op, don't advance the singleplayer level save
+    if (!isCoop) {
+      if (gameCompleted) {
+        this.currentLevel = 1;
+        localStorage.setItem("maze_level", "1");
+      } else {
+        this.currentLevel = Math.min(20, this.currentLevel + 1);
+        localStorage.setItem("maze_level", this.currentLevel.toString());
+      }
     }
 
     if (this.onGameEnd) this.onGameEnd(true, gameCompleted);
   }
 
-  triggerGameOver() {
+  triggerGameOver(fromNetwork = false) {
     this.stopLoop();
+    
+    const isCoop = this.multiplayer && this.multiplayer.isConnected;
+    if (isCoop && !fromNetwork) {
+      this.multiplayer.send({
+        type: "GAME_OVER"
+      });
+    }
+    
     this.state.gameState = "gameover";
     if (this.onGameEnd) this.onGameEnd(false);
   }

@@ -4127,6 +4127,143 @@ export class CanvasRenderer {
       player.visualY += (player.y - player.visualY) * interpolationFactor;
     }
 
+    // Co-op remote player rendering
+    if (state.otherPlayer) {
+      if (!this.otherPlayerGroup) {
+        this.otherPlayerGroup = new THREE.Group();
+        this.scene.add(this.otherPlayerGroup);
+        
+        // SpotLight representing remote player's flashlight - added directly to scene for full wall lighting
+        const light = new THREE.SpotLight("#ffffff", 0.0, 11.0, Math.PI / 6.0, 0.85, 1.1);
+        light.castShadow = false;
+        this.scene.add(light);
+        this.otherPlayerLight = light;
+        
+        const targetObj = new THREE.Object3D();
+        this.scene.add(targetObj);
+        this.otherPlayerLight.target = targetObj;
+      }
+      
+      // Lazily build or update the 3D Ghost character model (rebuilds if the real flashlight finishes loading)
+      const hasRealFl = !!this.flashlightModel;
+      if (!this.otherPlayerMesh || (hasRealFl && !this.otherPlayerHasRealFlashlight)) {
+        // Clear any existing children
+        while (this.otherPlayerGroup.children.length > 0) {
+          this.otherPlayerGroup.remove(this.otherPlayerGroup.children[0]);
+        }
+        
+        const ghostGroup = new THREE.Group();
+
+        // 1. Ghost Head (Sphere)
+        const headGeom = new THREE.SphereGeometry(0.12, 16, 16);
+        const ghostMat = new THREE.MeshStandardMaterial({
+          color: "#a78bfa", // violet sheet color
+          emissive: "#5b21b6", // dark purple glow
+          emissiveIntensity: 0.85,
+          transparent: true,
+          opacity: 0.65,
+          roughness: 0.15,
+          metalness: 0.1
+        });
+        const head = new THREE.Mesh(headGeom, ghostMat);
+        head.position.y = 0.55;
+        ghostGroup.add(head);
+
+        // 2. Ghost Eyes (Two small glowing yellow beads)
+        const eyeGeom = new THREE.SphereGeometry(0.016, 8, 8);
+        const eyeMat = new THREE.MeshBasicMaterial({ color: "#fde047" });
+        const leftEye = new THREE.Mesh(eyeGeom, eyeMat);
+        leftEye.position.set(0.045, 0.57, 0.10);
+        const rightEye = new THREE.Mesh(eyeGeom, eyeMat);
+        rightEye.position.set(-0.045, 0.57, 0.10);
+        ghostGroup.add(leftEye);
+        ghostGroup.add(rightEye);
+
+        // 3. Ghost Body (Cone pointing down to mimic a floating cloth shroud)
+        const bodyGeom = new THREE.ConeGeometry(0.13, 0.40, 16, 1, true);
+        bodyGeom.rotateX(Math.PI);
+        const body = new THREE.Mesh(bodyGeom, ghostMat);
+        body.position.y = 0.32;
+        ghostGroup.add(body);
+
+        // 4. Flashlight on the right side
+        const handGroup = new THREE.Group();
+        handGroup.position.set(0.16, 0.35, 0.08); // Right side
+        
+        if (hasRealFl) {
+          const flModel = this.flashlightModel.clone();
+          flModel.scale.set(0.5, 0.5, 0.5);
+          flModel.rotation.set(0, -Math.PI / 2, 0); // point forward (rotates -X lens to +Z ghost face direction)
+          handGroup.add(flModel);
+        } else {
+          // Fallback cylinder flashlight while loading assets
+          const cylGeom = new THREE.CylinderGeometry(0.015, 0.015, 0.1, 8);
+          cylGeom.rotateX(Math.PI / 2);
+          const cylMat = new THREE.MeshStandardMaterial({ color: "#1e293b", metalness: 0.8 });
+          const fallbackFl = new THREE.Mesh(cylGeom, cylMat);
+          handGroup.add(fallbackFl);
+        }
+        
+        ghostGroup.add(handGroup);
+        
+        this.otherPlayerMesh = ghostGroup;
+        this.otherPlayerGroup.add(this.otherPlayerMesh);
+        this.otherPlayerHasRealFlashlight = hasRealFl;
+      }
+      
+      const op = state.otherPlayer;
+      const localDist = Math.hypot(op.x - player.x, op.y - player.y);
+      const showOther = (op.floor === currentFloor && !op.isDead && localDist > 0.35);
+      
+      this.otherPlayerGroup.visible = showOther;
+      
+      if (showOther) {
+        if (op.visualX === undefined || op.visualX === null) {
+          op.visualX = op.x;
+          op.visualY = op.y;
+        } else {
+          op.visualX += (op.x - op.visualX) * interpolationFactor;
+          op.visualY += (op.y - op.visualY) * interpolationFactor;
+        }
+        
+        // Float the ghost slightly and bob up/down using a sine wave
+        const hoverY = 0.08 + Math.sin(Date.now() * 0.004) * 0.035;
+        this.otherPlayerGroup.position.set(op.visualX, hoverY, op.visualY);
+        
+        // Orient the character model Y-axis to match their angle
+        this.otherPlayerGroup.rotation.y = -op.angle + Math.PI / 2;
+        
+        // Position the SpotLight source around their flashlight height (e.g. Y = hoverY + 0.35)
+        this.otherPlayerLight.position.set(op.visualX, hoverY + 0.35, op.visualY);
+        
+        // Position the SpotLight target along their look direction vector
+        const lookDirX = Math.cos(op.angle);
+        const lookDirY = Math.sin(op.angle);
+        const targetPitch = op.pitch || 0;
+        
+        this.otherPlayerLight.target.position.set(
+          op.visualX + lookDirX * 5.0,
+          hoverY + 0.35 + Math.sin(targetPitch) * 5.0,
+          op.visualY + lookDirY * 5.0
+        );
+        
+        this.otherPlayerLight.intensity = op.lanternOn ? 4.5 : 0.0;
+        this.otherPlayerLight.updateMatrixWorld(true);
+        this.otherPlayerLight.target.updateMatrixWorld(true);
+      } else {
+        if (this.otherPlayerLight) {
+          this.otherPlayerLight.intensity = 0.0;
+        }
+      }
+    } else {
+      if (this.otherPlayerGroup) {
+        this.otherPlayerGroup.visible = false;
+      }
+      if (this.otherPlayerLight) {
+        this.otherPlayerLight.intensity = 0.0;
+      }
+    }
+
     const dx = player.visualX - this.lastVisualX;
     const dy = player.visualY - this.lastVisualY;
     const isMoving = !!player.isMoving;
@@ -4410,9 +4547,66 @@ export class CanvasRenderer {
       
       state.shadowMonsters.forEach((sm, index) => {
         let mesh = this.shadowMonsterMeshes[index];
-        if (!mesh) return;
+        if (!mesh) {
+          // Construct the shadow monster mesh on demand
+          mesh = new THREE.Group();
+          mesh.visible = false;
+          
+          const faceMesh = new THREE.Mesh(this.monsterFaceGeom, this.createMonsterFaceMat());
+          faceMesh.name = "face";
+          faceMesh.position.set(0, 0.75, 0.25);
+          mesh.add(faceMesh);
+          
+          const smokeGroup = new THREE.Group();
+          smokeGroup.name = "smokeGroup";
+          mesh.add(smokeGroup);
+          
+          for (let j = 0; j < 15; j++) {
+            const size = 0.25 + Math.random() * 0.25;
+            const smokeMesh = new THREE.Mesh(this.monsterSmokeGeom, this.monsterSmokeMat.clone());
+            smokeMesh.scale.set(size, size, size);
+            smokeMesh.position.set(
+              (Math.random() - 0.5) * 0.45,
+              0.75 + (Math.random() - 0.5) * 0.45,
+              -0.10 + (Math.random() - 0.5) * 0.3
+            );
+            smokeMesh.userData = {
+              initialPos: new THREE.Vector3(smokeMesh.position.x, smokeMesh.position.y, smokeMesh.position.z),
+              speedX: 0.5 + Math.random() * 1.5,
+              speedY: 0.5 + Math.random() * 1.5,
+              speedZ: 0.5 + Math.random() * 1.5,
+              phase: Math.random() * Math.PI * 2,
+              pulseSpeed: 1.0 + Math.random() * 2.0
+            };
+            smokeGroup.add(smokeMesh);
+          }
+          
+          mesh.userData.face = faceMesh;
+          mesh.userData.smokeGroup = smokeGroup;
+          
+          this.scene.add(mesh);
+          this.shadowMonsterMeshes[index] = mesh;
+          
+          if (this.renderer) {
+            try { this.renderer.compile(mesh, this.camera); } catch (e) {}
+          }
+        }
 
-        const shadowLight = this.shadowLightsPool ? this.shadowLightsPool[index] : null;
+        if (!this.shadowLightsPool) {
+          this.shadowLightsPool = [];
+        }
+        while (this.shadowLightsPool.length < state.shadowMonsters.length) {
+          this.shadowLightsPool.push(null);
+        }
+        
+        let shadowLight = this.shadowLightsPool[index];
+        if (!shadowLight) {
+          shadowLight = new THREE.PointLight(0xff0000, 0.0, 5.0);
+          shadowLight.castShadow = false;
+          shadowLight.visible = true;
+          this.scene.add(shadowLight);
+          this.shadowLightsPool[index] = shadowLight;
+        }
 
         if (sm.active) {
           const time = Date.now() * 0.005 + index * 10.0;

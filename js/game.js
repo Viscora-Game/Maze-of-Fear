@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=73";
-import { AudioEngine } from "./audio.js?v=73";
-import { CanvasRenderer } from "./canvas.js?v=73";
-import { translations } from "./translations.js?v=73";
-import { randomEvents, deathEvents } from "./events.js?v=73";
-import { getSeededRandom } from "./prng.js?v=73";
+import { generateMaze } from "./maze.js?v=74";
+import { AudioEngine } from "./audio.js?v=74";
+import { CanvasRenderer } from "./canvas.js?v=74";
+import { translations } from "./translations.js?v=74";
+import { randomEvents, deathEvents } from "./events.js?v=74";
+import { getSeededRandom } from "./prng.js?v=74";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -540,11 +540,11 @@ export class Game {
             const p = this.state.player;
             this.multiplayer.send({
               type: "PLAYER_POS",
-              x: p.x,
-              y: p.y,
+              x: Math.round(p.x * 100) / 100,
+              y: Math.round(p.y * 100) / 100,
               floor: this.state.currentFloor,
-              angle: p.angle,
-              pitch: p.pitch,
+              angle: Math.round(p.angle * 100) / 100,
+              pitch: Math.round(p.pitch * 100) / 100,
               lanternOn: this.state.lanternOn,
               fuel: p.fuel,
               health: p.health,
@@ -553,6 +553,16 @@ export class Game {
           }
         }
       }
+
+  broadcastAudioEvent(sound, extra = {}) {
+    if (this.multiplayer && this.multiplayer.isConnected) {
+      this.multiplayer.send({
+        type: "AUDIO_EVENT",
+        sound: sound,
+        ...extra
+      });
+    }
+  }
 
       if (this.state && this.state.gameState !== "menu") {
         this.draw();
@@ -2199,6 +2209,7 @@ export class Game {
             sm.speed = baseSpeed * (0.95 + Math.random() * 0.1);
             sm.soundTimer = 0.5; // Play sound immediately after spawn
             this.audio.playShadowSpawn();
+            this.broadcastAudioEvent("shadow_spawn");
             
             // Choose target player in co-op (must target living player!)
             if (isCoop) {
@@ -2257,6 +2268,7 @@ export class Game {
         if (sm.soundTimer <= 0) {
           sm.soundTimer = 3.5 + Math.random() * 2.0;
           this.audio.playShadowGroan(dist);
+          this.broadcastAudioEvent("shadow_groan", { dist: Math.round(dist * 10) / 10 });
         }
       }
 
@@ -2315,6 +2327,7 @@ export class Game {
         sm.burnTime += dt;
         if (!this.lastBurnSoundTime || Date.now() - this.lastBurnSoundTime > 300) {
           this.audio.playShadowBurn();
+          this.broadcastAudioEvent("shadow_burn");
           this.lastBurnSoundTime = Date.now();
         }
 

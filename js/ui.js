@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=73";
-import { MultiplayerManager } from "./multiplayer.js?v=73";
+import { Game } from "./game.js?v=74";
+import { MultiplayerManager } from "./multiplayer.js?v=74";
 
 const init = () => {
   const game = new Game();
@@ -2807,17 +2807,17 @@ function setupUI(game) {
       }
     }
 
-    // --- Draw Map Legend (P1 / P2 Status Box) ---
+    // --- Draw Map Legend (P1 / P2 Status Box at bottom-left corner) ---
     if (game.multiplayer && game.multiplayer.isConnected && s.otherPlayer) {
       const isTr = game.lang === "tr";
-      const legendX = 12;
-      const legendY = 16;
+      const legendX = 14;
+      const legendY = Math.max(20, ctx.canvas.height - 52);
       
-      ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
-      ctx.fillRect(legendX - 6, legendY - 12, 140, 44);
-      ctx.strokeStyle = "rgba(167, 139, 250, 0.4)";
+      ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+      ctx.fillRect(legendX - 6, legendY - 10, 160, 44);
+      ctx.strokeStyle = "rgba(167, 139, 250, 0.5)";
       ctx.lineWidth = 1;
-      ctx.strokeRect(legendX - 6, legendY - 12, 140, 44);
+      ctx.strokeRect(legendX - 6, legendY - 10, 160, 44);
       
       // Local player legend dot
       ctx.fillStyle = "#ef4444";
@@ -2829,7 +2829,7 @@ function setupUI(game) {
       ctx.font = "bold 11px Arial";
       ctx.textAlign = "left";
       ctx.textBaseline = "middle";
-      ctx.fillText(isTr ? "Sen (Kırmızı)" : "You (Red)", legendX + 16, legendY);
+      ctx.fillText(isTr ? "🔴 Sen (Kırmızı)" : "🔴 You (Red)", legendX + 16, legendY);
       
       // Partner legend dot
       const op = s.otherPlayer;
@@ -2838,7 +2838,7 @@ function setupUI(game) {
       ctx.arc(legendX + 6, legendY + 18, 5, 0, Math.PI * 2);
       ctx.fill();
       
-      let p2Text = isTr ? "Arkadaşın" : "Partner";
+      let p2Text = isTr ? "🟣 Arkadaşın (Mor)" : "🟣 Partner (Purple)";
       if (op.isDead) {
         p2Text += isTr ? " (Öldü 💀)" : " (Dead 💀)";
       } else if (op.floor !== s.currentFloor) {

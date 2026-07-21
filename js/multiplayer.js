@@ -423,16 +423,37 @@ export class MultiplayerManager {
         }
         break;
 
+      case "AUDIO_EVENT":
+        if (this.game && this.game.audio) {
+          if (data.sound === "shadow_spawn") {
+            this.game.audio.playShadowSpawn();
+          } else if (data.sound === "shadow_groan") {
+            this.game.audio.playShadowGroan(data.dist || 5.0);
+          } else if (data.sound === "shadow_burn") {
+            this.game.audio.playShadowBurn();
+          } else if (data.sound === "stop_shadow_burn") {
+            this.game.audio.stopShadowBurn();
+          } else if (data.sound === "jumpscare") {
+            this.game.audio.playJumpscare();
+          }
+        }
+        break;
+
       case "COOP_CHAT":
         this.game.showToast(`${this.game.lang === "tr" ? "Arkadaşın" : "Friend"}: ${data.text}`);
         break;
 
       case "SHOW_DIALOG":
-        this.game.showCoopDialog(data.title, data.text, data.isClue);
+        // Parchment / Clue dialogs are ONLY shown on partner screen if partner is dead & spectating!
+        if (state.player && state.player.isDead) {
+          this.game.showCoopDialog(data.title, data.text, data.isClue);
+        }
         break;
 
       case "CLOSE_DIALOG":
-        this.game.closeCoopDialog();
+        if (state.player && state.player.isDead) {
+          this.game.closeCoopDialog();
+        }
         break;
 
       case "GAME_OVER":

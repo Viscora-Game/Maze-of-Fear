@@ -1053,13 +1053,15 @@ export class AudioEngine {
     noise.stop(now + 1.3);
   }
 
-  // Shadow monster spawn sound - real audio asset
+  // Shadow monster spawn sound - real audio asset with randomized roar/growl
   playShadowSpawn() {
     if (this.muted || !this.ctx) return;
 
-    // Play scary stinger + heavy monster roar for dominant spawn alert
-    this._playBuffer("monster_roar", 0.90, 0.95); // Slightly pitched down for extra weight
-    this._playBuffer("stinger", 0.80);
+    // Randomize monster spawn sound for frightening variety!
+    const spawnRoars = ["monster_roar", "monster_growl", "jumpscare_scream"];
+    const pickRoar = spawnRoars[Math.floor(Math.random() * spawnRoars.length)];
+    this._playBuffer(pickRoar, 0.85, 0.85 + Math.random() * 0.2);
+    this._playBuffer("stinger", 0.75);
     return;
   }
 
@@ -1091,11 +1093,8 @@ export class AudioEngine {
   playJumpscare() {
     if (this.muted || !this.ctx) return;
 
-    // Play the real scream at high volume
     this._playBuffer("jumpscare_scream", 0.90, 1.0);
-    // Layer monster roar for extra impact
     this._playBuffer("monster_roar", 0.70, 0.9);
-    // Add suspenseful stinger
     setTimeout(() => this._playBuffer("stinger", 0.50), 100);
   }
 
@@ -1103,7 +1102,7 @@ export class AudioEngine {
     this.playJumpscare();
   }
 
-  // Shadow monster ambient groan (distance-based volume)
+  // Shadow monster ambient groan/breath/grunt (distance-based volume with wide variety)
   playShadowGroan(distance) {
     if (this.muted || !this.ctx) return;
 
@@ -1111,11 +1110,18 @@ export class AudioEngine {
     if (distance > maxDist) return;
     const volumeFactor = 1.0 - (distance / maxDist);
 
-    // Randomly pick from several monster sounds for variety
-    const groanSounds = ["monster_growl", "monster_breath", "monster_grunt", "deep_moan"];
+    // Randomly pick from full variety of preloaded monster audio files!
+    const groanSounds = [
+      "monster_growl", 
+      "monster_breath", 
+      "monster_grunt", 
+      "deep_moan", 
+      "ghost_moan", 
+      "monster_hiss"
+    ];
     const pick = groanSounds[Math.floor(Math.random() * groanSounds.length)];
-    const vol = 0.35 * volumeFactor;
-    const rate = 0.85 + Math.random() * 0.3; // pitch variation
+    const vol = 0.42 * volumeFactor;
+    const rate = 0.80 + Math.random() * 0.40; // pitch variation for organic realism
 
     if (this._playBuffer(pick, vol, rate)) return;
 
@@ -1167,9 +1173,13 @@ export class AudioEngine {
     this._playBuffer("gasp", 0.50);
   }
 
-  // Door opening creak sound
+  // Door opening creak sound (with metallic screech)
   playDoorOpen() {
     if (this.muted || !this.ctx) return;
+    if (this._playBuffer("metal_screech", 0.40, 1.05)) {
+      setTimeout(() => this._playBuffer("door_squeak", 0.35), 100);
+      return;
+    }
     this._playBuffer("door_squeak", 0.35);
   }
 

@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=80";
-import { MultiplayerManager } from "./multiplayer.js?v=80";
+import { Game } from "./game.js?v=81";
+import { MultiplayerManager } from "./multiplayer.js?v=81";
 
 const init = () => {
   const game = new Game();
@@ -798,6 +798,7 @@ function setupUI(game) {
       else if (sound === "shadow_groan") game.audio.playShadowGroan(2.0);
       else if (sound === "shadow_burn") game.audio.playShadowBurn();
       else if (sound === "scream") game.audio.playFemaleScream();
+      else if (sound === "door") game.audio.playDoorOpen();
       else if (sound === "unlock") game.audio.playUnlock();
       else if (sound === "flashlight") game.audio.playFlashlightOn();
     });

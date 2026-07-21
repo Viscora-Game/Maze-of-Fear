@@ -5,14 +5,14 @@ const makeClueTexture = (code) => {
   const ctx = canvas.getContext("2d");
   
   // Aged, dirty parchment color
-  ctx.fillStyle = "#d7c4a3"; // darker yellowed paper
+  ctx.fillStyle = "#cca462"; // Richer, darker yellowed paper base to prevent blowout
   ctx.fillRect(0, 0, 128, 128);
   
   // Vignette/grunge corners on texture (with guard for headless mock compatibility)
   if (ctx.createRadialGradient) {
-    const grad = ctx.createRadialGradient(64, 64, 30, 64, 64, 90);
-    grad.addColorStop(0, "rgba(90, 60, 30, 0)");
-    grad.addColorStop(1, "rgba(50, 30, 10, 0.45)");
+    const grad = ctx.createRadialGradient(64, 64, 25, 64, 64, 90);
+    grad.addColorStop(0, "rgba(80, 50, 20, 0)");
+    grad.addColorStop(1, "rgba(35, 15, 5, 0.6)");
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 128, 128);
   }
@@ -23,7 +23,7 @@ const makeClueTexture = (code) => {
     for (let i = 0; i < 8; i++) {
       const bx = Math.random() * 128;
       const by = Math.random() * 128;
-      const br = 1 + Math.random() * 3.5;
+      const br = 1.2 + Math.random() * 3.8;
       ctx.beginPath();
       ctx.arc(bx, by, br, 0, Math.PI * 2);
       ctx.fill();
@@ -33,15 +33,15 @@ const makeClueTexture = (code) => {
         ctx.beginPath();
         ctx.moveTo(bx, by);
         ctx.lineTo(bx + (Math.random() - 0.5) * 2, by + br * (1.5 + Math.random() * 2));
-        ctx.lineWidth = br * 0.4;
+        ctx.lineWidth = br * 0.55;
         ctx.strokeStyle = "#8a0303";
         ctx.stroke();
       }
     }
 
-    // Draw blood smear marks
-    ctx.strokeStyle = "rgba(138, 3, 3, 0.35)";
-    ctx.lineWidth = 6;
+    // Draw blood smear marks (darker and thicker for better visibility under flashlight)
+    ctx.strokeStyle = "rgba(100, 2, 2, 0.65)";
+    ctx.lineWidth = 7;
     ctx.lineCap = "round";
     ctx.beginPath();
     ctx.moveTo(10, 20 + Math.random() * 30);
@@ -50,11 +50,11 @@ const makeClueTexture = (code) => {
   }
   
   // Clue digits (spooky handwritten style)
-  ctx.fillStyle = "#6b0000"; // dried coagulated blood red
-  ctx.font = "italic bold 36px 'Courier New', monospace";
+  ctx.fillStyle = "#550000"; // even darker dried blood red
+  ctx.font = "italic bold 38px 'Courier New', monospace";
   ctx.textAlign = "center";
-  ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
-  ctx.shadowBlur = 4;
+  ctx.shadowColor = "rgba(0, 0, 0, 0.75)";
+  ctx.shadowBlur = 5;
   ctx.fillText(code, 64, 76);
   ctx.shadowBlur = 0; // reset
   
@@ -69,21 +69,21 @@ const makeLoreTexture = (loreId) => {
   const ctx = canvas.getContext("2d");
   
   // Aged, yellowed parchment color
-  ctx.fillStyle = "#c5b393"; // old dark paper
+  ctx.fillStyle = "#cca462"; // Richer, darker aged paper base to prevent blowout
   ctx.fillRect(0, 0, 128, 128);
   
   // Vignette corners
   if (ctx.createRadialGradient) {
-    const grad = ctx.createRadialGradient(64, 64, 30, 64, 64, 90);
-    grad.addColorStop(0, "rgba(90, 60, 30, 0)");
-    grad.addColorStop(1, "rgba(40, 20, 5, 0.5)");
+    const grad = ctx.createRadialGradient(64, 64, 25, 64, 64, 90);
+    grad.addColorStop(0, "rgba(80, 50, 20, 0)");
+    grad.addColorStop(1, "rgba(35, 15, 5, 0.6)");
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 128, 128);
   }
   
-  // Draw some handwritten lines to look like readable lore script
-  ctx.strokeStyle = "rgba(40, 20, 5, 0.4)";
-  ctx.lineWidth = 2.5;
+  // Draw some handwritten lines (darker and thicker for better legibility)
+  ctx.strokeStyle = "rgba(25, 10, 2, 0.75)";
+  ctx.lineWidth = 3;
   for (let i = 0; i < 6; i++) {
     const y = 30 + i * 15;
     ctx.beginPath();
@@ -92,11 +92,11 @@ const makeLoreTexture = (loreId) => {
     ctx.stroke();
   }
 
-  // Draw a big fancy title initial letter in red
+  // Draw a big fancy gothic celtic cross symbol (instead of system-dependent multi-colored scroll emoji)
   ctx.fillStyle = "#8a0303"; // crimson ink
-  ctx.font = "italic bold 32px 'Georgia', serif";
+  ctx.font = "bold 36px 'Georgia', serif";
   ctx.textAlign = "center";
-  ctx.fillText("📜", 64, 75);
+  ctx.fillText("✥", 64, 78);
   
   const texture = new THREE.CanvasTexture(canvas);
   return texture;
@@ -3140,6 +3140,7 @@ export class CanvasRenderer {
               const paperGeo = new THREE.BoxGeometry(0.20, 0.28, 0.02);
               const paperMat = new THREE.MeshStandardMaterial({ 
                 map: makeClueTexture(cell.puzzleClue),
+                color: "#959595",
                 roughness: 0.95
               });
               const paperMesh = new THREE.Mesh(paperGeo, paperMat);
@@ -3197,6 +3198,7 @@ export class CanvasRenderer {
               const paperGeo = new THREE.BoxGeometry(0.20, 0.20, 0.01);
               const paperMat = new THREE.MeshStandardMaterial({ 
                 map: makeLoreTexture(cell.loreParchment),
+                color: "#959595",
                 roughness: 0.95
               });
               const paperMesh = new THREE.Mesh(paperGeo, paperMat);
@@ -3211,6 +3213,7 @@ export class CanvasRenderer {
               const paperGeo = new THREE.BoxGeometry(0.20, 0.28, 0.02);
               const paperMat = new THREE.MeshStandardMaterial({ 
                 map: makeLoreTexture(cell.loreParchment),
+                color: "#959595",
                 roughness: 0.95
               });
               const paperMesh = new THREE.Mesh(paperGeo, paperMat);

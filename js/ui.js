@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=74";
-import { MultiplayerManager } from "./multiplayer.js?v=74";
+import { Game } from "./game.js?v=75";
+import { MultiplayerManager } from "./multiplayer.js?v=75";
 
 const init = () => {
   const game = new Game();
@@ -2848,6 +2848,12 @@ function setupUI(game) {
       ctx.fillText(p2Text, legendX + 16, legendY + 18);
     }
   };
+
+  // Prevent context menus (long-press popups on mobile, right-click on PC) globally for a pure native app experience
+  document.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    return false;
+  }, { passive: false });
 
   // Prevent pinch-to-zoom and gesture zooming globally on iOS/Safari
   document.addEventListener("gesturestart", (e) => {

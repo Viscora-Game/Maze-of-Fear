@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=74";
-import { AudioEngine } from "./audio.js?v=74";
-import { CanvasRenderer } from "./canvas.js?v=74";
-import { translations } from "./translations.js?v=74";
-import { randomEvents, deathEvents } from "./events.js?v=74";
-import { getSeededRandom } from "./prng.js?v=74";
+import { generateMaze } from "./maze.js?v=75";
+import { AudioEngine } from "./audio.js?v=75";
+import { CanvasRenderer } from "./canvas.js?v=75";
+import { translations } from "./translations.js?v=75";
+import { randomEvents, deathEvents } from "./events.js?v=75";
+import { getSeededRandom } from "./prng.js?v=75";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -75,11 +75,13 @@ export class Game {
     window.addEventListener("keydown", (e) => {
       const k = e.key.toLowerCase();
       this.keys[k] = true;
-      if (k === "f") this.toggleLantern(); // F to Toggle Lantern
-      if (k === "m") this.useInventoryItem("map_piece");
-      if (k === "c") this.useInventoryItem("compass");
-      if (k === "e" || e.key === " ") {
-        this.interactWithClosest();
+      if (this.state && this.state.gameState === "playing") {
+        if (k === "f") this.toggleLantern();
+        if (k === "m") this.useInventoryItem("map_piece");
+        if (k === "c") this.useInventoryItem("compass");
+        if (k === "e" || e.key === " ") {
+          this.interactWithClosest();
+        }
       }
     });
     window.addEventListener("keyup", (e) => {
@@ -1889,6 +1891,7 @@ export class Game {
         choices: [{
           text: this.t("confirm"),
           action: () => {
+            if (!this.state || !this.state.player) return;
             if (this.state.player.health <= 0) {
               this.triggerDeathChoice();
             } else {
@@ -1903,6 +1906,7 @@ export class Game {
 
   // Use items
   useInventoryItem(itemId) {
+    if (!this.state || !this.state.player) return;
     if (this.state.gameState !== "playing" && this.state.gameState !== "modal") return;
     const p = this.state.player;
     if (p.inventory[itemId] <= 0) return;

@@ -26,13 +26,26 @@
   --font-mono: 'Courier Prime', monospace;
 }
 
-/* --- Global Reset --- */
+/* --- Global Reset (Native App Experience) --- */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  user-select: none;
-  -webkit-user-select: none;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  -webkit-touch-callout: none !important; /* Prevents long-press callout menus on iOS/Android */
+  -webkit-tap-highlight-color: transparent !important; /* Prevents tap highlight overlays */
+  -webkit-user-drag: none !important; /* Prevents image dragging */
+}
+
+img, canvas, svg, button, div, span, p, h1, h2, h3, a, input {
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-user-drag: none !important;
+  -webkit-tap-highlight-color: transparent !important;
 }
 
 html, body {

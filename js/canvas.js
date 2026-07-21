@@ -4463,6 +4463,7 @@ export class CanvasRenderer {
       const time = Date.now() * 0.0035;
       for (const key in this.npcGroups) {
         const npcGroup = this.npcGroups[key];
+        if (!npcGroup || !npcGroup.userData || !npcGroup.userData.cell) continue;
         const { x, y, cell } = npcGroup.userData;
         
         if (cell.npc && cell.npc.id !== "well") {

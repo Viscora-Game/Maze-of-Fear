@@ -335,13 +335,13 @@ export class MultiplayerManager {
         if (data.item === "revival_scroll") {
           itemTransName = this.game.lang === "tr" ? "Diriltme Ayini Parşömeni" : "Revival Ritual Scroll";
         } else {
-          itemTransName = this.game.t("items." + data.item) || data.item;
+          itemTransName = this.game.t(`items.${data.item}.name`);
         }
 
         this.game.showToast(
           this.game.lang === "tr" 
-            ? `Arkadaşın sana ${itemTransName} verdi!` 
-            : `Your friend gave you a ${itemTransName}!`
+            ? `Arkadaşın sana ${itemTransName} gönderdi!` 
+            : `Your friend sent you a ${itemTransName}!`
         );
         this.game.updateInventoryUI();
         break;

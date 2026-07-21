@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=66";
-import { MultiplayerManager } from "./multiplayer.js?v=66";
+import { Game } from "./game.js?v=67";
+import { MultiplayerManager } from "./multiplayer.js?v=67";
 
 const init = () => {
   const game = new Game();
@@ -2144,15 +2144,15 @@ function setupUI(game) {
             
             let itemLabel = itemId;
             if (itemId === "revival_scroll") {
-              itemLabel = game.lang === "tr" ? "Diriltme Parşömeni" : "Revival Scroll";
+              itemLabel = game.lang === "tr" ? "Diriltme Ayini Parşömeni" : "Revival Ritual Scroll";
             } else {
-              itemLabel = game.t("items." + itemId + ".name") || itemId;
+              itemLabel = game.t(`items.${itemId}.name`);
             }
             
             game.showToast(
               game.lang === "tr"
-                ? `${itemLabel} arkadaşına gönderildi.`
-                : `${itemLabel} sent to friend.`
+                ? `Arkadaşına ${itemLabel} gönderdin.`
+                : `Sent ${itemLabel} to your friend.`
             );
             renderInventory();
             game.onStateChange();

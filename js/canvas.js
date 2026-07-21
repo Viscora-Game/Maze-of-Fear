@@ -1739,9 +1739,9 @@ export class CanvasRenderer {
     this.rainParticles.visible = !isUnderground; // Hide rain particles underground!
     this.scene.add(this.rainParticles);
 
-    // 1d. Creepier 3D Starfield Dome (only for outdoor ruins floor, no sliding!)
+    // 1d. 3D Starfield Dome (only for outdoor ruins floor, player-locked so no sliding)
     if (!isUnderground) {
-      const starCount = 180;
+      const starCount = 350;
       const starGeometry = new THREE.BufferGeometry();
       const positions = new Float32Array(starCount * 3);
 
@@ -1753,12 +1753,13 @@ export class CanvasRenderer {
 
       for (let i = 0; i < starCount; i++) {
         const theta = rng() * Math.PI * 2;
-        const phi = rng() * Math.PI * 0.45; // hemisphere dome
-        const radius = 55.0 + rng() * 15.0; // lock in distant world space
+        // phi from 0.05 (near zenith) to 1.25 (well past 45° toward horizon) so stars visible when looking forward
+        const phi = 0.05 + rng() * 1.20;
+        const radius = 40.0 + rng() * 20.0;
 
-        const x = radius * Math.cos(theta) * Math.sin(phi);
-        const z = radius * Math.sin(theta) * Math.sin(phi);
-        const y = radius * Math.cos(phi) + 2.0;
+        const x = radius * Math.sin(phi) * Math.cos(theta);
+        const z = radius * Math.sin(phi) * Math.sin(theta);
+        const y = radius * Math.cos(phi);
 
         positions[i * 3] = x;
         positions[i * 3 + 1] = y;
@@ -1769,10 +1770,11 @@ export class CanvasRenderer {
       
       const starMat = new THREE.PointsMaterial({
         color: "#ffffff",
-        size: 0.35,
+        size: 0.45,
         transparent: true,
-        opacity: 0.85,
-        sizeAttenuation: true
+        opacity: 0.7,
+        sizeAttenuation: true,
+        depthWrite: false
       });
 
       this.starField = new THREE.Points(starGeometry, starMat);
@@ -3712,6 +3714,11 @@ export class CanvasRenderer {
       this.dirLight.position.set(player.visualX + 8, 16, player.visualY + 8);
       this.dirLight.target.position.set(player.visualX, 0, player.visualY);
       this.dirLight.target.updateMatrixWorld();
+    }
+
+    // Lock starfield dome to player position so stars don't slide or vanish
+    if (this.starField) {
+      this.starField.position.set(player.visualX, 0, player.visualY);
     }
 
     // Toggle lantern light and flame core visibility

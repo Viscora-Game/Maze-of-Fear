@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=65";
-import { AudioEngine } from "./audio.js?v=65";
-import { CanvasRenderer } from "./canvas.js?v=65";
-import { translations } from "./translations.js?v=65";
-import { randomEvents, deathEvents } from "./events.js?v=65";
-import { getSeededRandom } from "./prng.js?v=65";
+import { generateMaze } from "./maze.js?v=66";
+import { AudioEngine } from "./audio.js?v=66";
+import { CanvasRenderer } from "./canvas.js?v=66";
+import { translations } from "./translations.js?v=66";
+import { randomEvents, deathEvents } from "./events.js?v=66";
+import { getSeededRandom } from "./prng.js?v=66";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -446,8 +446,14 @@ export class Game {
     if (this.state && this.state.visitedMap && this.state.visitedMap[rFloor]) {
       const cx = Math.floor(rx);
       const cy = Math.floor(ry);
-      if (cx >= 0 && cx < this.state.width && cy >= 0 && cy < this.state.height) {
-        this.state.visitedMap[rFloor][cy][cx] = true;
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const vx = cx + dx;
+          const vy = cy + dy;
+          if (vx >= 0 && vx < this.state.width && vy >= 0 && vy < this.state.height) {
+            this.state.visitedMap[rFloor][vy][vx] = true;
+          }
+        }
       }
     }
   }

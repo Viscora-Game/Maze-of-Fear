@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=65";
-import { MultiplayerManager } from "./multiplayer.js?v=65";
+import { Game } from "./game.js?v=66";
+import { MultiplayerManager } from "./multiplayer.js?v=66";
 
 const init = () => {
   const game = new Game();
@@ -2716,6 +2716,113 @@ function setupUI(game) {
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
+
+    // --- Draw Co-op Partner Position on 2D Map ---
+    if (game.multiplayer && game.multiplayer.isConnected && s.otherPlayer) {
+      const op = s.otherPlayer;
+      
+      // Only draw on map grid if partner is on the current rendering floor
+      if (op.floor === s.currentFloor) {
+        const opx = offsetX + op.x * cellSize;
+        const opy = offsetY + op.y * cellSize;
+        
+        if (op.isDead) {
+          // If dead, draw a skull marker 💀
+          ctx.font = `${Math.floor(cellSize * 0.75)}px Arial`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("💀", opx, opy);
+          
+          ctx.fillStyle = "#ef4444";
+          ctx.font = `bold ${Math.max(9, Math.floor(cellSize * 0.4))}px Arial`;
+          ctx.fillText(game.lang === "tr" ? "Öldü" : "Dead", opx, opy + cellSize * 0.55);
+        } else {
+          // Cyan/Violet pulsing ring for Co-op Partner
+          const opPulse = cellSize * 0.4 + Math.sin(Date.now() * 0.008 + 1) * cellSize * 0.15;
+          ctx.fillStyle = "rgba(167, 139, 250, 0.4)"; // Soft violet glow
+          ctx.beginPath();
+          ctx.arc(opx, opy, opPulse, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Inner bright violet dot
+          ctx.fillStyle = "#a78bfa";
+          ctx.beginPath();
+          ctx.arc(opx, opy, cellSize * 0.25, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Partner direction arrow pointer (Bright Cyan arrowhead style)
+          const opAngle = op.angle;
+          const opTipX = opx + Math.cos(opAngle) * cellSize * 0.75;
+          const opTipY = opy + Math.sin(opAngle) * cellSize * 0.75;
+          
+          const opLeftX = opx + Math.cos(opAngle - 2.5) * cellSize * 0.35;
+          const opLeftY = opy + Math.sin(opAngle - 2.5) * cellSize * 0.35;
+          
+          const opRightX = opx + Math.cos(opAngle + 2.5) * cellSize * 0.35;
+          const opRightY = opy + Math.sin(opAngle + 2.5) * cellSize * 0.35;
+          
+          ctx.fillStyle = "#22d3ee"; // Bright cyan arrowhead
+          ctx.strokeStyle = "#4c1d95"; // Deep purple outline
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(opTipX, opTipY);
+          ctx.lineTo(opLeftX, opLeftY);
+          ctx.lineTo(opx, opy);
+          ctx.lineTo(opRightX, opRightY);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          
+          // Text label above player: "Arkadaşın" / "Partner"
+          ctx.fillStyle = "#a78bfa";
+          ctx.font = `bold ${Math.max(10, Math.floor(cellSize * 0.45))}px Arial`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "bottom";
+          ctx.fillText(game.lang === "tr" ? "Arkadaşın" : "Partner", opx, opy - cellSize * 0.45);
+        }
+      }
+    }
+
+    // --- Draw Map Legend (P1 / P2 Status Box) ---
+    if (game.multiplayer && game.multiplayer.isConnected && s.otherPlayer) {
+      const isTr = game.lang === "tr";
+      const legendX = 12;
+      const legendY = 16;
+      
+      ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+      ctx.fillRect(legendX - 6, legendY - 12, 140, 44);
+      ctx.strokeStyle = "rgba(167, 139, 250, 0.4)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(legendX - 6, legendY - 12, 140, 44);
+      
+      // Local player legend dot
+      ctx.fillStyle = "#ef4444";
+      ctx.beginPath();
+      ctx.arc(legendX + 6, legendY, 5, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 11px Arial";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillText(isTr ? "Sen (Kırmızı)" : "You (Red)", legendX + 16, legendY);
+      
+      // Partner legend dot
+      const op = s.otherPlayer;
+      ctx.fillStyle = "#a78bfa";
+      ctx.beginPath();
+      ctx.arc(legendX + 6, legendY + 18, 5, 0, Math.PI * 2);
+      ctx.fill();
+      
+      let p2Text = isTr ? "Arkadaşın" : "Partner";
+      if (op.isDead) {
+        p2Text += isTr ? " (Öldü 💀)" : " (Dead 💀)";
+      } else if (op.floor !== s.currentFloor) {
+        p2Text += ` (${isTr ? "Kat" : "Floor"} ${op.floor + 1})`;
+      }
+      ctx.fillStyle = "#a78bfa";
+      ctx.fillText(p2Text, legendX + 16, legendY + 18);
+    }
   };
 
   // Prevent pinch-to-zoom and gesture zooming globally on iOS/Safari

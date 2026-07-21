@@ -1121,111 +1121,190 @@ export class CanvasRenderer {
     canvas.height = 512;
     const ctx = canvas.getContext("2d");
 
-    // Start with a rich, dark organic green background representing deep shadow
-    ctx.fillStyle = "#0c1a10";
+    // Base dark slate color
+    ctx.fillStyle = "#16191b";
     ctx.fillRect(0, 0, 512, 512);
 
-    const leafColors = [
-      { start: "#112e1a", end: "#1b4d2c" }, // Dark forest green
-      { start: "#183e23", end: "#28663b" }, // Medium forest green
-      { start: "#1d4f2b", end: "#388c4d" }, // Rich green
-      { start: "#236335", end: "#41a357" }, // Vibrant leafy green
-      { start: "#2d7f45", end: "#55bf71" }, // Bright green
-      { start: "#3da65a", end: "#7ad98e" }, // Yellow-green new growth
-      { start: "#4b8c3f", end: "#8bbd78" }  // Olive/yellow-green spring leaf
-    ];
-
-    let seed = 7711;
+    let seed = 3344;
     const rng = () => {
       seed = (seed * 9301 + 49297) % 233280;
       return seed / 233280;
     };
 
-    const drawSoftLeaf = (cCtx, lx, ly, lSize, lAngle, colors) => {
-      cCtx.save();
-      cCtx.translate(lx, ly);
-      cCtx.rotate(lAngle);
+    // Draw irregular ancient stone blocks
+    const rowHeights = [70, 75, 80, 72, 78, 68, 69]; // Sums to ~512
+    let currentY = 0;
+    const blockRows = [];
 
-      // Create a smooth linear gradient along the length of the leaf (from stem to tip)
-      const grad = cCtx.createLinearGradient(0, lSize, 0, -lSize);
-      grad.addColorStop(0.0, colors.start);
-      grad.addColorStop(0.7, colors.end);
-      grad.addColorStop(1.0, colors.end === "#7ad98e" || colors.end === "#8bbd78" ? "#b2f2b4" : colors.end);
+    for (let r = 0; r < rowHeights.length; r++) {
+      const h = rowHeights[r];
+      let currentX = 0;
+      const rowBlocks = [];
 
-      cCtx.fillStyle = grad;
+      // Generate random block widths
+      while (currentX < 512) {
+        const w = 90 + Math.floor(rng() * 110); // 90 to 200 width
+        const blockW = Math.min(w, 512 - currentX + 50); // allow wrapping overhang
+        rowBlocks.push({ x: currentX, w: blockW });
+        currentX += w;
+      }
+      blockRows.push({ y: currentY, h: h, blocks: rowBlocks });
+      currentY += h;
+    }
 
-      // Soft drop shadow built-in using transparent dark green shape beneath the leaf
-      cCtx.shadowColor = "rgba(4, 15, 8, 0.4)";
-      cCtx.shadowBlur = 4;
-      cCtx.shadowOffsetX = 1;
-      cCtx.shadowOffsetY = 2;
+    // Draw stone blocks with chiseled textures, moss, and cracks
+    for (const row of blockRows) {
+      for (const block of row.blocks) {
+        ctx.save();
+        
+        // Base stone color with slight variation
+        const baseShade = 24 + Math.floor(rng() * 15); // very dark slate
+        const rColor = baseShade + Math.floor(rng() * 6);
+        const gColor = baseShade + 6 + Math.floor(rng() * 4); // slightly green-mossy tint
+        const bColor = baseShade + 2;
+        ctx.fillStyle = `rgb(${rColor}, ${gColor}, ${bColor})`;
+        ctx.fillRect(block.x, row.y, block.w, row.h);
 
-      // Rounded oval boxwood leaf geometry
-      cCtx.beginPath();
-      cCtx.moveTo(0, -lSize);
-      cCtx.bezierCurveTo(lSize * 0.65, -lSize * 0.7, lSize * 0.65, lSize * 0.7, 0, lSize);
-      cCtx.bezierCurveTo(-lSize * 0.65, lSize * 0.7, -lSize * 0.65, -lSize * 0.7, 0, -lSize);
-      cCtx.closePath();
-      cCtx.fill();
+        // Chiseled stone texture (inner noise & weathering)
+        for (let j = 0; j < 15; j++) {
+          const wx = block.x + rng() * block.w;
+          const wy = row.y + rng() * row.h;
+          const wRad = 10 + rng() * 30;
+          const wShade = rng() > 0.5 ? 4 : -4;
+          
+          const wGrad = ctx.createRadialGradient(wx, wy, 0, wx, wy, wRad);
+          wGrad.addColorStop(0.0, `rgba(255, 255, 255, ${wShade > 0 ? 0.05 : 0.0})`);
+          wGrad.addColorStop(1.0, `rgba(0, 0, 0, ${wShade < 0 ? 0.15 : 0.0})`);
+          
+          ctx.fillStyle = wGrad;
+          ctx.beginPath();
+          ctx.arc(wx, wy, wRad, 0, Math.PI * 2);
+          ctx.fill();
+        }
 
-      // Clear shadows for details
-      cCtx.shadowColor = "transparent";
+        // Wet moss decay creeping from bottom and joints
+        const mossGrad = ctx.createLinearGradient(block.x, row.y + row.h, block.x, row.y);
+        mossGrad.addColorStop(0.0, "rgba(10, 22, 12, 0.45)"); // dark olive-black mold
+        mossGrad.addColorStop(0.4, "rgba(15, 30, 18, 0.2)");
+        mossGrad.addColorStop(1.0, "rgba(0, 0, 0, 0)");
+        ctx.fillStyle = mossGrad;
+        ctx.fillRect(block.x, row.y, block.w, row.h);
 
-      // Subtle light-colored leaf midrib (vein) - very thin and soft
-      cCtx.strokeStyle = "rgba(255, 255, 255, 0.15)";
-      cCtx.lineWidth = 0.8;
-      cCtx.beginPath();
-      cCtx.moveTo(0, lSize * 0.8);
-      cCtx.lineTo(0, -lSize * 0.7);
-      cCtx.stroke();
+        // Weathering lines/cracks inside the stone
+        ctx.strokeStyle = "rgba(0, 0, 0, 0.4)";
+        ctx.lineWidth = 1.0;
+        if (rng() > 0.5) {
+          ctx.beginPath();
+          const cx = block.x + rng() * block.w;
+          const cy = row.y;
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + (rng() - 0.5) * 15, cy + rng() * row.h * 0.6);
+          ctx.stroke();
+        }
 
-      cCtx.restore();
-    };
-
-    // Layer 1200 leaves to build a dense, bushy boxwood structure
-    for (let i = 0; i < 1200; i++) {
-      const x = rng() * 512;
-      const y = rng() * 512;
-      const size = 10.0 + rng() * 12.0;
-      const angle = (rng() * 360) * Math.PI / 180;
-      
-      const layerProgress = i / 1200;
-      const colorIndex = Math.floor(rng() * leafColors.length * (0.4 + layerProgress * 0.6));
-      const colPair = leafColors[Math.min(leafColors.length - 1, colorIndex)];
-
-      drawSoftLeaf(ctx, x, y, size, angle, colPair);
-
-      const offsets = [];
-      if (x < size) offsets.push([512, 0]);
-      if (x > 512 - size) offsets.push([-512, 0]);
-      if (y < size) offsets.push([0, 512]);
-      if (y > 512 - size) offsets.push([0, -512]);
-
-      if (x < size && y < size) offsets.push([512, 512]);
-      if (x > 512 - size && y < size) offsets.push([-512, 512]);
-      if (x < size && y > 512 - size) offsets.push([512, -512]);
-      if (x > 512 - size && y > 512 - size) offsets.push([-512, -512]);
-
-      for (const [ox, oy] of offsets) {
-        drawSoftLeaf(ctx, x + ox, y + oy, size, angle, colPair);
+        ctx.restore();
       }
     }
 
-    // Add photographic grain overlay (noise) to eliminate flat digital gradients
+    // Draw deep mortar joints (black cracks) between blocks
+    ctx.strokeStyle = "#08090a";
+    ctx.lineWidth = 4;
+    for (const row of blockRows) {
+      // Horizontal joint
+      ctx.beginPath();
+      ctx.moveTo(0, row.y);
+      ctx.lineTo(512, row.y);
+      ctx.stroke();
+
+      // Vertical joints
+      for (const block of row.blocks) {
+        ctx.beginPath();
+        ctx.moveTo(block.x, row.y);
+        ctx.lineTo(block.x, row.y + row.h);
+        ctx.stroke();
+      }
+    }
+
+    // Creeping ancient roots (dark grey-brown woody vines) wrapping around the ruins
+    const drawRootBranch = (startX, startY, length, angle, startWidth) => {
+      let cx = startX;
+      let cy = startY;
+      let w = startWidth;
+      
+      ctx.strokeStyle = "#1a1614"; // very dark root bark
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+
+      const segments = Math.floor(15 + rng() * 20);
+      const step = length / segments;
+
+      for (let i = 0; i < segments; i++) {
+        const dev = (rng() - 0.5) * 0.6;
+        angle += dev;
+        
+        const nx = cx + Math.cos(angle) * step;
+        const ny = cy + Math.sin(angle) * step;
+
+        ctx.lineWidth = w;
+        ctx.lineTo(nx, ny);
+
+        w *= 0.94;
+        cx = nx;
+        cy = ny;
+
+        const wrapX = cx < 0 ? cx + 512 : (cx > 512 ? cx - 512 : cx);
+        const wrapY = cy < 0 ? cy + 512 : (cy > 512 ? cy - 512 : cy);
+
+        if (w > 1.5 && rng() < 0.12) {
+          drawRootBranch(wrapX, wrapY, length * 0.5, angle + (rng() > 0.5 ? 0.8 : -0.8), w * 0.7);
+        }
+      }
+      ctx.stroke();
+
+      // Draw subtle wet wood highlight on roots to catch spotlight
+      cx = startX;
+      cy = startY;
+      w = startWidth;
+      ctx.strokeStyle = "rgba(75, 65, 58, 0.4)"; // soft brown highlight
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      for (let i = 0; i < segments; i++) {
+        const dev = (rng() - 0.5) * 0.6;
+        angle += dev;
+        const nx = cx + Math.cos(angle) * step;
+        const ny = cy + Math.sin(angle) * step;
+        ctx.lineWidth = w * 0.3;
+        ctx.lineTo(nx, ny);
+        w *= 0.94;
+        cx = nx;
+        cy = ny;
+      }
+      ctx.stroke();
+    };
+
+    // Spawn 5 main creeping root clusters climbing up from the base
+    for (let r = 0; r < 5; r++) {
+      const rx = rng() * 512;
+      const ry = 512;
+      drawRootBranch(rx, ry, 200 + rng() * 150, -Math.PI / 2 + (rng() - 0.5) * 0.5, 6.0 + rng() * 4.0);
+    }
+
+    // Add fine photographic slate texture noise
     const imgData = ctx.getImageData(0, 0, 512, 512);
     const data = imgData.data;
     for (let i = 0; i < data.length; i += 4) {
-      const noise = (rng() - 0.5) * 12;
-      data[i] = Math.max(0, Math.min(255, data[i] + noise));     // Red
-      data[i+1] = Math.max(0, Math.min(255, data[i+1] + noise * 1.1)); // Green
-      data[i+2] = Math.max(0, Math.min(255, data[i+2] + noise * 0.9)); // Blue
+      const noise = (rng() - 0.5) * 8;
+      data[i] = Math.max(0, Math.min(255, data[i] + noise));
+      data[i+1] = Math.max(0, Math.min(255, data[i+1] + noise * 0.95));
+      data[i+2] = Math.max(0, Math.min(255, data[i+2] + noise * 0.9));
     }
     ctx.putImageData(imgData, 0, 0);
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(1.5, 1.5);
+    texture.repeat.set(1.0, 1.0); // 1:1 mapping is perfect for ruins
     return texture;
   }
 
@@ -1235,58 +1314,147 @@ export class CanvasRenderer {
     canvas.height = 512;
     const ctx = canvas.getContext("2d");
 
-    // Base neutral gray (mid level bump)
-    ctx.fillStyle = "#808080"; 
+    // Base stone height (medium gray)
+    ctx.fillStyle = "#808080";
     ctx.fillRect(0, 0, 512, 512);
 
-    let seed = 7711; // Match seed for coordinate alignment
+    let seed = 3344; // Match coordinate seed exactly
     const rng = () => {
       seed = (seed * 9301 + 49297) % 233280;
       return seed / 233280;
     };
 
-    // Draw soft, pillowy humps instead of sharp leaf outlines
-    // This creates natural light diffusion without harsh specular glares!
-    for (let i = 0; i < 900; i++) {
-      const x = rng() * 512;
-      const y = rng() * 512;
-      const size = 15.0 + rng() * 25.0; // Larger, softer humps
-      const colRand = rng(); // Keep RNG sequence aligned
-      
-      const progress = i / 900;
-      const shade = 100 + Math.floor(progress * 60); // Max range 100-160 (low contrast, extremely smooth!)
+    // Calculate layout identical to color texture
+    const rowHeights = [70, 75, 80, 72, 78, 68, 69];
+    let currentY = 0;
+    const blockRows = [];
 
-      const grad = ctx.createRadialGradient(x, y, 0, x, y, size);
-      grad.addColorStop(0.0, `rgba(${shade}, ${shade}, ${shade}, 0.25)`);
-      grad.addColorStop(1.0, "rgba(128, 128, 128, 0)"); // fade out
-
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(x, y, size, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Wrap seams
-      const offsets = [];
-      if (x < size) offsets.push([512, 0]);
-      if (x > 512 - size) offsets.push([-512, 0]);
-      if (y < size) offsets.push([0, 512]);
-      if (y > 512 - size) offsets.push([0, -512]);
-
-      for (const [ox, oy] of offsets) {
-        const wrapGrad = ctx.createRadialGradient(x + ox, y + oy, 0, x + ox, y + oy, size);
-        wrapGrad.addColorStop(0.0, `rgba(${shade}, ${shade}, ${shade}, 0.25)`);
-        wrapGrad.addColorStop(1.0, "rgba(128, 128, 128, 0)");
-        ctx.fillStyle = wrapGrad;
-        ctx.beginPath();
-        ctx.arc(x + ox, y + oy, size, 0, Math.PI * 2);
-        ctx.fill();
+    for (let r = 0; r < rowHeights.length; r++) {
+      const h = rowHeights[r];
+      let currentX = 0;
+      const rowBlocks = [];
+      while (currentX < 512) {
+        const w = 90 + Math.floor(rng() * 110);
+        const blockW = Math.min(w, 512 - currentX + 50);
+        rowBlocks.push({ x: currentX, w: blockW });
+        currentX += w;
       }
+      blockRows.push({ y: currentY, h: h, blocks: rowBlocks });
+      currentY += h;
+    }
+
+    // Draw stone bump variations (chisel patterns)
+    for (const row of blockRows) {
+      for (const block of row.blocks) {
+        ctx.save();
+        
+        const baseHeight = 120 + Math.floor(rng() * 20); // 120 to 140
+        ctx.fillStyle = `rgb(${baseHeight}, ${baseHeight}, ${baseHeight})`;
+        ctx.fillRect(block.x, row.y, block.w, row.h);
+
+        // Chisel weathering pits
+        for (let j = 0; j < 15; j++) {
+          const wx = block.x + rng() * block.w;
+          const wy = row.y + rng() * row.h;
+          const wRad = 10 + rng() * 30;
+          const wShade = rng() > 0.5 ? 10 : -15; // indentations/protrusions
+          
+          const wGrad = ctx.createRadialGradient(wx, wy, 0, wx, wy, wRad);
+          wGrad.addColorStop(0.0, `rgba(${128 + wShade}, ${128 + wShade}, ${128 + wShade}, 0.25)`);
+          wGrad.addColorStop(1.0, "rgba(128, 128, 128, 0)");
+          
+          ctx.fillStyle = wGrad;
+          ctx.beginPath();
+          ctx.arc(wx, wy, wRad, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        if (rng() > 0.5) {
+          rng();
+          rng();
+        }
+
+        ctx.restore();
+      }
+    }
+
+    // Draw deep mortar cracks (black channels in bump map)
+    ctx.strokeStyle = "#101010"; // very deep recessed grooves
+    ctx.lineWidth = 5;
+    for (const row of blockRows) {
+      ctx.beginPath();
+      ctx.moveTo(0, row.y);
+      ctx.lineTo(512, row.y);
+      ctx.stroke();
+
+      for (const block of row.blocks) {
+        ctx.beginPath();
+        ctx.moveTo(block.x, row.y);
+        ctx.lineTo(block.x, row.y + row.h);
+        ctx.stroke();
+      }
+    }
+
+    // Draw roots as raised ridges (brighter values in bump map)
+    const drawRootBumpBranch = (startX, startY, length, angle, startWidth) => {
+      let cx = startX;
+      let cy = startY;
+      let w = startWidth;
+
+      ctx.strokeStyle = "rgba(160, 160, 160, 0.4)"; // raised height ridge
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+
+      const segments = Math.floor(15 + rng() * 20);
+      const step = length / segments;
+
+      for (let i = 0; i < segments; i++) {
+        const dev = (rng() - 0.5) * 0.6;
+        angle += dev;
+        const nx = cx + Math.cos(angle) * step;
+        const ny = cy + Math.sin(angle) * step;
+        ctx.lineWidth = w;
+        ctx.lineTo(nx, ny);
+        w *= 0.94;
+        cx = nx;
+        cy = ny;
+
+        const wrapX = cx < 0 ? cx + 512 : (cx > 512 ? cx - 512 : cx);
+        const wrapY = cy < 0 ? cy + 512 : (cy > 512 ? cy - 512 : cy);
+
+        if (w > 1.5 && rng() < 0.12) {
+          drawRootBumpBranch(wrapX, wrapY, length * 0.5, angle + (rng() > 0.5 ? 0.8 : -0.8), w * 0.7);
+        }
+      }
+      ctx.stroke();
+
+      // Consume inner highlight RNG
+      cx = startX;
+      cy = startY;
+      w = startWidth;
+      for (let i = 0; i < segments; i++) {
+        const dev = (rng() - 0.5) * 0.6;
+        angle += dev;
+        const nx = cx + Math.cos(angle) * step;
+        const ny = cy + Math.sin(angle) * step;
+        w *= 0.94;
+        cx = nx;
+        cy = ny;
+      }
+    };
+
+    // Draw the identical 5 root clusters in bump map space
+    for (let r = 0; r < 5; r++) {
+      const rx = rng() * 512;
+      const ry = 512;
+      drawRootBumpBranch(rx, ry, 200 + rng() * 150, -Math.PI / 2 + (rng() - 0.5) * 0.5, 6.0 + rng() * 4.0);
     }
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(1.5, 1.5);
+    texture.repeat.set(1.0, 1.0);
     return texture;
   }
 
@@ -2039,9 +2207,9 @@ export class CanvasRenderer {
     const hedgeMat = new THREE.MeshStandardMaterial({ 
       map: this.hedgeTexture, 
       bumpMap: this.hedgeBump,
-      bumpScale: 0.04,
+      bumpScale: 0.08,
       color: "#ffffff", 
-      roughness: 0.95 
+      roughness: 0.85 
     });
 
     const capMat = new THREE.MeshStandardMaterial({
@@ -3350,56 +3518,6 @@ export class CanvasRenderer {
           // 3. Floor-Specific Wall Decorations (Deterministic, zero-lag placement on wall faces facing open corridors)
           const wallRand = Math.abs(Math.sin(x * 37.129 + y * 91.83) * 43758.54) % 1;
           const isFloor = (tx, ty) => (tx >= 0 && tx < width && ty >= 0 && ty < height && grid[ty][tx].type !== "wall");
-
-          if (currentFloor === 0) {
-            // Add organic volumetric foliage puffs to break the flat box silhouette
-            // of the hedge walls. We only add them to faces facing open corridor cells to keep polycount low.
-            const directions = [
-              { dx: -1, dy: 0, nx: -1, nz: 0 }, // West
-              { dx: 1, dy: 0, nx: 1, nz: 0 },  // East
-              { dx: 0, dy: -1, nx: 0, nz: -1 }, // North
-              { dx: 0, dy: 1, nx: 0, nz: 1 }   // South
-            ];
-
-            let wSeed = x * 17.53 + y * 23.87;
-            const wRng = () => {
-              wSeed = Math.sin(wSeed) * 10000;
-              return wSeed - Math.floor(wSeed);
-            };
-
-            for (const dir of directions) {
-              if (isFloor(x + dir.dx, y + dir.dy)) {
-                // Spawn 4 to 6 overlapping organic leaf spheres on this face
-                const numPuffs = 4 + Math.floor(wRng() * 3);
-                for (let p = 0; p < numPuffs; p++) {
-                  const puffRad = 0.20 + wRng() * 0.14;
-                  const puffGeo = new THREE.SphereGeometry(puffRad, 6, 5);
-                  puffGeo.scale(1.0, 0.75 + wRng() * 0.5, 1.0 + wRng() * 0.4);
-                  
-                  const puffMesh = new THREE.Mesh(puffGeo, activeWallMat);
-                  
-                  const u = (wRng() - 0.5) * 0.72; // tangent along wall width
-                  const v = 0.20 + wRng() * 0.88;   // height along wall
-                  
-                  if (dir.nx !== 0) {
-                    puffMesh.position.set(
-                      dir.nx * (0.5 + puffRad * 0.20),
-                      v,
-                      u
-                    );
-                  } else {
-                    puffMesh.position.set(
-                      u,
-                      v,
-                      dir.nz * (0.5 + puffRad * 0.20)
-                    );
-                  }
-                  
-                  colGroup.add(puffMesh);
-                }
-              }
-            }
-          }
 
           let wallProp = null;
 

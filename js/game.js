@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=69";
-import { AudioEngine } from "./audio.js?v=69";
-import { CanvasRenderer } from "./canvas.js?v=69";
-import { translations } from "./translations.js?v=69";
-import { randomEvents, deathEvents } from "./events.js?v=69";
-import { getSeededRandom } from "./prng.js?v=69";
+import { generateMaze } from "./maze.js?v=70";
+import { AudioEngine } from "./audio.js?v=70";
+import { CanvasRenderer } from "./canvas.js?v=70";
+import { translations } from "./translations.js?v=70";
+import { randomEvents, deathEvents } from "./events.js?v=70";
+import { getSeededRandom } from "./prng.js?v=70";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -2122,8 +2122,19 @@ export class Game {
           
           sm.spawnTimer = minSpawn + Math.random() * (maxSpawn - minSpawn);
 
-          const pCellX = Math.floor(p.x);
-          const pCellY = Math.floor(p.y);
+          // In co-op, pick focus position from alive players (50/50 chance between Player 1 & Player 2 if both alive)
+          let focusX = p.x;
+          let focusY = p.y;
+          if (isCoop && s.otherPlayer && !s.otherPlayer.isDead) {
+            const p1Alive = p && !p.isDead;
+            if (!p1Alive || Math.random() < 0.5) {
+              focusX = s.otherPlayer.x;
+              focusY = s.otherPlayer.y;
+            }
+          }
+
+          const pCellX = Math.floor(focusX);
+          const pCellY = Math.floor(focusY);
           const grid = s.floors[s.currentFloor];
 
           // Collect all candidate path cells within range (but NOT inside the 8x8 region around the player!)

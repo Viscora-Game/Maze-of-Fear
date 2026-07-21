@@ -147,6 +147,7 @@ export class CanvasRenderer {
     this.woodTexture = this.buildWoodTexture();
     this.woodBump = null;
     this.floorTexture = this.buildFloorTexture();
+    this.floorBump = this.buildFloorBump();
 
     // Load jumpscare texture directly using URL constructor for Vite asset resolution compatibility
     const jumpscareUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
@@ -969,11 +970,10 @@ export class CanvasRenderer {
     canvas.height = 256;
     const ctx = canvas.getContext("2d");
 
-    // Base stone color
-    ctx.fillStyle = "#334155"; // Slate gray base
+    // Base slate stone color
+    ctx.fillStyle = "#2d3748"; 
     ctx.fillRect(0, 0, 256, 256);
 
-    // Draw stone brick pattern
     const rows = 8;
     const cols = 4;
     const rh = 256 / rows;
@@ -983,9 +983,9 @@ export class CanvasRenderer {
       const y = r * rh;
       const offset = (r % 2 === 0) ? 0 : cw / 2;
       
-      // Horizontal mortar line
-      ctx.strokeStyle = "#1e293b";
-      ctx.lineWidth = 2;
+      // Mortar lines (darker recessed joints)
+      ctx.strokeStyle = "#1a202c";
+      ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.moveTo(0, y);
       ctx.lineTo(256, y);
@@ -994,34 +994,46 @@ export class CanvasRenderer {
       for (let c = -1; c <= cols; c++) {
         const x = c * cw + offset;
         
-        // Vertical mortar line
         ctx.beginPath();
         ctx.moveTo(x, y);
         ctx.lineTo(x, y + rh);
         ctx.stroke();
 
-        // Add subtle shading/noise inside each brick
         ctx.save();
         ctx.rect(x + 2, y + 2, cw - 4, rh - 4);
         ctx.clip();
         
-        // Randomized shading gradient
-        const brickSeed = (r * 13 + c * 37) % 100;
-        const shade = -15 + (brickSeed % 30); // offset brightness
-        const color = `rgba(${51 + shade}, ${65 + shade}, ${85 + shade}, 0.8)`;
-        ctx.fillStyle = color;
+        // Deterministic stone shade variation
+        const brickSeed = (r * 17 + c * 31) % 100;
+        const shade = -12 + (brickSeed % 24);
+        
+        // Base brick fill with slight blue/grey slate variation
+        ctx.fillStyle = `rgb(${45 + shade}, ${55 + shade}, ${72 + shade})`;
         ctx.fillRect(x, y, cw, rh);
 
-        // Noise overlay
-        for (let i = 0; i < 40; i++) {
-          const nx = x + ((brickSeed * i + 17) % Math.floor(cw));
-          const ny = y + ((brickSeed * i + 79) % Math.floor(rh));
-          const nr = 1 + (i % 2);
-          ctx.fillStyle = (i % 2 === 0) ? "rgba(0,0,0,0.15)" : "rgba(255,255,255,0.08)";
+        // Soft linear gradient for natural stone beveling/shading
+        const grad = ctx.createLinearGradient(x, y, x + cw, y + rh);
+        grad.addColorStop(0, "rgba(255,255,255,0.06)");
+        grad.addColorStop(0.5, "rgba(0,0,0,0)");
+        grad.addColorStop(1, "rgba(0,0,0,0.18)");
+        ctx.fillStyle = grad;
+        ctx.fillRect(x, y, cw, rh);
+
+        // Draw 1-2 subtle, realistic stone cracks
+        if (brickSeed % 3 === 0) {
+          ctx.strokeStyle = "rgba(0,0,0,0.3)";
+          ctx.lineWidth = 1;
           ctx.beginPath();
-          ctx.arc(nx, ny, nr, 0, Math.PI * 2);
-          ctx.fill();
+          const startX = x + 5 + (brickSeed % 20);
+          const startY = y + 3;
+          ctx.moveTo(startX, startY);
+          ctx.lineTo(startX + (brickSeed % 10) - 5, startY + 12);
+          if (brickSeed % 6 === 0) {
+            ctx.lineTo(startX + (brickSeed % 15) - 7, startY + rh - 4);
+          }
+          ctx.stroke();
         }
+
         ctx.restore();
       }
     }
@@ -1040,7 +1052,7 @@ export class CanvasRenderer {
     canvas.height = 256;
     const ctx = canvas.getContext("2d");
 
-    // Flat mid-gray base
+    // Base midtone gray
     ctx.fillStyle = "#808080";
     ctx.fillRect(0, 0, 256, 256);
 
@@ -1053,27 +1065,46 @@ export class CanvasRenderer {
       const y = r * rh;
       const offset = (r % 2 === 0) ? 0 : cw / 2;
       
-      // Dark mortar grooves (recessed)
+      // Recessed horizontal mortar lines (dark gray = recessed)
       ctx.fillStyle = "#333333";
       ctx.fillRect(0, y, 256, 3);
 
       for (let c = -1; c <= cols; c++) {
         const x = c * cw + offset;
+        // Recessed vertical mortar lines
         ctx.fillRect(x, y, 3, rh);
 
-        // Raised brick face (lighter = raised)
-        const brickSeed = (r * 13 + c * 37) % 100;
-        const shade = 140 + (brickSeed % 40);
-        ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade})`;
-        ctx.fillRect(x + 4, y + 4, cw - 8, rh - 8);
+        const brickSeed = (r * 17 + c * 31) % 100;
+        ctx.save();
+        ctx.rect(x + 2, y + 2, cw - 4, rh - 4);
+        ctx.clip();
 
-        // Subtle surface noise on bricks
-        for (let i = 0; i < 15; i++) {
-          const nx = x + 4 + ((brickSeed * i + 17) % Math.max(1, Math.floor(cw - 8)));
-          const ny = y + 4 + ((brickSeed * i + 79) % Math.max(1, Math.floor(rh - 8)));
-          ctx.fillStyle = (i % 2 === 0) ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.08)";
-          ctx.fillRect(nx, ny, 2, 2);
+        // Base brick face elevation
+        const baseShade = 140 + (brickSeed % 25);
+        
+        // Beveled gradient (slopes up to top-left, slopes down to bottom-right)
+        const grad = ctx.createLinearGradient(x, y, x + cw, y + rh);
+        grad.addColorStop(0, `rgb(${baseShade + 20}, ${baseShade + 20}, ${baseShade + 20})`);
+        grad.addColorStop(1, `rgb(${baseShade - 20}, ${baseShade - 20}, ${baseShade - 20})`);
+        ctx.fillStyle = grad;
+        ctx.fillRect(x, y, cw, rh);
+
+        // Matching cracks (darker lines = recessed)
+        if (brickSeed % 3 === 0) {
+          ctx.strokeStyle = "#444444";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          const startX = x + 5 + (brickSeed % 20);
+          const startY = y + 3;
+          ctx.moveTo(startX, startY);
+          ctx.lineTo(startX + (brickSeed % 10) - 5, startY + 12);
+          if (brickSeed % 6 === 0) {
+            ctx.lineTo(startX + (brickSeed % 15) - 7, startY + rh - 4);
+          }
+          ctx.stroke();
         }
+
+        ctx.restore();
       }
     }
 
@@ -1362,6 +1393,66 @@ export class CanvasRenderer {
           const ny = y + 4 + ((tileSeed * i + 43) % (tileSize - 8));
           ctx.fillRect(nx, ny, 2, 2);
         }
+      }
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(2.0, 2.0);
+    return texture;
+  }
+
+  buildFloorBump() {
+    const canvas = document.createElement("canvas");
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext("2d");
+
+    // Base midtone gray
+    ctx.fillStyle = "#808080";
+    ctx.fillRect(0, 0, 256, 256);
+
+    const rows = 4;
+    const cols = 4;
+    const tileSize = 256 / rows;
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const x = c * tileSize;
+        const y = r * tileSize;
+
+        // Recessed grout lines
+        ctx.fillStyle = "#222222";
+        ctx.fillRect(x, y, tileSize, 3);
+        ctx.fillRect(x, y, 3, tileSize);
+
+        // Tile face
+        const tileSeed = (r * 17 + c * 23) % 100;
+        const baseShade = 130 + (tileSeed % 30);
+        
+        ctx.save();
+        ctx.rect(x + 2, y + 2, tileSize - 4, tileSize - 4);
+        ctx.clip();
+
+        // Beveled tile face gradient
+        const grad = ctx.createLinearGradient(x, y, x + tileSize, y + tileSize);
+        grad.addColorStop(0, `rgb(${baseShade + 15}, ${baseShade + 15}, ${baseShade + 15})`);
+        grad.addColorStop(1, `rgb(${baseShade - 15}, ${baseShade - 15}, ${baseShade - 15})`);
+        ctx.fillStyle = grad;
+        ctx.fillRect(x, y, tileSize, tileSize);
+
+        // Matching cracks
+        if (tileSeed % 4 === 0) {
+          ctx.strokeStyle = "#444444";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(x + 5, y + 5);
+          ctx.lineTo(x + tileSize * 0.4, y + tileSize * 0.35);
+          ctx.lineTo(x + tileSize * 0.45, y + tileSize * 0.7);
+          ctx.stroke();
+        }
+        ctx.restore();
       }
     }
 
@@ -1965,14 +2056,14 @@ export class CanvasRenderer {
       activeWallMat = new THREE.MeshStandardMaterial({
         map: this.brickTexture,
         bumpMap: this.brickBump,
-        bumpScale: 0.08,
+        bumpScale: 0.05,
         color: "#3a4454", // cold grey stone zindan
         roughness: 0.85
       });
       activeFloorMat = new THREE.MeshStandardMaterial({
         map: this.floorTexture,
-        bumpMap: this.brickBump,
-        bumpScale: 0.08,
+        bumpMap: this.floorBump,
+        bumpScale: 0.05,
         color: "#242830", // zindan zemin gri
         roughness: 0.9
       });
@@ -1981,14 +2072,14 @@ export class CanvasRenderer {
       activeWallMat = new THREE.MeshStandardMaterial({
         map: this.brickTexture,
         bumpMap: this.brickBump,
-        bumpScale: 0.10,
+        bumpScale: 0.06,
         color: "#4d2226", // nemli bordo/kızıl-kahve taşlar
         roughness: 0.80
       });
       activeFloorMat = new THREE.MeshStandardMaterial({
         map: this.floorTexture,
-        bumpMap: this.brickBump,
-        bumpScale: 0.10,
+        bumpMap: this.floorBump,
+        bumpScale: 0.06,
         color: "#2b1215", // nemli kan kırmızısı zemin
         roughness: 0.85
       });
@@ -2950,13 +3041,6 @@ export class CanvasRenderer {
             if (type === "gate") {
               const ironMat = new THREE.MeshStandardMaterial({ color: "#27272a", metalness: 0.85, roughness: 0.2 });
               const goldTipMat = new THREE.MeshStandardMaterial({ color: "#d97706", metalness: 0.9, roughness: 0.1 });
-              
-              // 0. Solid back wall panel (dark stone, blocks view behind gate)
-              const backWallMat = new THREE.MeshStandardMaterial({ color: "#1a1a1e", roughness: 0.95, metalness: 0.1 });
-              const backWall = new THREE.Mesh(new THREE.BoxGeometry(1.05, 1.25, 0.04), backWallMat);
-              backWall.position.set(0, 0.625, -0.02);
-              obsSubGroup.add(backWall);
-
               // 1. Solid Outer Door Frame (left post, right post, top header)
               const frameL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.25, 0.04), ironMat);
               frameL.position.set(-0.52, 0.625, 0);
@@ -3130,13 +3214,6 @@ export class CanvasRenderer {
               // Detailed Code Lock Gate: iron bars + a number pad panel in the center
               const ironMat = new THREE.MeshStandardMaterial({ color: "#27272a", metalness: 0.85, roughness: 0.2 });
               const goldTipMat = new THREE.MeshStandardMaterial({ color: "#d97706", metalness: 0.9, roughness: 0.1 });
-              
-              // 0. Solid back wall panel (dark stone, blocks view behind codeLock gate)
-              const backWallMat = new THREE.MeshStandardMaterial({ color: "#1a1a1e", roughness: 0.95, metalness: 0.1 });
-              const backWall = new THREE.Mesh(new THREE.BoxGeometry(1.05, 1.25, 0.04), backWallMat);
-              backWall.position.set(0, 0.625, -0.02);
-              obsSubGroup.add(backWall);
-
               // 1. Solid Outer Door Frame (left post, right post, top header)
               const frameL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.25, 0.04), ironMat);
               frameL.position.set(-0.52, 0.625, 0);

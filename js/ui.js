@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=77";
-import { MultiplayerManager } from "./multiplayer.js?v=77";
+import { Game } from "./game.js?v=78";
+import { MultiplayerManager } from "./multiplayer.js?v=78";
 
 const init = () => {
   const game = new Game();
@@ -784,6 +784,24 @@ function setupUI(game) {
       btnVoiceOn.classList.remove("active");
     });
   }
+
+  // Sound Test Panel preview buttons handler
+  document.querySelectorAll(".btn-test-sfx").forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (!game.audio) return;
+      game.audio.init(); // ensure Web Audio API is initialized & unlocked
+      const sound = btn.getAttribute("data-sound");
+      if (sound === "wood_chop") game.audio.playWoodChop();
+      else if (sound === "shears_cut") game.audio.playShearsCut();
+      else if (sound === "water_fill") game.audio.playWaterFill();
+      else if (sound === "shadow_spawn") game.audio.playShadowSpawn();
+      else if (sound === "shadow_groan") game.audio.playShadowGroan(2.0);
+      else if (sound === "shadow_burn") game.audio.playShadowBurn();
+      else if (sound === "scream") game.audio.playFemaleScream();
+      else if (sound === "unlock") game.audio.playUnlock();
+      else if (sound === "flashlight") game.audio.playFlashlightOn();
+    });
+  });
 
   const btnMicToggle = document.getElementById("btn-mic-toggle");
   if (btnMicToggle) {

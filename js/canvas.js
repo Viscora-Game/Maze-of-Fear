@@ -2007,6 +2007,16 @@ export class CanvasRenderer {
     this.dirLight.shadow.bias = -0.0005;
     this.scene.add(this.dirLight);
 
+    // 1c. Fixed PointLight Pool for static torches (keeps compilation count constant at exactly 6 lights)
+    this.torchLightsPool = [];
+    for (let i = 0; i < 6; i++) {
+      const pLight = new THREE.PointLight("#ea580c", 0.0, 4.0);
+      pLight.castShadow = false;
+      pLight.visible = true; // Stay in scene graph to avoid shader recompiles
+      this.scene.add(pLight);
+      this.torchLightsPool.push(pLight);
+    }
+
     // Configure Fog dynamically based on floor level
     if (this.scene.fog) {
       if (isDeepestFloor) {
@@ -2502,13 +2512,6 @@ export class CanvasRenderer {
                   flameGroup.add(blueBase);
 
                   stemGroup.add(flameGroup);
-
-                  // E. PointLight (warm light source moving along with the tilted cup)
-                  const torchLight = new THREE.PointLight("#ea580c", 2.2, 4.0);
-                  torchLight.position.set(0, 0.19, 0.02);
-                  torchLight.castShadow = false;
-                  stemGroup.add(torchLight);
-
                   // Apply 30 degrees tilt forward to the entire stem assembly
                   stemGroup.rotation.x = Math.PI / 6.0;
                   torchGroup.add(stemGroup);
@@ -2519,13 +2522,14 @@ export class CanvasRenderer {
 
                   cellGroup.add(torchGroup);
 
-                  // Register torch light and flame group for flickering animation
+                  // Register torch flame and world coordinates for dynamic light pooling in draw()
                   if (this.torches) {
+                    const worldY = 0.46 + 0.19 * Math.cos(Math.PI / 6.0); // ~0.62m height
                     this.torches.push({
-                      light: torchLight,
                       flame: flameGroup,
                       baseIntensity: 2.2,
                       worldX: x + 0.5 + mount.x,
+                      worldY: worldY,
                       worldZ: y + 0.5 + mount.z
                     });
                   }
@@ -2712,10 +2716,14 @@ export class CanvasRenderer {
 
               if (lid) {
                 lid.userData.initialX = lid.rotation.x;
+                lid.userData.gridX = x;
+                lid.userData.gridY = y;
                 this.chestLidGroups[`${x},${y}`] = lid;
               } else {
                 // If lid is not found, fallback to animating the whole clone
                 chestClone.userData.initialX = chestClone.rotation.x;
+                chestClone.userData.gridX = x;
+                chestClone.userData.gridY = y;
                 this.chestLidGroups[`${x},${y}`] = chestClone;
               }
 
@@ -2789,6 +2797,7 @@ export class CanvasRenderer {
               lockMesh.position.set(0, -0.025, 0.322); // positioned at the front-bottom edge of the lid
               lidGroup.add(lockMesh);
 
+              lidGroup.userData = { gridX: x, gridY: y };
               chestSubGroup.add(lidGroup);
               this.chestLidGroups[`${x},${y}`] = lidGroup;
             }
@@ -3041,6 +3050,14 @@ export class CanvasRenderer {
               npcMesh.position.y = 0.10;
               npcSubGroup.add(npcMesh);
             }
+
+            // Cache bone lookups on model for O(1) animation updates
+            const model = npcSubGroup.children[0];
+            if (model) {
+              model.userData.armL = typeof model.getObjectByName === "function" ? (model.getObjectByName("upper_arm.L") || model.getObjectByName("shoulder.L")) : null;
+              model.userData.armR = typeof model.getObjectByName === "function" ? (model.getObjectByName("upper_arm.R") || model.getObjectByName("shoulder.R")) : null;
+            }
+
             // Auto-rotate NPC to face toward the player's approach direction (open corridor)
             const npcIsWall = (tx, ty) => {
               if (tx < 0 || tx >= width || ty < 0 || ty >= height) return true;
@@ -3495,6 +3512,7 @@ export class CanvasRenderer {
               }
             }
 
+            obsSubGroup.userData = { gridX: x, gridY: y };
             cellGroup.add(obsSubGroup);
             this.obstacleMeshes[`${x},${y}`] = obsSubGroup;
           }
@@ -3759,6 +3777,15 @@ export class CanvasRenderer {
     this.camera.add(this.playerMesh);
 
     // 5. Pre-create and compile shadow monsters to prevent runtime allocation/compile stutters
+    this.shadowLightsPool = [];
+    for (let i = 0; i < 2; i++) {
+      const sLight = new THREE.PointLight(0xff0000, 0.0, 5.0);
+      sLight.castShadow = false;
+      sLight.visible = true; // Always visible in the scene graph to avoid recompilation
+      this.scene.add(sLight);
+      this.shadowLightsPool.push(sLight);
+    }
+
     this.shadowMonsterMeshes = [];
     const maxMonsters = 2; // Nightmare mode can have at most 2 active monsters
     for (let i = 0; i < maxMonsters; i++) {
@@ -3796,12 +3823,9 @@ export class CanvasRenderer {
         smokeGroup.add(smokeMesh);
       }
 
-      // 4. Red Point Light casting eerie glow on walls (start disabled to prevent light-uniform recompilation)
-      const shadowLight = new THREE.PointLight(0xff0000, 0.0, 5.0);
-      shadowLight.name = "shadowLight";
-      shadowLight.position.set(0, 0.75, 0.2);
-      shadowLight.visible = false;
-      mesh.add(shadowLight);
+      // Cache child sub-meshes in userData for O(1) rendering lookups
+      mesh.userData.face = faceMesh;
+      mesh.userData.smokeGroup = smokeGroup;
 
       this.scene.add(mesh);
       this.shadowMonsterMeshes.push(mesh);
@@ -3952,7 +3976,7 @@ export class CanvasRenderer {
         this.torches.sort((a, b) => a.lastDist - b.lastDist);
       }
 
-      // Capping visible lights to exactly 6 closest lights in the scene.
+      // Capping active lights to exactly 6 closest lights in the scene.
       // This maintains a constant light count of exactly 6 in the Three.js scene graph,
       // which completely prevents GPU shader recompilation stutters when walking between rooms.
       const activeLimit = Math.min(this.torches.length, 6);
@@ -3960,17 +3984,15 @@ export class CanvasRenderer {
       this.torches.forEach((t, i) => {
         const flicker = Math.sin(time * 3.3 + i) * 0.18 + Math.cos(time * 6.7 + i * 2.1) * 0.12 + Math.sin(time * 19.3 + i * 3.4) * 0.06;
         
-        if (i < activeLimit) {
-          t.light.visible = true;
+        if (i < 6 && this.torchLightsPool && this.torchLightsPool[i]) {
+          const pLight = this.torchLightsPool[i];
+          pLight.position.set(t.worldX, t.worldY || 0.62, t.worldZ);
           // Only enable intensity if it is close enough to affect player visuals (under 6.5m)
           if (t.lastDist < 6.5) {
-            t.light.intensity = t.baseIntensity + flicker;
+            pLight.intensity = t.baseIntensity + flicker;
           } else {
-            t.light.intensity = 0.0;
+            pLight.intensity = 0.0;
           }
-        } else {
-          t.light.visible = false;
-          t.light.intensity = 0.0;
         }
 
         if (t.flame) {
@@ -3988,6 +4010,15 @@ export class CanvasRenderer {
           }
         }
       });
+
+      // Ensure unused lights in the pool are turned off
+      if (this.torchLightsPool) {
+        for (let i = this.torches.length; i < 6; i++) {
+          if (this.torchLightsPool[i]) {
+            this.torchLightsPool[i].intensity = 0.0;
+          }
+        }
+      }
 
       // The first element of the sorted list is always the closest torch!
       if (this.torches[0] && typeof this.torches[0].lastDist === "number") {
@@ -4081,7 +4112,9 @@ export class CanvasRenderer {
 
     // 2. Direct Chest lid animation & gold particle burst sync (only loops over actual chest meshes, no grid loops)
     for (const key in this.chestLidGroups) {
-      const [cx, cy] = key.split(",").map(Number);
+      const lid = this.chestLidGroups[key];
+      const cx = lid.userData ? lid.userData.gridX : 0;
+      const cy = lid.userData ? lid.userData.gridY : 0;
       const cell = grid[cy] ? grid[cy][cx] : null;
       if (cell && cell.chest) {
         if (this.chestGoldMeshes[key]) {
@@ -4097,7 +4130,6 @@ export class CanvasRenderer {
             this.triggeredChests.delete(key);
           }
         }
-        const lid = this.chestLidGroups[key];
         const initialX = lid.userData && lid.userData.initialX !== undefined ? lid.userData.initialX : 0;
         const targetRot = cell.chest.opened ? initialX - 1.8 : initialX;
         lid.rotation.x += (targetRot - lid.rotation.x) * 0.15;
@@ -4106,10 +4138,12 @@ export class CanvasRenderer {
 
     // 3. Direct Obstacle mesh visibility sync
     for (const key in this.obstacleMeshes) {
-      const [ox, oy] = key.split(",").map(Number);
+      const obsMesh = this.obstacleMeshes[key];
+      const ox = obsMesh.userData ? obsMesh.userData.gridX : 0;
+      const oy = obsMesh.userData ? obsMesh.userData.gridY : 0;
       const cell = grid[oy] ? grid[oy][ox] : null;
       if (cell && cell.obstacle) {
-        this.obstacleMeshes[key].visible = !cell.obstacle.resolved;
+        obsMesh.visible = !cell.obstacle.resolved;
       }
     }
 
@@ -4301,8 +4335,8 @@ export class CanvasRenderer {
                 }
 
                 // Arms breathing/swaying (if skeletal bones are loaded)
-                const armL = typeof model.getObjectByName === "function" ? (model.getObjectByName("upper_arm.L") || model.getObjectByName("shoulder.L")) : null;
-                const armR = typeof model.getObjectByName === "function" ? (model.getObjectByName("upper_arm.R") || model.getObjectByName("shoulder.R")) : null;
+                const armL = model.userData ? model.userData.armL : null;
+                const armR = model.userData ? model.userData.armR : null;
                 if (armL) armL.rotation.z = Math.sin(time * 0.8) * 0.05;
                 if (armR) armR.rotation.z = -Math.sin(time * 0.8) * 0.05;
               }
@@ -4350,6 +4384,8 @@ export class CanvasRenderer {
         let mesh = this.shadowMonsterMeshes[index];
         if (!mesh) return;
 
+        const shadowLight = this.shadowLightsPool ? this.shadowLightsPool[index] : null;
+
         if (sm.active) {
           const time = Date.now() * 0.005 + index * 10.0;
           const burnRatio = Math.max(0.15, 1.0 - (sm.burnTime / 2.0));
@@ -4361,8 +4397,8 @@ export class CanvasRenderer {
           const dz = this.camera.position.z - sm.y;
           mesh.rotation.y = Math.atan2(dx, dz);
           
-          // Update face and light
-          const face = mesh.getObjectByName("face");
+          // Update face via O(1) cached lookup
+          const face = mesh.userData.face;
           if (face) {
             const faceScale = 1.0 + Math.sin(time * 1.5) * 0.05;
             face.scale.set(faceScale, faceScale, faceScale);
@@ -4380,14 +4416,13 @@ export class CanvasRenderer {
             }
           }
           
-          const shadowLight = mesh.getObjectByName("shadowLight");
           if (shadowLight) {
-            shadowLight.visible = true;
+            shadowLight.position.set(sm.x, 0.90 + Math.sin(time) * 0.08, sm.y);
             shadowLight.intensity = 1.2 * burnRatio;
           }
           
-          // Animate individual smoke spheres
-          const smokeGroup = mesh.getObjectByName("smokeGroup");
+          // Animate individual smoke spheres via O(1) cached lookup
+          const smokeGroup = mesh.userData.smokeGroup;
           if (smokeGroup) {
             smokeGroup.rotation.y = time * 0.2;
             smokeGroup.rotation.x = time * 0.1;
@@ -4408,13 +4443,20 @@ export class CanvasRenderer {
         } else {
           // Hide if not active (keep in pre-compiled pool)
           mesh.visible = false;
-          const shadowLight = mesh.getObjectByName("shadowLight");
           if (shadowLight) {
-            shadowLight.visible = false;
             shadowLight.intensity = 0.0;
           }
         }
       });
+
+      // Turn off any remaining pooled monster lights
+      if (this.shadowLightsPool) {
+        for (let i = state.shadowMonsters.length; i < 2; i++) {
+          if (this.shadowLightsPool[i]) {
+            this.shadowLightsPool[i].intensity = 0.0;
+          }
+        }
+      }
     }
 
     // Spawning and fading out trail particles (volumetric smoke trail) - Pooled System

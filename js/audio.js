@@ -1099,6 +1099,10 @@ export class AudioEngine {
     setTimeout(() => this._playBuffer("stinger", 0.50), 100);
   }
 
+  playFemaleScream() {
+    this.playJumpscare();
+  }
+
   // Shadow monster ambient groan (distance-based volume)
   playShadowGroan(distance) {
     if (this.muted || !this.ctx) return;

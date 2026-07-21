@@ -337,6 +337,7 @@ export class MultiplayerManager {
         
         // Sync fog of war map cells visited by remote player
         this.game.syncRemotePlayerVisited(data.x, data.y, data.floor);
+        this.updateSpatialVoice();
         break;
 
       case "CHEST_OPENED":
@@ -492,9 +493,63 @@ export class MultiplayerManager {
 
   playRemoteAudio(stream) {
     const audioElem = document.getElementById("coop-remote-audio");
-    if (audioElem) {
-      audioElem.srcObject = stream;
-      audioElem.play().catch(e => console.warn("Remote audio autoplay blocked:", e));
+    if (!audioElem) return;
+    audioElem.srcObject = stream;
+    audioElem.play().catch(e => console.warn("Remote audio autoplay blocked:", e));
+
+    if (!this.voiceAudioCtx && this.game.audio && this.game.audio.ctx) {
+      try {
+        const audioCtx = this.game.audio.ctx;
+        this.voiceSourceNode = audioCtx.createMediaElementSource(audioElem);
+        
+        this.voiceFilterNode = audioCtx.createBiquadFilter();
+        this.voiceFilterNode.type = "lowpass";
+        this.voiceFilterNode.frequency.value = 12000;
+
+        this.voiceGainNode = audioCtx.createGain();
+        this.voiceGainNode.gain.value = 1.0;
+
+        this.voiceSourceNode.connect(this.voiceFilterNode);
+        this.voiceFilterNode.connect(this.voiceGainNode);
+        this.voiceGainNode.connect(audioCtx.destination);
+        this.voiceAudioCtx = audioCtx;
+      } catch (e) {
+        console.warn("Spatial voice Web Audio setup fallback:", e);
+      }
+    }
+  }
+
+  updateSpatialVoice() {
+    if (!this.voiceGainNode || !this.voiceFilterNode || !this.game.state) return;
+    const s = this.game.state;
+    const p1 = s.player;
+    const p2 = s.otherPlayer;
+    if (!p1 || !p2) return;
+
+    const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+    const sameFloor = (p1.floor === p2.floor);
+
+    let targetVolume = 1.0;
+    let targetCutoff = 12000;
+
+    if (!sameFloor) {
+      targetVolume = 0.35; // Minimum 35% volume (never cut off completely!)
+      targetCutoff = 450;  // Deep muffled echo through floor shaft
+    } else {
+      if (dist <= 5.0) {
+        targetVolume = 1.0;
+        targetCutoff = 12000;
+      } else {
+        const factor = Math.min(1.0, (dist - 5.0) / 25.0);
+        targetVolume = 1.0 - factor * 0.65;    // Drops from 1.0 to 0.35 minimum
+        targetCutoff = 12000 - factor * 11400; // Drops from 12000 Hz to 600 Hz (muffled through stone corridors)
+      }
+    }
+
+    const now = this.voiceAudioCtx ? this.voiceAudioCtx.currentTime : 0;
+    if (now) {
+      this.voiceGainNode.gain.setTargetAtTime(targetVolume, now, 0.1);
+      this.voiceFilterNode.frequency.setTargetAtTime(targetCutoff, now, 0.1);
     }
   }
 

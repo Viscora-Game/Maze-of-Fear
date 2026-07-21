@@ -1265,4 +1265,117 @@ export class AudioEngine {
     this.fireRumbleGain.gain.setTargetAtTime(targetVol * 0.35, now, 0.12);
     this.firePopGain.gain.setTargetAtTime(targetVol * 0.95, now, 0.12);
   }
+
+  // Procedural Axe Wood Chop SFX (for Barricades)
+  playWoodChop() {
+    if (this.muted || !this.ctx) return;
+    try {
+      const now = this.ctx.currentTime;
+      // 1. Heavy thud impact
+      const osc = this.ctx.createOscillator();
+      const oscGain = this.ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(140, now);
+      osc.frequency.exponentialRampToValueAtTime(30, now + 0.15);
+      oscGain.gain.setValueAtTime(0.7, now);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+      osc.connect(oscGain);
+      oscGain.connect(this.masterGain);
+      osc.start(now);
+      osc.stop(now + 0.2);
+
+      // 2. Wood splinter crack noise
+      const bufferSize = this.ctx.sampleRate * 0.25;
+      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.04));
+      }
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = buffer;
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = "bandpass";
+      filter.frequency.setValueAtTime(800, now);
+      filter.Q.setValueAtTime(1.5, now);
+      const noiseGain = this.ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.6, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+      noise.connect(filter);
+      filter.connect(noiseGain);
+      noiseGain.connect(this.masterGain);
+      noise.start(now);
+
+      if (typeof navigator !== "undefined" && navigator.vibrate) {
+        navigator.vibrate([70, 30, 100]);
+      }
+    } catch (e) {
+      console.warn("Error playing playWoodChop:", e);
+    }
+  }
+
+  // Procedural Shears Cut SFX (for Ivy/Vines)
+  playShearsCut() {
+    if (this.muted || !this.ctx) return;
+    try {
+      const now = this.ctx.currentTime;
+      const bufferSize = this.ctx.sampleRate * 0.15;
+      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.02));
+      }
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = buffer;
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = "highpass";
+      filter.frequency.setValueAtTime(2500, now);
+      const noiseGain = this.ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.5, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+      noise.connect(filter);
+      filter.connect(noiseGain);
+      noiseGain.connect(this.masterGain);
+      noise.start(now);
+
+      if (typeof navigator !== "undefined" && navigator.vibrate) {
+        navigator.vibrate([40, 20, 40]);
+      }
+    } catch (e) {
+      console.warn("Error playing playShearsCut:", e);
+    }
+  }
+
+  // Procedural Water Fill SFX (for Bucket at Well)
+  playWaterFill() {
+    if (this.muted || !this.ctx) return;
+    try {
+      const now = this.ctx.currentTime;
+      const bufferSize = this.ctx.sampleRate * 0.8;
+      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.sin(i * 0.05);
+      }
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = buffer;
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = "bandpass";
+      filter.frequency.setValueAtTime(450, now);
+      filter.frequency.exponentialRampToValueAtTime(1100, now + 0.7);
+      const noiseGain = this.ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.4, now);
+      noiseGain.gain.linearRampToValueAtTime(0.6, now + 0.3);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.78);
+      noise.connect(filter);
+      filter.connect(noiseGain);
+      noiseGain.connect(this.masterGain);
+      noise.start(now);
+
+      if (typeof navigator !== "undefined" && navigator.vibrate) {
+        navigator.vibrate([50, 40, 60, 40, 80]);
+      }
+    } catch (e) {
+      console.warn("Error playing playWaterFill:", e);
+    }
+  }
 }

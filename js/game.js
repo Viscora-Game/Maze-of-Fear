@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=76";
-import { AudioEngine } from "./audio.js?v=76";
-import { CanvasRenderer } from "./canvas.js?v=76";
-import { translations } from "./translations.js?v=76";
-import { randomEvents, deathEvents } from "./events.js?v=76";
-import { getSeededRandom } from "./prng.js?v=76";
+import { generateMaze } from "./maze.js?v=77";
+import { AudioEngine } from "./audio.js?v=77";
+import { CanvasRenderer } from "./canvas.js?v=77";
+import { translations } from "./translations.js?v=77";
+import { randomEvents, deathEvents } from "./events.js?v=77";
+import { getSeededRandom } from "./prng.js?v=77";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -1171,7 +1171,7 @@ export class Game {
             inv.shears--;
             if (inv.shears <= 0 && this.state.player.equippedItem === "shears") this.state.player.equippedItem = null;
             this.resolveObstacle(cell.obstacle);
-            this.audio.playSlash();
+            this.audio.playShearsCut();
             this.state.gameState = "playing";
             if (this.onStateChange) this.onStateChange();
           }
@@ -1185,7 +1185,7 @@ export class Game {
             inv.axe--;
             if (inv.axe <= 0 && this.state.player.equippedItem === "axe") this.state.player.equippedItem = null;
             this.resolveObstacle(cell.obstacle);
-            this.audio.playSlash();
+            this.audio.playWoodChop();
             this.state.gameState = "playing";
             if (this.onStateChange) this.onStateChange();
           }
@@ -1578,7 +1578,7 @@ export class Game {
           action: () => {
             inv.bucket--;
             inv.bucket_full++;
-            this.audio.playPickup();
+            this.audio.playWaterFill();
             this.state.gameState = "playing";
             if (this.onStateChange) this.onStateChange();
           }

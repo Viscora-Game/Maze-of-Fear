@@ -347,6 +347,10 @@ export class MultiplayerManager {
         this.game.updateInventoryUI();
         break;
 
+      case "COOP_ROPE_DESCEND_ALERT":
+        this.game.showCoopRopeDescendToast();
+        break;
+
       case "JUMPSCARE":
         this.game.showJumpscareForSpectator();
         break;

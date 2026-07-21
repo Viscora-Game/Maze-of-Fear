@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=70";
-import { AudioEngine } from "./audio.js?v=70";
-import { CanvasRenderer } from "./canvas.js?v=70";
-import { translations } from "./translations.js?v=70";
-import { randomEvents, deathEvents } from "./events.js?v=70";
-import { getSeededRandom } from "./prng.js?v=70";
+import { generateMaze } from "./maze.js?v=71";
+import { AudioEngine } from "./audio.js?v=71";
+import { CanvasRenderer } from "./canvas.js?v=71";
+import { translations } from "./translations.js?v=71";
+import { randomEvents, deathEvents } from "./events.js?v=71";
+import { getSeededRandom } from "./prng.js?v=71";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -869,6 +869,12 @@ export class Game {
         this.audio.playUnlock();
         this.revealArea(cellX, cellY);
         
+        if (cell.staircase === "down" && this.multiplayer && this.multiplayer.isConnected) {
+          this.multiplayer.send({
+            type: "COOP_ROPE_DESCEND_ALERT"
+          });
+        }
+
         if (typeof this.onFloorTransition === "function") {
           this.onFloorTransition(nextFloor, cell.staircase);
         } else {
@@ -2548,6 +2554,13 @@ export class Game {
         overlay.classList.add("hidden");
       }, 1500);
     }
+  }
+
+  showCoopRopeDescendToast() {
+    const msg = this.lang === "tr"
+      ? "Arkadaşın alt kata indi! Arkadaşının sana halat bulup getirmesini bekle veya tüccardan halat satın al."
+      : "Your friend descended to the lower floor! Wait for your friend to bring you a rope or buy one from the Merchant.";
+    this.showToast(msg);
   }
 
   // Interfacing with Death Choice Modals

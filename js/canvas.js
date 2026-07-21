@@ -4524,13 +4524,34 @@ export class CanvasRenderer {
               if (this.lastState) this.rebuildScene(this.lastState);
             }
           } else {
-            const dx = player.visualX - (x + 0.5);
-            const dz = player.visualY - (y + 0.5);
+            // Target selection for NPC facing direction in co-op mode:
+            // If Host and Guest are together/nearby, face Host.
+            // If Host is far away, lock onto Guest if Guest is closer/near!
+            let focusX = player.visualX;
+            let focusZ = player.visualY;
+
+            if (state && state.otherPlayer && state.otherPlayer.floor === currentFloor && !state.otherPlayer.isDead) {
+              const op = state.otherPlayer;
+              const dist1 = (player && !player.isDead) ? Math.hypot(player.visualX - (x + 0.5), player.visualY - (y + 0.5)) : 999;
+              const dist2 = Math.hypot(op.visualX - (x + 0.5), op.visualY - (y + 0.5));
+
+              // If Host is nearby (within 8m) and within 2.5m range of Guest, prioritize Host; otherwise pick closest player!
+              if (dist1 < 8.0 && dist1 <= dist2 + 2.5) {
+                focusX = player.visualX;
+                focusZ = player.visualY;
+              } else if (dist2 < dist1) {
+                focusX = op.visualX;
+                focusZ = op.visualY;
+              }
+            }
+
+            const dx = focusX - (x + 0.5);
+            const dz = focusZ - (y + 0.5);
             const dist = Math.hypot(dx, dz);
             
-            if (dist < 20.0) {
+            if (dist < 25.0) {
               const targetAngle = Math.atan2(dx, dz);
-              // Both mouse and FBX human models face +X locally, so offset by -Math.PI / 2 to face player directly
+              // Both mouse and FBX human models face +X locally, so offset by -Math.PI / 2 to face target directly
               const baseAngle = targetAngle - Math.PI / 2;
               
               let diff = baseAngle - npcGroup.rotation.y;

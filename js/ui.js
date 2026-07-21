@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=70";
-import { MultiplayerManager } from "./multiplayer.js?v=70";
+import { Game } from "./game.js?v=71";
+import { MultiplayerManager } from "./multiplayer.js?v=71";
 
 const init = () => {
   const game = new Game();
@@ -2020,7 +2020,7 @@ function setupUI(game) {
     hud.invGrid.innerHTML = "";
 
     const emojiMap = {
-      key: "🔑", shears: "✂️", bucket: "🪣", bucket_full: "💧", axe: "🪓", rope: "🪵", compass: "🧭", map_piece: "📜", fuel: "🛢️", fuel_half: "🛢️", cheese: "🧀"
+      key: "🔑", shears: "✂️", bucket: "🪣", bucket_full: "💧", axe: "🪓", rope: "🪢", compass: "🧭", map_piece: "📜", fuel: "🛢️", fuel_half: "🛢️", cheese: "🧀"
     };
 
     Object.entries(p.inventory).forEach(([itemId, count]) => {

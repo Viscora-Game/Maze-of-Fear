@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=106";
-import { MultiplayerManager } from "./multiplayer.js?v=106";
+import { Game } from "./game.js?v=107";
+import { MultiplayerManager } from "./multiplayer.js?v=107";
 
 const init = () => {
   const game = new Game();
@@ -156,8 +156,8 @@ function setupUI(game) {
 
   const showScreen = (screenName) => {
     if (screenName === "menu" || screenName === "coop") {
-      if (multiplayer) {
-        multiplayer.cleanup();
+      if (game && game.multiplayer) {
+        game.multiplayer.cleanup();
       }
     }
     // Hide all active modals and clear dialogue typewriter animations if transitioning to non-game screens (e.g. pause menu, settings, main menu)

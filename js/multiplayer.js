@@ -560,7 +560,7 @@ export class MultiplayerManager {
     if (!p1 || !p2) return;
 
     const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
-    const sameFloor = (p1.floor === p2.floor);
+    const sameFloor = (Number(p1.floor) === Number(p2.floor));
 
     let targetVolume = 1.0;
     let targetCutoff = 12000;

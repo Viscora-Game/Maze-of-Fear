@@ -4367,7 +4367,7 @@ export class CanvasRenderer {
         return;
       }
       const localDist = Math.hypot(op.x - player.x, op.y - player.y);
-      const isPartnerOnFloor = (op.floor === currentFloor && !op.isDead);
+      const isPartnerOnFloor = (Number(op.floor) === Number(currentFloor) && !op.isDead);
       
       if (isPartnerOnFloor) {
         if (op.visualX === undefined || op.visualX === null || Math.hypot(op.x - op.visualX, op.y - op.visualY) > 4.0) {
@@ -4655,7 +4655,7 @@ export class CanvasRenderer {
             let focusX = player.visualX;
             let focusZ = player.visualY;
 
-            if (state && state.otherPlayer && state.otherPlayer.floor === currentFloor && !state.otherPlayer.isDead) {
+            if (state && state.otherPlayer && Number(state.otherPlayer.floor) === Number(currentFloor) && !state.otherPlayer.isDead) {
               const op = state.otherPlayer;
               const dist1 = (player && !player.isDead) ? Math.hypot(player.visualX - (x + 0.5), player.visualY - (y + 0.5)) : 999;
               const dist2 = Math.hypot(op.visualX - (x + 0.5), op.visualY - (y + 0.5));
@@ -4814,7 +4814,7 @@ export class CanvasRenderer {
           this.shadowLightsPool[index] = shadowLight;
         }
 
-        if (sm.active && sm.floor === currentFloor) {
+        if (sm.active && Number(sm.floor) === Number(currentFloor)) {
           const time = Date.now() * 0.005 + index * 10.0;
           const burnRatio = Math.max(0.15, 1.0 - (sm.burnTime / 2.0));
           

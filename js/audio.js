@@ -18,27 +18,24 @@ export class AudioEngine {
   }
 
   init() {
-    if (this.ctx) {
-      if (this.ctx.state === "suspended") {
-        this.ctx.resume();
+    if (!this.ctx) {
+      try {
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        this.masterGain = this.ctx.createGain();
+        const startingGain = this.muted ? (0.1 * 0.3) : (this.volume * 0.3);
+        this.masterGain.gain.setValueAtTime(startingGain, this.ctx.currentTime);
+        this.masterGain.connect(this.ctx.destination);
+        this.createNoiseBuffer();
+        this.startWind();
+      } catch (e) {
+        console.warn("Web Audio API not supported", e);
+        this.ctx = null;
       }
-      return;
     }
-    try {
-      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-      this.masterGain = this.ctx.createGain();
-      // Apply the global volume scaled down by 0.3 maximum gain
-      const startingGain = this.muted ? (0.1 * 0.3) : (this.volume * 0.3);
-      this.masterGain.gain.setValueAtTime(startingGain, this.ctx.currentTime);
-      this.masterGain.connect(this.ctx.destination);
-      this.ctx.resume(); // Force immediate resume on user click gesture
-      this.createNoiseBuffer();
-      this.startWind();
-      this._preloadSounds(); // Preload all horror SFX assets
-    } catch (e) {
-      console.warn("Web Audio API not supported", e);
-      this.ctx = null;
+    if (this.ctx && this.ctx.state === "suspended") {
+      this.ctx.resume().catch(() => {});
     }
+    this._preloadSounds(); // Always trigger preloading of SFX assets
   }
 
   // Preload all audio assets in the background
@@ -58,6 +55,17 @@ export class AudioEngine {
   // Load a single sound file into buffer cache
   _loadSound(name) {
     if (this.soundBuffers[name] || this._loadingPromises[name]) return;
+    if (!this.ctx) {
+      try {
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        this.masterGain = this.ctx.createGain();
+        const startingGain = this.muted ? (0.1 * 0.3) : (this.volume * 0.3);
+        this.masterGain.gain.setValueAtTime(startingGain, this.ctx.currentTime);
+        this.masterGain.connect(this.ctx.destination);
+      } catch (e) {
+        return;
+      }
+    }
     const url = `assets/audio/${name}.wav`;
     this._loadingPromises[name] = fetch(url)
       .then(r => {
@@ -66,7 +74,9 @@ export class AudioEngine {
       })
       .then(buf => this.ctx.decodeAudioData(buf))
       .then(decoded => { this.soundBuffers[name] = decoded; })
-      .catch(() => { /* Asset not found, will fall back to synthesized */ });
+      .catch((err) => {
+        console.warn(`Could not load audio asset ${name}:`, err);
+      });
   }
 
   // Play a cached audio buffer with optional volume, playbackRate, and offset

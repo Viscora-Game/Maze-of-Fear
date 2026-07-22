@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=104";
-import { AudioEngine } from "./audio.js?v=104";
-import { CanvasRenderer } from "./canvas.js?v=104";
-import { translations } from "./translations.js?v=104";
-import { randomEvents, deathEvents } from "./events.js?v=104";
-import { getSeededRandom } from "./prng.js?v=104";
+import { generateMaze } from "./maze.js?v=105";
+import { AudioEngine } from "./audio.js?v=105";
+import { CanvasRenderer } from "./canvas.js?v=105";
+import { translations } from "./translations.js?v=105";
+import { randomEvents, deathEvents } from "./events.js?v=105";
+import { getSeededRandom } from "./prng.js?v=105";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -2164,7 +2164,7 @@ export class Game {
     s.shadowMonsters.forEach((sm, index) => {
       // In Co-op, Guest does NOT run independent monster AI physics. Guest reports flashlight burn and checks local jumpscare!
       if (isCoop && !isHost) {
-        if (sm.active && sm.floor === s.currentFloor) {
+        if (sm.active && Number(sm.floor) === Number(s.currentFloor)) {
           // A. Report Flashlight Burn to Host
           if (p.lanternOn && !p.isDead) {
             const dist = Math.hypot(sm.x - p.x, sm.y - p.y);
@@ -2566,7 +2566,7 @@ export class Game {
         }
 
         // B. Check Guest player collision on Host side
-        if (isCoop && s.otherPlayer && !s.otherPlayer.isDead && s.otherPlayer.floor === sm.floor) {
+        if (isCoop && s.otherPlayer && !s.otherPlayer.isDead && Number(s.otherPlayer.floor) === Number(sm.floor)) {
           const guestDist = Math.hypot(sm.x - s.otherPlayer.x, sm.y - s.otherPlayer.y);
           if (guestDist < 0.42 && this.hasLineOfSight(s.otherPlayer.x, s.otherPlayer.y, sm.x, sm.y, grid, s.width, s.height)) {
             sm.active = false;

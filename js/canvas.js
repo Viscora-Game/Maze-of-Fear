@@ -2666,6 +2666,38 @@ export class CanvasRenderer {
             }
           }
 
+          // B.5. Ancient Altar (🗿 - Ancient Rune Pedestal)
+          if (cell.altar) {
+            const altarGroup = new THREE.Group();
+            altarGroup.name = "altar";
+
+            // Stone base pedestal
+            const baseGeo = new THREE.BoxGeometry(0.7, 0.4, 0.7);
+            const stoneMat = new THREE.MeshPhongMaterial({
+              color: "#334155",
+              bumpMap: this.brickBump,
+              bumpScale: 0.08,
+              shininess: 25
+            });
+            const baseMesh = new THREE.Mesh(baseGeo, stoneMat);
+            baseMesh.position.set(0, 0.2, 0);
+            altarGroup.add(baseMesh);
+
+            // Inner glowing rune crystal core
+            const crystalGeo = new THREE.OctahedronGeometry(0.2, 0);
+            const crystalMat = new THREE.MeshPhongMaterial({
+              color: "#fbbf24",
+              emissive: cell.altar.used ? "#332000" : "#d97706",
+              emissiveIntensity: cell.altar.used ? 0.2 : 0.85,
+              shininess: 80
+            });
+            const crystalMesh = new THREE.Mesh(crystalGeo, crystalMat);
+            crystalMesh.position.set(0, 0.55, 0);
+            altarGroup.add(crystalMesh);
+
+            cellGroup.add(altarGroup);
+          }
+
           // C. Staircases (Rope Descent Pit or Rope Climb Point)
           if (cell.staircase) {
             const stairSubGroup = new THREE.Group();
@@ -4732,6 +4764,10 @@ export class CanvasRenderer {
 
     // 5. Update dynamic Flashlight SpotLight position & Target in world space (real-life flashlight tracking)
     if (this.lantern && this.lantern.target) {
+      const baseDist = (this.isWebView ? 9.0 : 11.0);
+      const bonus = (player && player.flashlightRangeBonus ? player.flashlightRangeBonus : 0);
+      this.lantern.distance = baseDist * (1.0 + bonus);
+
       const dir = new THREE.Vector3();
       this.camera.getWorldDirection(dir);
 

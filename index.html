@@ -11,7 +11,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js?v=115').catch(err => {
+        navigator.serviceWorker.register('sw.js?v=116').catch(err => {
           console.warn('Service Worker registration failed:', err);
         });
       });
@@ -628,6 +628,60 @@
     </div>
   </div>
 
+  <!-- Ancient Altar Upgrade Modal -->
+  <div id="modal-altar" class="modal hidden">
+    <div class="modal-content glass text-center" style="max-width: 520px; width: 92%; padding: 24px;">
+      <div style="font-size: 3.2rem; filter: drop-shadow(0 0 12px rgba(234,179,8,0.5)); margin-bottom: 4px;">🗿</div>
+      <h2 class="modal-title glow-text text-amber text-2xl font-bold" data-t="altar.title">🗿 Kadim Sunak Lütfu</h2>
+      <p class="modal-text text-slate-300 text-sm my-3" data-t="altar.desc">Kutsal ruhlara 60 Altın adayarak yolculuğun için kalıcı bir lütuf kazan.</p>
+      
+      <div class="altar-cost-tag" style="background: rgba(234,179,8,0.15); border: 1px solid rgba(234,179,8,0.4); border-radius: 8px; padding: 6px 12px; display: inline-block; color: #fbbf24; font-weight: bold; margin-bottom: 16px;">
+        💰 <span data-t="altar.cost">Bedel: 60 Altın</span>
+      </div>
+
+      <!-- Upgrade Options Container -->
+      <div id="altar-options-container" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px;">
+        <!-- Option A1 -->
+        <button id="btn-altar-a1" class="btn-modal w-full text-left p-3" style="background: rgba(15,23,42,0.7); border: 1px solid rgba(251,191,36,0.3); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer;">
+          <div>
+            <div class="font-bold text-amber text-base" data-t="altar.optionA1Title">🔦 Uzun Menzilli Odak</div>
+            <div class="text-xs text-slate-400" data-t="altar.optionA1Desc">Fener Işığı Menzili ve Canavar Yakma Mesafesi +%40</div>
+          </div>
+          <span class="btn-badge" style="background: #fbbf24; color: #000; font-weight: bold; padding: 4px 10px; border-radius: 6px; font-size: 0.78rem;">60 💰</span>
+        </button>
+
+        <!-- Option A2 -->
+        <button id="btn-altar-a2" class="btn-modal w-full text-left p-3" style="background: rgba(15,23,42,0.7); border: 1px solid rgba(251,191,36,0.3); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer;">
+          <div>
+            <div class="font-bold text-amber text-base" data-t="altar.optionA2Title">🔋 Güçlendirilmiş Hücre</div>
+            <div class="text-xs text-slate-400" data-t="altar.optionA2Desc">Pil Tüketim Hızı %40 Yavaşlar</div>
+          </div>
+          <span class="btn-badge" style="background: #fbbf24; color: #000; font-weight: bold; padding: 4px 10px; border-radius: 6px; font-size: 0.78rem;">60 💰</span>
+        </button>
+
+        <!-- Option B1 -->
+        <button id="btn-altar-b1" class="btn-modal w-full text-left p-3" style="background: rgba(15,23,42,0.7); border: 1px solid rgba(16,185,129,0.3); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer;">
+          <div>
+            <div class="font-bold text-emerald text-base" data-t="altar.optionB1Title">👟 Hızlı Adımlar</div>
+            <div class="text-xs text-slate-400" data-t="altar.optionB1Desc">Temel Yürüme Hızı Kalıcı +%25</div>
+          </div>
+          <span class="btn-badge" style="background: #10b981; color: #000; font-weight: bold; padding: 4px 10px; border-radius: 6px; font-size: 0.78rem;">60 💰</span>
+        </button>
+
+        <!-- Option B2 -->
+        <button id="btn-altar-b2" class="btn-modal w-full text-left p-3" style="background: rgba(15,23,42,0.7); border: 1px solid rgba(16,185,129,0.3); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer;">
+          <div>
+            <div class="font-bold text-emerald text-base" data-t="altar.optionB2Title">🫁 Derin Soluk</div>
+            <div class="text-xs text-slate-400" data-t="altar.optionB2Desc">Koşma Stamina Harcaması %40 Yavaşlar</div>
+          </div>
+          <span class="btn-badge" style="background: #10b981; color: #000; font-weight: bold; padding: 4px 10px; border-radius: 6px; font-size: 0.78rem;">60 💰</span>
+        </button>
+      </div>
+
+      <button id="btn-altar-close" class="btn-modal btn-danger w-full" data-t="close">Kapat</button>
+    </div>
+  </div>
+
   <!-- Landscape Only Orientation Lock Warning -->
   <div id="orientation-warning" class="orientation-warning">
     <div class="warning-content">
@@ -641,6 +695,6 @@
     <img src="assets/jumpscare.png" style="width: 100%; height: 100%; object-fit: contain; filter: brightness(1.2) contrast(1.3); transform: scale(1.1);" />
   </div>
 
-  <script type="module" src="js/ui.js?v=115"></script>
+  <script type="module" src="js/ui.js?v=116"></script>
 </body>
 </html>

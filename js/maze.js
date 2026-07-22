@@ -788,6 +788,24 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
     }
   }
 
+  // 10.5 Place Ancient Altars (🗿) on 2-floor & 3-floor levels (Floor 1 & Floor 2)
+  if (numFloors >= 2) {
+    for (let f = 1; f < numFloors; f++) {
+      const altarFreeCells = getFreeCellsInRegionAndFloor(2, f);
+      let targetCell = null;
+      if (altarFreeCells.length > 0) {
+        targetCell = altarFreeCells[Math.floor(Math.random() * altarFreeCells.length)];
+      } else {
+        const fallback = getFreeCellsInRegionAndFloor(0, f);
+        if (fallback.length > 0) targetCell = fallback[0];
+      }
+      if (targetCell) {
+        targetCell.altar = { id: `altar_f${f}`, used: false };
+        occupiedCells.push({ x: targetCell.x, y: targetCell.y, floor: f });
+      }
+    }
+  }
+
   // 11. Populate remaining dead-end chests with gold, fuel, or non-repeating unique rewards
   const placedUniqueItems = new Set();
   const uniqueItemsPool = ["compass", "map_piece", "cheese"];

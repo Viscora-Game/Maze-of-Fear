@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=115";
-import { AudioEngine } from "./audio.js?v=115";
-import { CanvasRenderer } from "./canvas.js?v=115";
-import { translations } from "./translations.js?v=115";
-import { randomEvents, deathEvents } from "./events.js?v=115";
-import { getSeededRandom } from "./prng.js?v=115";
+import { generateMaze } from "./maze.js?v=116";
+import { AudioEngine } from "./audio.js?v=116";
+import { CanvasRenderer } from "./canvas.js?v=116";
+import { translations } from "./translations.js?v=116";
+import { randomEvents, deathEvents } from "./events.js?v=116";
+import { getSeededRandom } from "./prng.js?v=116";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -716,12 +716,14 @@ export class Game {
     p.isRunning = isRunning;
     p.isMoving = isMoving;
 
-    // Walking speed: 1.8 grid cells/sec, Running speed: 2.8 grid cells/sec
-    const speed = isRunning ? 2.8 : 1.8;
+    // Walking speed: 1.8 grid cells/sec, Running speed: 2.8 grid cells/sec (modified by Altar upgrades)
+    const walkSpeed = 1.8 * (1 + (p.walkSpeedBonus || 0));
+    const runSpeed = 2.8 * (1 + (p.walkSpeedBonus || 0));
+    const speed = isRunning ? runSpeed : walkSpeed;
 
     if (isRunning) {
-      // Drain stamina when running forward (depletes in 4 seconds: 25 per second)
-      p.stamina = Math.max(0, p.stamina - dt * 25);
+      // Drain stamina when running forward (depletes in 4 seconds, reduced by Altar upgrades)
+      p.stamina = Math.max(0, p.stamina - dt * 25 * (p.staminaDrainRate || 1.0));
     } else {
       // Regenerate stamina when walking or standing (fully recovers in 15 seconds: 6.6 per second)
       p.stamina = Math.min(p.maxStamina, p.stamina + dt * 6.6);
@@ -956,7 +958,7 @@ export class Game {
       else if (this.difficulty === "easy") decayMult = 0.7;
       else if (this.difficulty === "hard") decayMult = 1.25;
       else if (this.difficulty === "nightmare") decayMult = 1.4;
-      p.fuel = Math.max(0, p.fuel - dt * (100 / 240) * decayMult);
+      p.fuel = Math.max(0, p.fuel - dt * (100 / 240) * decayMult * (p.flashlightDrainRate || 1.0));
       if (p.fuel === 0) {
         this.state.lanternOn = false; // Turn off automatically when out of fuel
       }
@@ -1276,6 +1278,7 @@ export class Game {
           else if (cell.npc && !cell.npc.disappearing) type = "npc";
           else if (cell.puzzleClue) type = "clue";
           else if (cell.loreParchment) type = "lore";
+          else if (cell.altar) type = "altar";
           
           if (type) {
             // Calculate distance to the center of the cell
@@ -1308,6 +1311,49 @@ export class Game {
       else if (interactable.type === "obstacle") this.triggerObstacleInteraction(interactable.cell);
       else if (interactable.type === "clue") this.triggerClueInteraction(interactable.cell);
       else if (interactable.type === "lore") this.triggerLoreInteraction(interactable.cell);
+      else if (interactable.type === "altar") this.triggerAltarInteraction(interactable.cell);
+    }
+  }
+
+  // Interacting with Ancient Altars (🗿)
+  triggerAltarInteraction(cell) {
+    this.state.gameState = "modal";
+    if (this.onAltar) {
+      this.onAltar({
+        cell: cell,
+        onUpgrade: (upgradeType) => {
+          const p = this.state.player;
+          if (p.gold < 60) {
+            if (this.showToast) this.showToast(this.t("altar.insufficientGold"));
+            return false;
+          }
+          p.gold -= 60;
+
+          if (upgradeType === "A1") {
+            p.flashlightRangeBonus = (p.flashlightRangeBonus || 0) + 0.40;
+            if (this.showToast) this.showToast(this.lang === "tr" ? "🔦 Uzun Menzilli Odak Kazanıldı! (+%40 Menzil)" : "🔦 Long-Range Focus Granted! (+40% Reach)");
+          } else if (upgradeType === "A2") {
+            p.flashlightDrainRate = (p.flashlightDrainRate || 1.0) * 0.60;
+            if (this.showToast) this.showToast(this.lang === "tr" ? "🔋 Güçlendirilmiş Hücre Kazanıldı! (%40 Yavaş Pil Tüketimi)" : "🔋 Reinforced Cell Granted! (40% Slower Battery Drain)");
+          } else if (upgradeType === "B1") {
+            p.walkSpeedBonus = (p.walkSpeedBonus || 0) + 0.25;
+            if (this.showToast) this.showToast(this.lang === "tr" ? "👟 Hızlı Adımlar Kazanıldı! (+%25 Yürüme Hızı)" : "👟 Swift Stride Granted! (+25% Walk Speed)");
+          } else if (upgradeType === "B2") {
+            p.staminaDrainRate = (p.staminaDrainRate || 1.0) * 0.60;
+            if (this.showToast) this.showToast(this.lang === "tr" ? "🫁 Derin Soluk Kazanıldı! (%40 Yavaş Stamina Tüketimi)" : "🫁 Deep Breath Granted! (40% Slower Stamina Drain)");
+          }
+
+          cell.altar.used = true;
+          this.state.gameState = "playing";
+          if (this.onStateChange) this.onStateChange();
+          if (this.draw) this.draw();
+          return true;
+        },
+        onClose: () => {
+          this.state.gameState = "playing";
+          if (this.onStateChange) this.onStateChange();
+        }
+      });
     }
   }
 
@@ -2341,7 +2387,8 @@ export class Game {
       // Check if player's flashlight is shining on this shadow monster
       let isBurned = false;
       if (s.lanternOn && p.fuel > 0 && p.health > 0 && !p.isDead) {
-        if (dist < 8.0) {
+        const maxBurnDist = 8.0 * (1 + (p.flashlightRangeBonus || 0));
+        if (dist < maxBurnDist) {
           const lookX = Math.cos(p.angle);
           const lookY = Math.sin(p.angle);
           const dirX = (sm.x - p.x) / dist;

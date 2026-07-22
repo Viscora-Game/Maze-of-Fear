@@ -149,6 +149,26 @@ export const translations = {
       adClose: "No thanks, take damage"
     },
 
+    // Ancient Altar System
+    altar: {
+      title: "🗿 Ancient Shrine Blessing",
+      desc: "Sacrifice 60 Gold to receive a permanent ancient blessing for your journey.",
+      cost: "Cost: 60 Gold",
+      insufficientGold: "Insufficient Gold! You need 60 Gold.",
+      pathLantern: "🔦 Lantern Blessing (60 Gold)",
+      pathAgility: "👟 Agility Blessing (60 Gold)",
+      optionA1Title: "Long-Range Focus",
+      optionA1Desc: "+40% Flashlight Beam & Monster Burn Reach",
+      optionA2Title: "Reinforced Cell",
+      optionA2Desc: "40% Slower Battery Depletion Rate",
+      optionB1Title: "Swift Stride",
+      optionB1Desc: "+25% Permanent Walking Speed",
+      optionB2Title: "Deep Breath",
+      optionB2Desc: "40% Slower Sprint Stamina Consumption",
+      purchased: "Blessing Received!",
+      alreadyUsed: "This Shrine's power has been exhausted."
+    },
+
     // NPC Dialogues
     npc: {
       mouse: {
@@ -484,6 +504,26 @@ export const translations = {
       itemReward: "Bir {item} buldunuz!",
       adUndo: "Tuzaktan Kaçmak İçin Reklam İzle",
       adClose: "Hayır, hasarı kabul et"
+    },
+
+    // Kadim Sunak Sistemi
+    altar: {
+      title: "🗿 Kadim Sunak Lütfu",
+      desc: "Kutsal ruhlara 60 Altın adayarak yolculuğun için kalıcı bir lütuf kazan.",
+      cost: "Bedel: 60 Altın",
+      insufficientGold: "Yetersiz Altın! 60 Altın gerekli.",
+      pathLantern: "🔦 Fener Lütfu (60 Altın)",
+      pathAgility: "👟 Çeviklik Lütfu (60 Altın)",
+      optionA1Title: "Uzun Menzilli Odak",
+      optionA1Desc: "Fener Işığı Menzili ve Canavar Yakma Mesafesi +%40",
+      optionA2Title: "Güçlendirilmiş Hücre",
+      optionA2Desc: "Pil Tüketim Hızı %40 Yavaşlar",
+      optionB1Title: "Hızlı Adımlar",
+      optionB1Desc: "Temel Yürüme Hızı Kalıcı +%25",
+      optionB2Title: "Derin Soluk",
+      optionB2Desc: "Koşma Stamina Harcaması %40 Yavaşlar",
+      purchased: "Lütuf Kazanıldı!",
+      alreadyUsed: "Bu sunak gücünü tüketti."
     },
 
     // NPC Dialogues

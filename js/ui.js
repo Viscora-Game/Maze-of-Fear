@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=115";
-import { MultiplayerManager } from "./multiplayer.js?v=115";
+import { Game } from "./game.js?v=116";
+import { MultiplayerManager } from "./multiplayer.js?v=116";
 
 const init = () => {
   const game = new Game();
@@ -151,7 +151,8 @@ function setupUI(game) {
     keypad: document.getElementById("modal-keypad"),
     ad: document.getElementById("modal-ad"),
     end: document.getElementById("modal-end"),
-    map: document.getElementById("modal-map")
+    map: document.getElementById("modal-map"),
+    altar: document.getElementById("modal-altar")
   };
 
   const showScreen = (screenName) => {
@@ -1729,6 +1730,52 @@ function setupUI(game) {
     }
   };
 
+  // Ancient Altar Overlay
+  game.onAltar = (config) => {
+    if (!modals.altar) return;
+    modals.altar.classList.remove("hidden");
+
+    const setupBtn = (id, type) => {
+      const btn = modals.altar.querySelector(id);
+      if (!btn) return;
+      
+      const newBtn = btn.cloneNode(true);
+      btn.parentNode.replaceChild(newBtn, btn);
+
+      if (config.cell && config.cell.altar && config.cell.altar.used) {
+        newBtn.style.opacity = "0.5";
+        newBtn.style.cursor = "not-allowed";
+        newBtn.onclick = () => {
+          if (game.showToast) game.showToast(game.t("altar.alreadyUsed"), true);
+        };
+      } else {
+        newBtn.style.opacity = "1.0";
+        newBtn.style.cursor = "pointer";
+        newBtn.onclick = () => {
+          const success = config.onUpgrade(type);
+          if (success) {
+            modals.altar.classList.add("hidden");
+          }
+        };
+      }
+    };
+
+    setupBtn("#btn-altar-a1", "A1");
+    setupBtn("#btn-altar-a2", "A2");
+    setupBtn("#btn-altar-b1", "B1");
+    setupBtn("#btn-altar-b2", "B2");
+
+    const closeBtn = modals.altar.querySelector("#btn-altar-close");
+    if (closeBtn) {
+      const newClose = closeBtn.cloneNode(true);
+      closeBtn.parentNode.replaceChild(newClose, closeBtn);
+      newClose.onclick = () => {
+        modals.altar.classList.add("hidden");
+        config.onClose();
+      };
+    }
+  };
+
   // Toast Notification System
   game.showToast = (message, isWarning = false) => {
     const container = document.getElementById("toast-container");
@@ -2719,6 +2766,20 @@ function setupUI(game) {
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillText(npcEmojis[cell.npc.id] || "?", cx + cellSize/2, cy + cellSize/2);
+          }
+
+          // Draw Ancient Altar (🗿)
+          if (cell.altar) {
+            ctx.fillStyle = cell.altar.used ? "rgba(100, 116, 139, 0.4)" : "rgba(234, 179, 8, 0.35)";
+            ctx.fillRect(cx, cy, cellSize, cellSize);
+            ctx.strokeStyle = cell.altar.used ? "#64748b" : "#eab308";
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(cx + 1, cy + 1, cellSize - 2, cellSize - 2);
+
+            ctx.font = `${Math.floor(cellSize * 0.65)}px Arial`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("🗿", cx + cellSize/2, cy + cellSize/2);
           }
         }
       }

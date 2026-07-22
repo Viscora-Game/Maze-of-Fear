@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=112";
-import { AudioEngine } from "./audio.js?v=112";
-import { CanvasRenderer } from "./canvas.js?v=112";
-import { translations } from "./translations.js?v=112";
-import { randomEvents, deathEvents } from "./events.js?v=112";
-import { getSeededRandom } from "./prng.js?v=112";
+import { generateMaze } from "./maze.js?v=113";
+import { AudioEngine } from "./audio.js?v=113";
+import { CanvasRenderer } from "./canvas.js?v=113";
+import { translations } from "./translations.js?v=113";
+import { randomEvents, deathEvents } from "./events.js?v=113";
+import { getSeededRandom } from "./prng.js?v=113";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -116,6 +116,12 @@ export class Game {
   }
 
   showJumpscare(type = "normal") {
+    const now = Date.now();
+    if (this._lastJumpscareShowTime && now - this._lastJumpscareShowTime < 3000) {
+      return; // Ignore duplicate overlapping jumpscares within 3s
+    }
+    this._lastJumpscareShowTime = now;
+
     const overlay = document.getElementById("modal-jumpscare");
     if (!overlay || typeof overlay.querySelector !== "function") return;
     const img = overlay.querySelector("img");
@@ -1503,6 +1509,8 @@ export class Game {
   triggerLoreInteraction(cell) {
     this.state.gameState = "modal";
     const loreId = cell.loreParchment;
+    cell.loreParchment = null; // Collect & remove parchment from floor cell so it does not re-trigger!
+    if (this.draw) this.draw();
     const title = this.lang === "tr" ? "Yırtık Bir Günlük Sayfası" : "A Torn Journal Page";
     const text = this.t(`lore.${loreId}`);
 

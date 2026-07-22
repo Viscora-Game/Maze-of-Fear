@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=94";
-import { MultiplayerManager } from "./multiplayer.js?v=94";
+import { Game } from "./game.js?v=95";
+import { MultiplayerManager } from "./multiplayer.js?v=95";
 
 const init = () => {
   const game = new Game();

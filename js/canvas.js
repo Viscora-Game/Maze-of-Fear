@@ -2370,24 +2370,6 @@ export class CanvasRenderer {
       });
     }
 
-    for (let y = 0; y < height; y++) {
-      const row = [];
-      for (let x = 0; x < width; x++) {
-        const cell = grid[y][x];
-        const cellGroup = new THREE.Group();
-
-        if (cell.type !== "wall") {
-          // A. Path Floor Panel
-          const floorMesh = new THREE.Mesh(floorGeo, activeFloorMat);
-          floorMesh.rotation.x = -Math.PI / 2;
-          floorMesh.position.set(0, 0, 0);
-          cellGroup.add(floorMesh);
-
-          // Add realistic, wet, semi-transparent blood pools on paths!
-          if (cell.type === "floor" && !(x === 1 && y === 1)) {
-            const cellRand = Math.abs(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1;
-            const bloodChance = isDeepestFloor ? 0.20 : (isUnderground ? 0.12 : 0.07);
-            
     // Pre-allocate shared puddle geometry and material to eliminate GPU allocation stutter
     if (!this.bloodTexture) {
       this.bloodTexture = this.buildBloodTexture();

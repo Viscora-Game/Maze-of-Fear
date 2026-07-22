@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=105";
-import { MultiplayerManager } from "./multiplayer.js?v=105";
+import { Game } from "./game.js?v=106";
+import { MultiplayerManager } from "./multiplayer.js?v=106";
 
 const init = () => {
   const game = new Game();
@@ -14,6 +14,12 @@ const init = () => {
   window.addEventListener("click", initAudioOnGesture, { passive: true });
   window.addEventListener("touchstart", initAudioOnGesture, { passive: true });
   window.addEventListener("pointerdown", initAudioOnGesture, { passive: true });
+
+  window.addEventListener("beforeunload", () => {
+    if (game && game.multiplayer) {
+      game.multiplayer.cleanup();
+    }
+  });
 };
 
 if (document.readyState === "loading") {
@@ -148,8 +154,12 @@ function setupUI(game) {
     map: document.getElementById("modal-map")
   };
 
-  // 2. State & Screen Management Helper with Minimal CSS Entry Transition
   const showScreen = (screenName) => {
+    if (screenName === "menu" || screenName === "coop") {
+      if (multiplayer) {
+        multiplayer.cleanup();
+      }
+    }
     // Hide all active modals and clear dialogue typewriter animations if transitioning to non-game screens (e.g. pause menu, settings, main menu)
     if (screenName !== "game") {
       if (typeof closeMap === "function") closeMap();

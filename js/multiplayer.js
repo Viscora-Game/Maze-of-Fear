@@ -227,16 +227,9 @@ export class MultiplayerManager {
   }
 
   cleanup() {
-    this.isConnected = false;
     this.stopHeartbeat();
-    if (this.localAudioStream) {
-      try { this.localAudioStream.getTracks().forEach(track => track.stop()); } catch(e){}
-      this.localAudioStream = null;
-    }
-    if (this.activeCall) {
-      try { this.activeCall.close(); } catch(e){}
-      this.activeCall = null;
-    }
+    this.isConnected = false;
+
     if (this.conn) {
       try { this.conn.close(); } catch(e){}
       this.conn = null;
@@ -245,6 +238,41 @@ export class MultiplayerManager {
       try { this.peer.destroy(); } catch(e){}
       this.peer = null;
     }
+
+    // Stop microphone audio tracks completely
+    if (this.localAudioStream) {
+      try {
+        this.localAudioStream.getTracks().forEach(track => track.stop());
+      } catch (e) {}
+      this.localAudioStream = null;
+    }
+
+    // Close WebRTC active call
+    if (this.activeCall) {
+      try { this.activeCall.close(); } catch (e) {}
+      this.activeCall = null;
+    }
+
+    // Stop remote audio element
+    const audioElem = document.getElementById("coop-remote-audio");
+    if (audioElem) {
+      audioElem.srcObject = null;
+      try { audioElem.pause(); } catch(e){}
+    }
+
+    if (this.game) {
+      if (this.game.state) {
+        this.game.state.otherPlayer = null;
+      }
+      if (this.game.renderer) {
+        if (this.game.renderer.otherPlayerGroup) this.game.renderer.otherPlayerGroup.visible = false;
+        if (this.game.renderer.otherPlayerLight) this.game.renderer.otherPlayerLight.intensity = 0.0;
+        this.game.renderer.otherPlayerGroup = null;
+        this.game.renderer.otherPlayerMesh = null;
+        this.game.renderer.otherPlayerLight = null;
+      }
+    }
+
     this.updateMicUI();
   }
 

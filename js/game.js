@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=87";
-import { AudioEngine } from "./audio.js?v=87";
-import { CanvasRenderer } from "./canvas.js?v=87";
-import { translations } from "./translations.js?v=87";
-import { randomEvents, deathEvents } from "./events.js?v=87";
-import { getSeededRandom } from "./prng.js?v=87";
+import { generateMaze } from "./maze.js?v=88";
+import { AudioEngine } from "./audio.js?v=88";
+import { CanvasRenderer } from "./canvas.js?v=88";
+import { translations } from "./translations.js?v=88";
+import { randomEvents, deathEvents } from "./events.js?v=88";
+import { getSeededRandom } from "./prng.js?v=88";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -781,8 +781,9 @@ export class Game {
       p.y = res.y;
     }
 
-    // Check if player actually moved (not blocked by wall collision)
-    const actuallyMoved = isMoving && (Math.abs(p.x - preX) > 0.001 || Math.abs(p.y - preY) > 0.001);
+    // Check if player actually moved (not blocked by wall collision or standing still)
+    const distMoved = Math.hypot(p.x - preX, p.y - preY);
+    const actuallyMoved = isMoving && (distMoved > 0.015);
 
     // Sync visual coordinates directly
     p.visualX = p.x;
@@ -901,13 +902,13 @@ export class Game {
 
       // Footstep audio timing (runs faster when sprinting)
       this.stepSoundTimer += dt;
-      const stepInterval = isRunning ? 0.28 : 0.45;
+      const stepInterval = isRunning ? 0.32 : 0.48;
       if (this.stepSoundTimer > stepInterval) {
         this.audio.playStep(isRunning);
         this.stepSoundTimer = 0;
       }
     } else {
-      this.stepSoundTimer = 999; // Prime step timer for instant sound on next move start
+      this.stepSoundTimer = 0;
       this.audio.stopStep();
     }
 

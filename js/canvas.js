@@ -2085,7 +2085,21 @@ export class CanvasRenderer {
 
     // 1d. 3D Starfield Dome & Blood Moon (Kanlı Ay) for outdoor floor (fog: false ensures 100% crisp visibility)
     if (!isUnderground) {
-      const starCount = 750;
+      // Soft glowing circular star particle texture (prevents default WebGL square points!)
+      const starCanvas = document.createElement("canvas");
+      starCanvas.width = 64;
+      starCanvas.height = 64;
+      const sCtx = starCanvas.getContext("2d");
+      const sGrad = sCtx.createRadialGradient(32, 32, 0, 32, 32, 32);
+      sGrad.addColorStop(0.0, "rgba(255, 255, 255, 1.0)");
+      sGrad.addColorStop(0.2, "rgba(255, 245, 225, 0.8)");
+      sGrad.addColorStop(0.5, "rgba(240, 200, 255, 0.3)");
+      sGrad.addColorStop(1.0, "rgba(0, 0, 0, 0.0)");
+      sCtx.fillStyle = sGrad;
+      sCtx.fillRect(0, 0, 64, 64);
+      const starTex = new THREE.CanvasTexture(starCanvas);
+
+      const starCount = 350;
       const starGeometry = new THREE.BufferGeometry();
       const positions = new Float32Array(starCount * 3);
 
@@ -2097,8 +2111,8 @@ export class CanvasRenderer {
 
       for (let i = 0; i < starCount; i++) {
         const theta = rng() * Math.PI * 2;
-        const phi = 0.02 + rng() * 1.40;
-        const radius = 25.0 + rng() * 15.0;
+        const phi = 0.02 + rng() * 1.35;
+        const radius = 35.0 + rng() * 15.0;
 
         const x = radius * Math.sin(phi) * Math.cos(theta);
         const z = radius * Math.sin(phi) * Math.sin(theta);
@@ -2112,11 +2126,12 @@ export class CanvasRenderer {
       starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
       
       const starMat = new THREE.PointsMaterial({
-        color: "#ffffff",
-        size: 1.6,
+        map: starTex,
+        size: 0.40,
         transparent: true,
-        opacity: 1.0,
+        opacity: 0.85,
         sizeAttenuation: true,
+        blending: THREE.AdditiveBlending,
         depthWrite: false,
         fog: false // Crucial: ignore scene fog so stars shine brightly!
       });
@@ -2124,74 +2139,70 @@ export class CanvasRenderer {
       this.starField = new THREE.Points(starGeometry, starMat);
       this.scene.add(this.starField);
 
-      // 1e. Glowing 3D Blood Moon (Kanlı Ay)
+      // 1e. High-Detail Luminous 3D Blood Moon (Kanlı Ay)
       try {
-        const moonGroup = new THREE.Group();
-        const moonGeo = new THREE.SphereGeometry(4.2, 32, 32);
-
         const moonCanvas = document.createElement("canvas");
-        moonCanvas.width = 256;
-        moonCanvas.height = 256;
+        moonCanvas.width = 512;
+        moonCanvas.height = 512;
         const mCtx = moonCanvas.getContext("2d");
 
-        // Vibrant high-contrast Blood Moon gradient
-        const mGrad = mCtx.createRadialGradient(128, 128, 10, 128, 128, 128);
-        mGrad.addColorStop(0.0, "#ff4444"); // Glowing crimson core
-        mGrad.addColorStop(0.45, "#ef4444"); // Vibrant blood red
-        mGrad.addColorStop(0.80, "#991b1b"); // Deep blood maroon
-        mGrad.addColorStop(1.0, "#450a0a");  // Dark limb
-        mCtx.fillStyle = mGrad;
-        mCtx.fillRect(0, 0, 256, 256);
+        // Outer Glow Aura
+        const glowGrad = mCtx.createRadialGradient(256, 256, 120, 256, 256, 250);
+        glowGrad.addColorStop(0.0, "rgba(239, 68, 68, 0.75)");
+        glowGrad.addColorStop(0.4, "rgba(185, 28, 28, 0.35)");
+        glowGrad.addColorStop(1.0, "rgba(0, 0, 0, 0.0)");
+        mCtx.fillStyle = glowGrad;
+        mCtx.beginPath();
+        mCtx.arc(256, 256, 250, 0, Math.PI * 2);
+        mCtx.fill();
 
-        // Dark blood craters
-        mCtx.fillStyle = "rgba(45, 5, 5, 0.65)";
+        // Blood Moon Disc
+        const mGrad = mCtx.createRadialGradient(210, 210, 20, 256, 256, 130);
+        mGrad.addColorStop(0.0, "#fca5a5"); // Bright crimson highlight
+        mGrad.addColorStop(0.3, "#ef4444"); // Blood red
+        mGrad.addColorStop(0.7, "#991b1b"); // Deep blood maroon
+        mGrad.addColorStop(1.0, "#450a0a"); // Shadowed limb
+        mCtx.fillStyle = mGrad;
+        mCtx.beginPath();
+        mCtx.arc(256, 256, 130, 0, Math.PI * 2);
+        mCtx.fill();
+
+        // Realistic lunar mares & crater detail
+        mCtx.fillStyle = "rgba(45, 10, 15, 0.4)";
         [
-          { x: 90, y: 80, r: 24 }, { x: 160, y: 110, r: 35 }, { x: 120, y: 170, r: 28 },
-          { x: 70, y: 140, r: 18 }, { x: 180, y: 65, r: 20 }, { x: 135, y: 60, r: 15 }
+          { x: 210, y: 200, r: 35 }, { x: 280, y: 230, r: 45 }, { x: 240, y: 300, r: 40 },
+          { x: 180, y: 270, r: 25 }, { x: 300, y: 170, r: 30 }, { x: 170, y: 190, r: 22 },
+          { x: 260, y: 150, r: 28 }, { x: 210, y: 330, r: 32 }
         ].forEach(c => {
           mCtx.beginPath();
           mCtx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
           mCtx.fill();
         });
 
+        // Soft lunar limb shadow overlay
+        const shadowGrad = mCtx.createRadialGradient(310, 310, 50, 256, 256, 130);
+        shadowGrad.addColorStop(0.0, "rgba(0, 0, 0, 0.0)");
+        shadowGrad.addColorStop(0.7, "rgba(10, 2, 4, 0.5)");
+        shadowGrad.addColorStop(1.0, "rgba(5, 1, 2, 0.85)");
+        mCtx.fillStyle = shadowGrad;
+        mCtx.beginPath();
+        mCtx.arc(256, 256, 130, 0, Math.PI * 2);
+        mCtx.fill();
+
         const moonTex = new THREE.CanvasTexture(moonCanvas);
+        const moonGeo = new THREE.PlaneGeometry(10.0, 10.0);
         const moonMat = new THREE.MeshBasicMaterial({
           map: moonTex,
-          fog: false // Crucial: ignore scene fog so Blood Moon is 100% visible!
-        });
-        const moonMesh = new THREE.Mesh(moonGeo, moonMat);
-        moonGroup.add(moonMesh);
-
-        // Luminous Red Aura Halo Ring
-        const auraCanvas = document.createElement("canvas");
-        auraCanvas.width = 128;
-        auraCanvas.height = 128;
-        const aCtx = auraCanvas.getContext("2d");
-        const aGrad = aCtx.createRadialGradient(64, 64, 20, 64, 64, 64);
-        aGrad.addColorStop(0.0, "rgba(239, 68, 68, 0.95)");
-        aGrad.addColorStop(0.35, "rgba(185, 28, 28, 0.55)");
-        aGrad.addColorStop(1.0, "rgba(0, 0, 0, 0)");
-        aCtx.fillStyle = aGrad;
-        aCtx.fillRect(0, 0, 128, 128);
-
-        const auraTex = new THREE.CanvasTexture(auraCanvas);
-        const auraGeo = new THREE.PlaneGeometry(16.0, 16.0);
-        const auraMat = new THREE.MeshBasicMaterial({
-          map: auraTex,
           transparent: true,
           opacity: 0.95,
           depthWrite: false,
-          blending: THREE.AdditiveBlending,
-          fog: false // Crucial: ignore scene fog for radiant red halo!
+          fog: false // Crucial: ignore scene fog so Blood Moon is 100% visible!
         });
-        const auraMesh = new THREE.Mesh(auraGeo, auraMat);
-        auraMesh.position.z = -0.1;
-        moonGroup.add(auraMesh);
-
-        // Position high in North-East sky (closer and prominent)
-        moonGroup.position.set(14.0, 20.0, -22.0);
-        this.scene.add(moonGroup);
-        this.bloodMoonGroup = moonGroup;
+        const moonMesh = new THREE.Mesh(moonGeo, moonMat);
+        moonMesh.position.set(25.0, 38.0, -45.0);
+        moonMesh.lookAt(0, 0, 0); // Face camera origin
+        this.scene.add(moonMesh);
+        this.bloodMoonGroup = moonMesh;
       } catch (e) {
         console.warn("Failed to create Blood Moon:", e);
       }

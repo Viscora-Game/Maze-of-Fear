@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=85";
-import { MultiplayerManager } from "./multiplayer.js?v=85";
+import { Game } from "./game.js?v=86";
+import { MultiplayerManager } from "./multiplayer.js?v=86";
 
 const init = () => {
   const game = new Game();
@@ -2944,6 +2944,14 @@ function setupUI(game) {
       }
     },
     {
+      icon: "⚙️",
+      title: { tr: "Ayarlar & Zorluk Seviyesi", en: "Settings & Difficulty Modes" },
+      desc: {
+        tr: "Ayarlar menüsünden oyunun zorluk seviyesini (Barışçıl ☮️, Kolay 🟢, Orta 🟡, Zor 🔴, Kabus 💀) dilediğin zaman değiştirebilir, ses test panelinden sesleri deneyebilir ve arayüz butonlarını boyutlandırabilirsin!",
+        en: "From the Settings menu, you can change the game difficulty (Peaceful ☮️, Easy 🟢, Medium 🟡, Hard 🔴, Nightmare 💀), test sound effects, and resize HUD buttons anytime!"
+      }
+    },
+    {
       icon: "🕹️",
       title: { tr: "Kontroller & Hareket", en: "Controls & Movement" },
       desc: {
@@ -3058,6 +3066,11 @@ function setupUI(game) {
 
   if (btnTutSkip) {
     btnTutSkip.addEventListener("click", hideTutorialModal);
+  }
+
+  const btnReplayTut = document.getElementById("btn-replay-tutorial");
+  if (btnReplayTut) {
+    btnReplayTut.addEventListener("click", showTutorialModal);
   }
 
   // Auto-show tutorial on very first launch

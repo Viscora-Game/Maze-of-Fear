@@ -405,6 +405,16 @@ export class MultiplayerManager {
           monster.burnTime = data.burnTime || 0;
         }
         break;
+
+      case "GUEST_MONSTER_BURN":
+        // Host receives flashlight burn hit from Guest player
+        if (this.isHost && state.shadowMonsters && state.shadowMonsters[data.index]) {
+          const monster = state.shadowMonsters[data.index];
+          if (monster && monster.active) {
+            monster.burnTime += (data.dt || 0.05) * 1.2;
+          }
+        }
+        break;
       
       case "MONSTER_SPAWN_ALERT":
         // Display target alert if target is local player

@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=98";
-import { AudioEngine } from "./audio.js?v=98";
-import { CanvasRenderer } from "./canvas.js?v=98";
-import { translations } from "./translations.js?v=98";
-import { randomEvents, deathEvents } from "./events.js?v=98";
-import { getSeededRandom } from "./prng.js?v=98";
+import { generateMaze } from "./maze.js?v=99";
+import { AudioEngine } from "./audio.js?v=99";
+import { CanvasRenderer } from "./canvas.js?v=99";
+import { translations } from "./translations.js?v=99";
+import { randomEvents, deathEvents } from "./events.js?v=99";
+import { getSeededRandom } from "./prng.js?v=99";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -2148,12 +2148,33 @@ export class Game {
     const isHost = isCoop && this.multiplayer.isHost;
 
     s.shadowMonsters.forEach((sm, index) => {
-      // Spawner logic
-      if (!sm.active) {
-        if (isCoop && !isHost) {
-          // Guest does not run spawning logic; only waits for host sync
-          return;
+      // In Co-op, Guest does NOT run independent monster AI physics. Guest only reports flashlight burn to Host!
+      if (isCoop && !isHost) {
+        if (sm.active && p.lanternOn && !p.isDead && sm.floor === s.currentFloor) {
+          const dist = Math.hypot(sm.x - p.x, sm.y - p.y);
+          if (dist <= 6.5) {
+            const lookX = Math.cos(p.angle);
+            const lookY = Math.sin(p.angle);
+            const dirX = (sm.x - p.x) / dist;
+            const dirY = (sm.y - p.y) / dist;
+            const dot = lookX * dirX + lookY * dirY;
+            if (dot > 0.866) {
+              const grid = s.floors[s.currentFloor];
+              if (this.hasLineOfSight(p.x, p.y, sm.x, sm.y, grid, s.width, s.height)) {
+                this.multiplayer.send({
+                  type: "GUEST_MONSTER_BURN",
+                  index: index,
+                  dt: dt
+                });
+              }
+            }
+          }
         }
+        return;
+      }
+
+      // Spawner logic (Host or Singleplayer)
+      if (!sm.active) {
         
         sm.spawnTimer -= dt;
         if (sm.spawnTimer <= 0) {

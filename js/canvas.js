@@ -397,7 +397,12 @@ export class CanvasRenderer {
     this.canvas.addEventListener("click", () => {
       if (this.lastState && this.lastState.gameState !== "playing") return;
       if (document.pointerLockElement !== this.canvas && this.canvas.requestPointerLock) {
-        this.canvas.requestPointerLock();
+        try {
+          const lockPromise = this.canvas.requestPointerLock();
+          if (lockPromise && typeof lockPromise.catch === "function") {
+            lockPromise.catch(() => {}); // Safely swallow browser pointer lock rejection warnings
+          }
+        } catch (e) {}
       }
     });
 

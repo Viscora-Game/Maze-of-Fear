@@ -1053,14 +1053,13 @@ export class AudioEngine {
     noise.stop(now + 1.3);
   }
 
-  // Shadow monster spawn sound - real audio asset with randomized roar/growl
+  // Shadow monster spawn sound - heavy monster roar/growl/grunt alert (no female scream)
   playShadowSpawn() {
     if (this.muted || !this.ctx) return;
 
-    // Randomize monster spawn sound for frightening variety!
-    const spawnRoars = ["monster_roar", "monster_growl", "jumpscare_scream"];
+    const spawnRoars = ["monster_roar", "monster_growl", "monster_grunt"];
     const pickRoar = spawnRoars[Math.floor(Math.random() * spawnRoars.length)];
-    this._playBuffer(pickRoar, 0.85, 0.85 + Math.random() * 0.2);
+    this._playBuffer(pickRoar, 0.85, 0.85 + Math.random() * 0.15);
     this._playBuffer("stinger", 0.75);
     return;
   }
@@ -1093,13 +1092,16 @@ export class AudioEngine {
   playJumpscare() {
     if (this.muted || !this.ctx) return;
 
-    this._playBuffer("jumpscare_scream", 0.90, 1.0);
+    this._playBuffer("jumpscare_scream", 0.95, 1.0);
     this._playBuffer("monster_roar", 0.70, 0.9);
     setTimeout(() => this._playBuffer("stinger", 0.50), 100);
   }
 
+  // Pure high-pitched female horror scream
   playFemaleScream() {
-    this.playJumpscare();
+    if (this.muted || !this.ctx) return;
+    this._playBuffer("jumpscare_scream", 0.95, 1.05);
+    this._playBuffer("distant_scream", 0.75, 1.0);
   }
 
   // Shadow monster ambient groan/breath/grunt (distance-based volume with wide variety)

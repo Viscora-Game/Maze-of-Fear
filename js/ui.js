@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=83";
-import { MultiplayerManager } from "./multiplayer.js?v=83";
+import { Game } from "./game.js?v=84";
+import { MultiplayerManager } from "./multiplayer.js?v=84";
 
 const init = () => {
   const game = new Game();
@@ -2932,4 +2932,139 @@ function setupUI(game) {
       }
     }, 800);
   }
+
+  // --- Interactive Onboarding Tutorial Manager ---
+  const tutorialSlides = [
+    {
+      icon: "🔦",
+      title: { tr: "Fener & Gölge Canavarı", en: "Flashlight & Shadow Monster" },
+      desc: {
+        tr: "Fenerini açık tut! Pili bittiğinde karanlıkta Gölge Canavarı belirir. Fener ışığını canavara tutarak onu yakabilir ve kaçırabilirsin.",
+        en: "Keep your flashlight on! In darkness, the Shadow Monster will stalk you. Focus your light beam on it to burn and repel it."
+      }
+    },
+    {
+      icon: "🕹️",
+      title: { tr: "Kontroller & Hareket", en: "Controls & Movement" },
+      desc: {
+        tr: "Sol parmağınla Joystick'i kullanarak yürü, sağ parmağınla ekrana dokunup sürükleyerek etrafa bak. Fener butonuna basarak fenerini açıp kapatabilirsin.",
+        en: "Use the Joystick on the left to move, and drag your right thumb to look around. Tap the flashlight button to toggle your light."
+      }
+    },
+    {
+      icon: "🪓",
+      title: { tr: "Engeller & Eşyalar", en: "Obstacles & Tools" },
+      desc: {
+        tr: "Ahşap barikatlar için Balta 🪓, sarmaşıklar için Makas ✂️, kapılar için Anahtar 🗝️ ve uçurumlar için Halat 🪢 bulup kullanın.",
+        en: "Collect tools: Use the Axe 🪓 for barricades, Shears ✂️ for vines, Key 🗝️ for gates, and Rope 🪢 to descend chasm shafts."
+      }
+    },
+    {
+      icon: "🎙️",
+      title: { tr: "Co-op & Sesli Sohbet", en: "Co-op & Voice Chat" },
+      desc: {
+        tr: "Arkadaşınla oda kurup birlikte oynayabilir, in-game 🎤 Mikrofon butonuna basarak sesli sohbet edebilirsin. Uzaklaştıkça ses boğuklaşır!",
+        en: "Host a room and play co-op with your friend! Tap the 🎤 mic button for voice chat. Voices muffle naturally across distance."
+      }
+    },
+    {
+      icon: "🪜",
+      title: { tr: "Çıkış & Katlar", en: "Exit & Lower Floors" },
+      desc: {
+        tr: "Sandıkları açın, şifre parşömenlerini toplayın ve merdivenlerden 🪜 alt katlara inip labirentten kaçın! İyi şanslar!",
+        en: "Open chests, read code parchments, descend ladders 🪜 to lower floors, and escape the maze! Good luck!"
+      }
+    }
+  ];
+
+  let currentTutIndex = 0;
+  const modalTut = document.getElementById("modal-tutorial");
+  const tutIcon = document.getElementById("tut-icon");
+  const tutTitle = document.getElementById("tut-title");
+  const tutDesc = document.getElementById("tut-desc");
+  const tutCounter = document.getElementById("tut-step-counter");
+  const tutDots = document.getElementById("tut-dots");
+  const btnTutPrev = document.getElementById("btn-tut-prev");
+  const btnTutNext = document.getElementById("btn-tut-next");
+  const btnTutSkip = document.getElementById("btn-tut-skip");
+
+  const renderTutorialSlide = (index) => {
+    currentTutIndex = index;
+    const isTr = game.lang === "tr";
+    const slide = tutorialSlides[index];
+
+    if (tutIcon) tutIcon.textContent = slide.icon;
+    if (tutTitle) tutTitle.textContent = slide.title[isTr ? "tr" : "en"];
+    if (tutDesc) tutDesc.textContent = slide.desc[isTr ? "tr" : "en"];
+    if (tutCounter) tutCounter.textContent = `${isTr ? "REHBER: ADIM" : "TUTORIAL: STEP"} ${index + 1} / ${tutorialSlides.length}`;
+
+    // Render Dots
+    if (tutDots) {
+      tutDots.innerHTML = "";
+      tutorialSlides.forEach((_, i) => {
+        const dot = document.createElement("span");
+        dot.style.width = i === index ? "18px" : "8px";
+        dot.style.height = "8px";
+        dot.style.borderRadius = "4px";
+        dot.style.background = i === index ? "var(--cyan)" : "rgba(255, 255, 255, 0.25)";
+        dot.style.transition = "all 0.2s ease";
+        tutDots.appendChild(dot);
+      });
+    }
+
+    // Prev / Next button states
+    if (btnTutPrev) {
+      btnTutPrev.style.display = index === 0 ? "none" : "block";
+      btnTutPrev.textContent = isTr ? "◀ Geri" : "◀ Back";
+    }
+    if (btnTutNext) {
+      if (index === tutorialSlides.length - 1) {
+        btnTutNext.textContent = isTr ? "Başla! 🚀" : "Start! 🚀";
+      } else {
+        btnTutNext.textContent = isTr ? "İleri ▶" : "Next ▶";
+      }
+    }
+  };
+
+  const showTutorialModal = () => {
+    if (modalTut) {
+      modalTut.classList.remove("hidden");
+      renderTutorialSlide(0);
+    }
+  };
+
+  const hideTutorialModal = () => {
+    if (modalTut) {
+      modalTut.classList.add("hidden");
+      localStorage.setItem("maze_tutorial_completed", "true");
+    }
+  };
+
+  if (btnTutPrev) {
+    btnTutPrev.addEventListener("click", () => {
+      if (currentTutIndex > 0) renderTutorialSlide(currentTutIndex - 1);
+    });
+  }
+
+  if (btnTutNext) {
+    btnTutNext.addEventListener("click", () => {
+      if (currentTutIndex < tutorialSlides.length - 1) {
+        renderTutorialSlide(currentTutIndex + 1);
+      } else {
+        hideTutorialModal();
+      }
+    });
+  }
+
+  if (btnTutSkip) {
+    btnTutSkip.addEventListener("click", hideTutorialModal);
+  }
+
+  // Auto-show tutorial on very first launch
+  if (localStorage.getItem("maze_tutorial_completed") !== "true") {
+    setTimeout(showTutorialModal, 600);
+  }
+
+  // Expose function globally for replaying tutorial anytime
+  window.openGameTutorial = showTutorialModal;
 }

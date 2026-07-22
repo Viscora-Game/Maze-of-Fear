@@ -22,7 +22,7 @@ export class AudioEngine {
       try {
         this.ctx = new (window.AudioContext || window.webkitAudioContext)();
         this.masterGain = this.ctx.createGain();
-        const startingGain = this.muted ? (0.1 * 0.3) : (this.volume * 0.3);
+        const startingGain = this.muted ? (0.1 * 0.55) : (this.volume * 0.55);
         this.masterGain.gain.setValueAtTime(startingGain, this.ctx.currentTime);
         this.masterGain.connect(this.ctx.destination);
         this.createNoiseBuffer();
@@ -1177,13 +1177,15 @@ export class AudioEngine {
 
   // Flashlight toggle sounds
   playFlashlightOn() {
+    this.init();
     if (this.muted || !this.ctx) return;
-    this._playBuffer("flashlight_on", 0.40);
+    this._playBuffer("flashlight_on", 0.75);
   }
 
   playFlashlightOff() {
+    this.init();
     if (this.muted || !this.ctx) return;
-    this._playBuffer("flashlight_off", 0.40);
+    this._playBuffer("flashlight_off", 0.75);
   }
 
   // Gasp sound (for scary moments)

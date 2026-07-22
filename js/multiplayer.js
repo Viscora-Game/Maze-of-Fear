@@ -568,7 +568,7 @@ export class MultiplayerManager {
         this.voiceFilterNode.frequency.value = 12000;
 
         this.voiceGainNode = audioCtx.createGain();
-        this.voiceGainNode.gain.value = 1.0;
+        this.voiceGainNode.gain.value = 0.45; // Balanced 45% max gain so voice doesn't overpower SFX
 
         this.voiceSourceNode.connect(this.voiceFilterNode);
         this.voiceFilterNode.connect(this.voiceGainNode);
@@ -590,20 +590,20 @@ export class MultiplayerManager {
     const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
     const sameFloor = (Number(p1.floor) === Number(p2.floor));
 
-    let targetVolume = 1.0;
+    let targetVolume = 0.45;
     let targetCutoff = 12000;
 
     if (!sameFloor) {
-      targetVolume = 0.35; // Minimum 35% volume (never cut off completely!)
-      targetCutoff = 450;  // Deep muffled echo through floor shaft
+      targetVolume = 0.15; // Muffled 15% volume across different floors
+      targetCutoff = 450;
     } else {
-      if (dist <= 5.0) {
-        targetVolume = 1.0;
+      if (dist <= 4.0) {
+        targetVolume = 0.45;
         targetCutoff = 12000;
       } else {
-        const factor = Math.min(1.0, (dist - 5.0) / 25.0);
-        targetVolume = 1.0 - factor * 0.65;    // Drops from 1.0 to 0.35 minimum
-        targetCutoff = 12000 - factor * 11400; // Drops from 12000 Hz to 600 Hz (muffled through stone corridors)
+        const factor = Math.min(1.0, (dist - 4.0) / 20.0);
+        targetVolume = 0.45 - factor * 0.32;    // Drops smoothly from 0.45 to 0.13
+        targetCutoff = 12000 - factor * 11400; // Drops to 600 Hz
       }
     }
 

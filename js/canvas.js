@@ -118,7 +118,7 @@ export class CanvasRenderer {
     
     // Cap pixel ratio on mobile devices to 1.0 (prevents high-DPI tablets/phones from rendering at 4K resolution)
     const maxDPR = isMobileDevice ? 1.0 : 1.5;
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxDPR));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1.0, maxDPR));
     this.renderer.setSize(canvas.width, canvas.height);
     
     // Auto-migrate mobile performance settings (forces legacy savedShadows="true" to "false" on mobile)

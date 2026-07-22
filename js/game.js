@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=109";
-import { AudioEngine } from "./audio.js?v=109";
-import { CanvasRenderer } from "./canvas.js?v=109";
-import { translations } from "./translations.js?v=109";
-import { randomEvents, deathEvents } from "./events.js?v=109";
-import { getSeededRandom } from "./prng.js?v=109";
+import { generateMaze } from "./maze.js?v=110";
+import { AudioEngine } from "./audio.js?v=110";
+import { CanvasRenderer } from "./canvas.js?v=110";
+import { translations } from "./translations.js?v=110";
+import { randomEvents, deathEvents } from "./events.js?v=110";
+import { getSeededRandom } from "./prng.js?v=110";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -2463,15 +2463,23 @@ export class Game {
         let nextX = sm.x + runX;
         let nextY = sm.y + runY;
 
-        const canMoveTo = (tx, ty) => {
-          const gx = Math.floor(tx);
-          const gy = Math.floor(ty);
-          if (gx < 0 || gx >= s.width || gy < 0 || gy >= s.height) return false;
-          return grid[gy][gx].type !== "wall";
+        const canMonsterMoveTo = (tx, ty, radius = 0.25) => {
+          const minGx = Math.floor(tx - radius);
+          const maxGx = Math.floor(tx + radius);
+          const minGy = Math.floor(ty - radius);
+          const maxGy = Math.floor(ty + radius);
+          if (minGx < 0 || maxGx >= s.width || minGy < 0 || maxGy >= s.height) return false;
+          for (let gy = minGy; gy <= maxGy; gy++) {
+            for (let gx = minGx; gx <= maxGx; gx++) {
+              const cell = grid[gy] ? grid[gy][gx] : null;
+              if (!cell || cell.type === "wall" || cell.obstacle) return false;
+            }
+          }
+          return true;
         };
 
-        if (canMoveTo(nextX, sm.y)) sm.x = nextX;
-        if (canMoveTo(sm.x, nextY)) sm.y = nextY;
+        if (canMonsterMoveTo(nextX, sm.y)) sm.x = nextX;
+        if (canMonsterMoveTo(sm.x, nextY)) sm.y = nextY;
       } else {
         // Chase player: automatically switch target to surviving alive player if target died!
         let targetObj = p;
@@ -2498,23 +2506,47 @@ export class Game {
           sm.lastNextStep = this.findPathToPlayer(sm.x, sm.y, targetX, targetY, grid, s.width, s.height);
         }
 
+        const canMonsterMoveTo = (tx, ty, radius = 0.25) => {
+          const minGx = Math.floor(tx - radius);
+          const maxGx = Math.floor(tx + radius);
+          const minGy = Math.floor(ty - radius);
+          const maxGy = Math.floor(ty + radius);
+          if (minGx < 0 || maxGx >= s.width || minGy < 0 || maxGy >= s.height) return false;
+          for (let gy = minGy; gy <= maxGy; gy++) {
+            for (let gx = minGx; gx <= maxGx; gx++) {
+              const cell = grid[gy] ? grid[gy][gx] : null;
+              if (!cell || cell.type === "wall" || cell.obstacle) return false;
+            }
+          }
+          return true;
+        };
+
         const nextStep = sm.lastNextStep;
+        let stepX = 0;
+        let stepY = 0;
         if (nextStep) {
           let chaseX = nextStep.x - sm.x;
           let chaseY = nextStep.y - sm.y;
           const len = Math.hypot(chaseX, chaseY);
           if (len > 0.001) {
-            sm.x += (chaseX / len) * sm.speed * dt;
-            sm.y += (chaseY / len) * sm.speed * dt;
+            stepX = (chaseX / len) * sm.speed * dt;
+            stepY = (chaseY / len) * sm.speed * dt;
           }
         } else {
           let chaseX = targetX - sm.x;
           let chaseY = targetY - sm.y;
           const len = Math.hypot(chaseX, chaseY);
           if (len > 0.001) {
-            sm.x += (chaseX / len) * sm.speed * dt;
-            sm.y += (chaseY / len) * sm.speed * dt;
+            stepX = (chaseX / len) * sm.speed * dt;
+            stepY = (chaseY / len) * sm.speed * dt;
           }
+        }
+
+        if (canMonsterMoveTo(sm.x + stepX, sm.y)) {
+          sm.x += stepX;
+        }
+        if (canMonsterMoveTo(sm.x, sm.y + stepY)) {
+          sm.y += stepY;
         }
       }
 

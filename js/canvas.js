@@ -4388,16 +4388,18 @@ export class CanvasRenderer {
         // Hide ghost mesh only if camera is literally clipping inside body (<0.35m)
         this.otherPlayerGroup.visible = (localDist > 0.35);
 
-        // Spotlight ALWAYS stays active when lanternOn is true, regardless of localDist!
         if (op.lanternOn) {
-          let baseIntensity = 5.5;
+          const isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+          let baseIntensity = isMobileDevice ? 2.5 : 4.5;
+          this.otherPlayerLight.distance = isMobileDevice ? 7.0 : 10.0;
+
           // Dynamic low battery (<20%) flickering for partner's flashlight
           if (op.fuel !== undefined && op.fuel < 20) {
             const rand = Math.random();
             if (rand < 0.20) {
-              baseIntensity = 0.5 + Math.random() * 1.5;
+              baseIntensity = 0.4 + Math.random() * 1.0;
             } else if (rand < 0.40) {
-              baseIntensity = 2.5 + Math.random() * 1.5;
+              baseIntensity = 1.5 + Math.random() * 1.0;
             }
           }
 

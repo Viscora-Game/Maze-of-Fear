@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=101";
-import { AudioEngine } from "./audio.js?v=101";
-import { CanvasRenderer } from "./canvas.js?v=101";
-import { translations } from "./translations.js?v=101";
-import { randomEvents, deathEvents } from "./events.js?v=101";
-import { getSeededRandom } from "./prng.js?v=101";
+import { generateMaze } from "./maze.js?v=102";
+import { AudioEngine } from "./audio.js?v=102";
+import { CanvasRenderer } from "./canvas.js?v=102";
+import { translations } from "./translations.js?v=102";
+import { randomEvents, deathEvents } from "./events.js?v=102";
+import { getSeededRandom } from "./prng.js?v=102";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -1403,8 +1403,10 @@ export class Game {
           const itemTrans = this.t(`items.${content.item}.name`);
           text = this.t("chest.itemReward", { item: itemTrans });
           this.state.player.inventory[content.item]++;
-          if (content.item === "fuel" || content.item === "fuel_half") {
-            this.state.player.fuel = 100;
+          if (content.item === "fuel") {
+            this.state.player.fuel = Math.min(100, this.state.player.fuel + 50);
+          } else if (content.item === "fuel_half") {
+            this.state.player.fuel = Math.min(100, this.state.player.fuel + 25);
           }
           if (content.item === "compass") this.state.player.hasCompass = true;
           if (content.gold) this.state.player.gold += content.gold;

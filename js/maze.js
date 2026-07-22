@@ -800,7 +800,7 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
     deadEnds.forEach((c, idx) => {
       const roll = Math.random();
       let chestContent = {};
-      if (roll < 0.75) {
+      if (roll < 0.90) {
         const rewardRoll = Math.random();
         // In Co-op: 45% Fuel, 40% Gold, 15% Unique Item; Singleplayer: 35% Fuel, 50% Gold, 15% Unique Item
         const fuelThreshold = isCoop ? 0.45 : 0.35;
@@ -822,10 +822,10 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
             chestContent = { type: "item", item: "fuel", gold: 15 };
           }
         }
-      } else if (roll < 0.90) {
-        chestContent = { type: "trap", damage: 25 }; // Constant 25 damage (survive up to 3 chests)
+      } else if (roll < 0.96) {
+        chestContent = { type: "trap", damage: 20 }; // Reduced 10% total trap chance
       } else {
-        chestContent = { type: "mimic", damage: 25 }; // Constant 25 damage (survive up to 3 chests)
+        chestContent = { type: "mimic", damage: 20 };
       }
 
       c.chest = {

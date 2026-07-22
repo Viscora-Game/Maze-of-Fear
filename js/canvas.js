@@ -2533,7 +2533,7 @@ export class CanvasRenderer {
             const wallE = isWall(x + 1, y);
             const wallW = isWall(x - 1, y);
 
-            if (wallN || wallS || wallE || wallW) {
+            if (!cell.loreParchment && !cell.chest && !cell.puzzleClue && !cell.npc && !cell.obstacle && (wallN || wallS || wallE || wallW)) {
               if (Math.random() < 0.055) { // 5.5% probability per path cell adjacent to a wall
                 const walls = [];
                 if (wallN && !this.occupiedWallFaces.has(`${x},${y - 1},S`)) walls.push({ x: 0, z: -0.478, rotationY: 0, wx: x, wy: y - 1, face: "S" }); // mounts on North wall, faces South

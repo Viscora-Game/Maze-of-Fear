@@ -174,6 +174,9 @@ export class MultiplayerManager {
 
     this.conn.on("open", () => {
       this.isConnected = true;
+      if (this.game && this.game.unlockAchievement) {
+        this.game.unlockAchievement("coop_first_lobby");
+      }
       this.updateStatus("Bağlantı kuruldu! Oyun başlıyor...");
       
       if (this.enableVoice) {

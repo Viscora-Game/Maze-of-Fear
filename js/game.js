@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=97";
-import { AudioEngine } from "./audio.js?v=97";
-import { CanvasRenderer } from "./canvas.js?v=97";
-import { translations } from "./translations.js?v=97";
-import { randomEvents, deathEvents } from "./events.js?v=97";
-import { getSeededRandom } from "./prng.js?v=97";
+import { generateMaze } from "./maze.js?v=98";
+import { AudioEngine } from "./audio.js?v=98";
+import { CanvasRenderer } from "./canvas.js?v=98";
+import { translations } from "./translations.js?v=98";
+import { randomEvents, deathEvents } from "./events.js?v=98";
+import { getSeededRandom } from "./prng.js?v=98";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -47,12 +47,24 @@ export class Game {
     this.difficulty = localStorage.getItem("maze_diff") || "medium";
     this.coopMapSize = "small"; // Default Co-op Map Size
 
-    // Achievements definitions
+    // Achievements definitions (16 Total: Easy, Medium, Hard, Nightmare, Co-op, and General)
     this.achievements = [
       { id: "first_escape", group: "easy", nameTr: "İlk Kaçış", nameEn: "First Escape", descTr: "Kolay veya daha üstü zorlukta labirentten ilk kez kaç.", descEn: "Escape the maze on Easy or higher difficulty for the first time.", icon: "🏆" },
       { id: "burn_monster", group: "medium", nameTr: "Karanlığın Avcısı", nameEn: "Shadow Burner", descTr: "Orta veya daha üstü zorlukta canavarı ilk kez yakarak geri püskürt.", descEn: "Repel the shadow monster on Medium or higher difficulty by burning it.", icon: "🔥" },
       { id: "no_damage_victory", group: "hard", nameTr: "Hayatta Kalan", nameEn: "Fearless", descTr: "Zor veya daha üstü zorlukta canavardan hiç hasar almadan kaç.", descEn: "Escape the maze on Hard or higher difficulty without taking damage from the monster.", icon: "🛡️" },
       { id: "nightmare_victory", group: "nightmare", nameTr: "Kabusun Sonu", nameEn: "End of Nightmare", descTr: "Kabus (Nightmare) modunda labirentten başarıyla kaç.", descEn: "Successfully escape the maze on Nightmare difficulty.", icon: "💀" },
+      
+      // Co-op Achievements
+      { id: "coop_first_lobby", group: "coop", nameTr: "Omuz Omuza", nameEn: "Side by Side", descTr: "Co-op modunda bir lobiye ilk kez katıl veya lobi kur.", descEn: "Host or join a Co-op room lobby for the first time.", icon: "🤝" },
+      { id: "coop_first_escape", group: "coop", nameTr: "Kardeşlik Bağı", nameEn: "Brotherhood", descTr: "Co-op modunda arkadaşınla birlikte labirentten başarıyla kaç.", descEn: "Successfully escape the maze in Co-op mode with your partner.", icon: "👥" },
+      { id: "coop_revive_partner", group: "coop", nameTr: "Hayat Kurtaran", nameEn: "Savior", descTr: "Co-op modunda arkadaşının düştüğü bir oyunda labirentten kaçmayı başar.", descEn: "Escape the maze in Co-op mode when your partner was saved or spectating.", icon: "🚑" },
+      { id: "coop_nightmare_escape", group: "coop", nameTr: "Karanlığın İkizleri", nameEn: "Twin Shadows", descTr: "Kabus (Nightmare) zorluğunda Co-op modunda arkadaşınla birlikte kaç.", descEn: "Escape the maze in Co-op mode on Nightmare difficulty.", icon: "🕯️" },
+
+      // General & Retention Achievements
+      { id: "master_explorer", group: "general", nameTr: "Usta Gezgin", nameEn: "Master Explorer", descTr: "Tek oyunculu modda Seviye 5 veya üzerine ulaş.", descEn: "Reach Level 5 or higher in singleplayer progression.", icon: "🗺️" },
+      { id: "speedrunner", group: "general", nameTr: "Rüzgar Gibi", nameEn: "Speedrunner", descTr: "Bir labirent bölümünü 90 saniyeden kısa sürede tamamla.", descEn: "Complete a maze level in under 90 seconds.", icon: "⚡" },
+      { id: "monster_slayer", group: "general", nameTr: "Fenerlerin Efendisi", nameEn: "Light Lord", descTr: "Bir oyunda canavarı ışıkla en az 3 kez yakarak püskürt.", descEn: "Burn and repel the shadow monster at least 3 times in a single game.", icon: "💡" },
+      { id: "rope_explorer", group: "general", nameTr: "Derinliklerin Hakimi", nameEn: "Abyss Explorer", descTr: "Alt katlara giden halat kuyusunu kullanarak alt kata in.", descEn: "Use the rope shaft to descend to lower maze floors.", icon: "🪢" },
       { id: "read_all_lore", group: "general", nameTr: "Kayıp Parşömenler", nameEn: "Lore Keeper", descTr: "Labirentteki 3 hikaye parşömeninin tamamını bul ve oku.", descEn: "Find and read all 3 lore papers scattered in the maze.", icon: "📜" },
       { id: "solve_all_quests", group: "general", nameTr: "İyilik Meleği", nameEn: "Soul Liberator", descTr: "Çocuk ve Fare yan görevlerinin ikisini de aynı oyunda tamamla.", descEn: "Complete both the Child and Mouse side quests in a single game.", icon: "💖" },
       { id: "gold_collector", group: "general", nameTr: "Altın Avcısı", nameEn: "Gold Digger", descTr: "Bir oyunda en az 30 altın biriktir.", descEn: "Accumulate at least 30 gold in a single game.", icon: "💰" },
@@ -2672,6 +2684,25 @@ export class Game {
     }
     if (this.state.player.gold >= 30) {
       this.unlockAchievement("gold_collector");
+    }
+
+    // New Co-op Achievements
+    if (isCoop) {
+      this.unlockAchievement("coop_first_escape");
+      if (this.difficulty === "nightmare") {
+        this.unlockAchievement("coop_nightmare_escape");
+      }
+      if (this.state.otherPlayer && this.state.otherPlayer.isDead) {
+        this.unlockAchievement("coop_revive_partner");
+      }
+    }
+
+    // Speedrunner Achievement (clear level in under 90 seconds)
+    if (this.state.gameStartTime) {
+      const elapsedSec = (Date.now() - this.state.gameStartTime) / 1000;
+      if (elapsedSec < 90) {
+        this.unlockAchievement("speedrunner");
+      }
     }
 
     // In co-op, don't advance the singleplayer level save

@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=97";
-import { MultiplayerManager } from "./multiplayer.js?v=97";
+import { Game } from "./game.js?v=98";
+import { MultiplayerManager } from "./multiplayer.js?v=98";
 
 const init = () => {
   const game = new Game();
@@ -1142,6 +1142,7 @@ function setupUI(game) {
       { id: "medium", titleKey: "achGroupMedium" },
       { id: "hard", titleKey: "achGroupHard" },
       { id: "nightmare", titleKey: "achGroupNightmare" },
+      { id: "coop", titleKey: "achGroupCoop" },
       { id: "general", titleKey: "achGroupGeneral" }
     ];
 

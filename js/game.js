@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=111";
-import { AudioEngine } from "./audio.js?v=111";
-import { CanvasRenderer } from "./canvas.js?v=111";
-import { translations } from "./translations.js?v=111";
-import { randomEvents, deathEvents } from "./events.js?v=111";
-import { getSeededRandom } from "./prng.js?v=111";
+import { generateMaze } from "./maze.js?v=112";
+import { AudioEngine } from "./audio.js?v=112";
+import { CanvasRenderer } from "./canvas.js?v=112";
+import { translations } from "./translations.js?v=112";
+import { randomEvents, deathEvents } from "./events.js?v=112";
+import { getSeededRandom } from "./prng.js?v=112";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -811,39 +811,6 @@ export class Game {
     const cellX = Math.floor(p.x);
     const cellY = Math.floor(p.y);
     const cell = grid[cellY][cellX];
-
-    // Proximity cell transition random jumpscare chance (0.4% chance on entering a new cell)
-    if (this.lastCellX === undefined) {
-      this.lastCellX = cellX;
-      this.lastCellY = cellY;
-    }
-    if (cellX !== this.lastCellX || cellY !== this.lastCellY) {
-      this.lastCellX = cellX;
-      this.lastCellY = cellY;
-      
-      const anyActiveMonster = this.state.shadowMonsters && this.state.shadowMonsters.some(sm => sm.active);
-      if (this.state.gameState === "playing" && !anyActiveMonster && this.difficulty !== "peaceful") {
-        if (Math.random() < 0.004) {
-          this.state.gameState = "modal";
-          this.audio.playJumpscare();
-          this.audio.playHeartbeatRapid(6000); // 6 seconds of rapid heartbeat panic
-          this.audio.playPanting(); // heavy breathing panic
-          
-          this.showJumpscare("normal");
-          const overlay = document.getElementById("modal-jumpscare");
-          if (overlay) {
-            overlay.classList.remove("hidden");
-            setTimeout(() => {
-              overlay.classList.add("hidden");
-              this.state.gameState = "playing";
-              if (this.onStateChange) this.onStateChange();
-            }, 1200);
-          } else {
-            this.state.gameState = "playing";
-          }
-        }
-      }
-    }
 
     // Update staircase stepped-off tracking
     if (this.state.staircaseCell) {

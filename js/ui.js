@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=84";
-import { MultiplayerManager } from "./multiplayer.js?v=84";
+import { Game } from "./game.js?v=85";
+import { MultiplayerManager } from "./multiplayer.js?v=85";
 
 const init = () => {
   const game = new Game();
@@ -2968,11 +2968,11 @@ function setupUI(game) {
       }
     },
     {
-      icon: "🪜",
-      title: { tr: "Çıkış & Katlar", en: "Exit & Lower Floors" },
+      icon: "🪢",
+      title: { tr: "Çıkış & Halatla Kat İnişi", en: "Exit & Rope Shaft Descent" },
       desc: {
-        tr: "Sandıkları açın, şifre parşömenlerini toplayın ve merdivenlerden 🪜 alt katlara inip labirentten kaçın! İyi şanslar!",
-        en: "Open chests, read code parchments, descend ladders 🪜 to lower floors, and escape the maze! Good luck!"
+        tr: "Sandıkları açın, şifre parşömenlerini toplayın ve bulduğunuz Halat 🪢 ile kuyu/uçurumlardan alt katlara inip labirentten kaçın! İyi şanslar!",
+        en: "Open chests, read code parchments, and use your Rope 🪢 to descend chasm shafts into lower floors and escape the maze! Good luck!"
       }
     }
   ];

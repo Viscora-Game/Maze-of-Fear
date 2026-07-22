@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=99";
-import { AudioEngine } from "./audio.js?v=99";
-import { CanvasRenderer } from "./canvas.js?v=99";
-import { translations } from "./translations.js?v=99";
-import { randomEvents, deathEvents } from "./events.js?v=99";
-import { getSeededRandom } from "./prng.js?v=99";
+import { generateMaze } from "./maze.js?v=100";
+import { AudioEngine } from "./audio.js?v=100";
+import { CanvasRenderer } from "./canvas.js?v=100";
+import { translations } from "./translations.js?v=100";
+import { randomEvents, deathEvents } from "./events.js?v=100";
+import { getSeededRandom } from "./prng.js?v=100";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -2148,25 +2148,36 @@ export class Game {
     const isHost = isCoop && this.multiplayer.isHost;
 
     s.shadowMonsters.forEach((sm, index) => {
-      // In Co-op, Guest does NOT run independent monster AI physics. Guest only reports flashlight burn to Host!
+      // In Co-op, Guest does NOT run independent monster AI physics. Guest reports flashlight burn and checks local jumpscare!
       if (isCoop && !isHost) {
-        if (sm.active && p.lanternOn && !p.isDead && sm.floor === s.currentFloor) {
-          const dist = Math.hypot(sm.x - p.x, sm.y - p.y);
-          if (dist <= 6.5) {
-            const lookX = Math.cos(p.angle);
-            const lookY = Math.sin(p.angle);
-            const dirX = (sm.x - p.x) / dist;
-            const dirY = (sm.y - p.y) / dist;
-            const dot = lookX * dirX + lookY * dirY;
-            if (dot > 0.866) {
-              const grid = s.floors[s.currentFloor];
-              if (this.hasLineOfSight(p.x, p.y, sm.x, sm.y, grid, s.width, s.height)) {
-                this.multiplayer.send({
-                  type: "GUEST_MONSTER_BURN",
-                  index: index,
-                  dt: dt
-                });
+        if (sm.active && sm.floor === s.currentFloor) {
+          // A. Report Flashlight Burn to Host
+          if (p.lanternOn && !p.isDead) {
+            const dist = Math.hypot(sm.x - p.x, sm.y - p.y);
+            if (dist <= 6.5) {
+              const lookX = Math.cos(p.angle);
+              const lookY = Math.sin(p.angle);
+              const dirX = (sm.x - p.x) / dist;
+              const dirY = (sm.y - p.y) / dist;
+              const dot = lookX * dirX + lookY * dirY;
+              if (dot > 0.866) {
+                const grid = s.floors[s.currentFloor];
+                if (this.hasLineOfSight(p.x, p.y, sm.x, sm.y, grid, s.width, s.height)) {
+                  this.multiplayer.send({
+                    type: "GUEST_MONSTER_BURN",
+                    index: index,
+                    dt: dt
+                  });
+                }
               }
+            }
+          }
+          // B. Check local jumpscare collision on Guest side (ONLY if monster is NOT burning/fleeing!)
+          if (sm.burnTime === 0 && p.health > 0 && !p.isDead) {
+            const localDist = Math.hypot(sm.x - p.x, sm.y - p.y);
+            const grid = s.floors[s.currentFloor];
+            if (localDist < 0.65 && grid && this.hasLineOfSight(p.x, p.y, sm.x, sm.y, grid, s.width, s.height)) {
+              this.triggerJumpscare();
             }
           }
         }
@@ -2513,16 +2524,42 @@ export class Game {
         }
       }
 
-      // Check Jumpscare range — each player checks collision for their own character!
-      if (p.health > 0 && !p.isDead) {
-        const localDist = Math.hypot(sm.x - p.x, sm.y - p.y);
-        if (localDist < 0.65 && this.hasLineOfSight(p.x, p.y, sm.x, sm.y, grid, s.width, s.height)) {
-          this.triggerJumpscare();
-          
-          if (isCoop) {
-            // Despawn monster on jumpscare so it doesn't immediately jumpscare the other player too
+      // Check Jumpscare range — A burning/fleeing monster CANNOT deal damage or trigger jumpscare!
+      if (sm.active && sm.burnTime === 0) {
+        // A. Check Host local player collision
+        if (p.health > 0 && !p.isDead) {
+          const localDist = Math.hypot(sm.x - p.x, sm.y - p.y);
+          if (localDist < 0.65 && this.hasLineOfSight(p.x, p.y, sm.x, sm.y, grid, s.width, s.height)) {
+            this.triggerJumpscare();
+            
+            if (isCoop) {
+              sm.active = false;
+              sm.spawnTimer = 15.0 + Math.random() * 10.0;
+              this.multiplayer.send({
+                type: "MONSTER_SYNC",
+                index: index,
+                active: false,
+                x: sm.x,
+                y: sm.y,
+                floor: sm.floor,
+                targetPlayer: "",
+                spawnTimer: sm.spawnTimer,
+                speed: sm.speed,
+                burnTime: 0
+              });
+            }
+          }
+        }
+
+        // B. Check Guest player collision on Host side
+        if (isCoop && s.otherPlayer && !s.otherPlayer.isDead && s.otherPlayer.floor === sm.floor) {
+          const guestDist = Math.hypot(sm.x - s.otherPlayer.x, sm.y - s.otherPlayer.y);
+          if (guestDist < 0.65 && this.hasLineOfSight(s.otherPlayer.x, s.otherPlayer.y, sm.x, sm.y, grid, s.width, s.height)) {
             sm.active = false;
             sm.spawnTimer = 15.0 + Math.random() * 10.0;
+            this.multiplayer.send({
+              type: "JUMPSCARE"
+            });
             this.multiplayer.send({
               type: "MONSTER_SYNC",
               index: index,

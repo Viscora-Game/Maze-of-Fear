@@ -106,16 +106,26 @@ export class CanvasRenderer {
   constructor(canvas) {
     this.canvas = canvas;
     
-    // 1. Initialize WebGL Renderer (disable antialias on mobile for major GPU perf boost)
+    // 1. Initialize WebGL Renderer (optimized for mobile GPUs)
     const isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-    this.renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: !isMobileDevice, alpha: false });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer = new THREE.WebGLRenderer({
+      canvas: canvas,
+      antialias: !isMobileDevice,
+      alpha: false,
+      powerPreference: "high-performance",
+      precision: isMobileDevice ? "mediump" : "highp"
+    });
+    
+    // Cap pixel ratio on mobile devices to 1.0 (prevents high-DPI tablets/phones from rendering at 4K resolution)
+    const maxDPR = isMobileDevice ? 1.0 : 1.5;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxDPR));
     this.renderer.setSize(canvas.width, canvas.height);
     
-    // Dynamic shadow mapping switch (opt-in/opt-out for mobile performance boost)
-    this.shadowsEnabled = localStorage.getItem("maze_shadows") !== "false";
+    // Dynamic shadow mapping switch (default OFF on mobile for 60 FPS fluidity)
+    const savedShadows = localStorage.getItem("maze_shadows");
+    this.shadowsEnabled = savedShadows === null ? !isMobileDevice : (savedShadows === "true");
     this.renderer.shadowMap.enabled = this.shadowsEnabled;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = isMobileDevice ? THREE.BasicShadowMap : THREE.PCFSoftShadowMap;
     
     // 2. Setup Loading Manager & Load Photographic Textures
     const loadingScreen = document.getElementById("loading-screen");
@@ -1890,6 +1900,9 @@ export class CanvasRenderer {
 
   resize(containerWidth, containerHeight, mazeWidth, mazeHeight) {
     if (this.renderer && this.camera) {
+      const isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+      const maxDPR = isMobileDevice ? 1.0 : 1.5;
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxDPR));
       this.renderer.setSize(containerWidth, containerHeight);
       this.camera.aspect = containerWidth / containerHeight;
       this.camera.updateProjectionMatrix();
@@ -4865,8 +4878,14 @@ export class CanvasRenderer {
             
             const count = 1 + Math.floor(Math.random() * 2);
             for (let tIdx = 0; tIdx < count; tIdx++) {
-              // Find an inactive trail particle from pool
-              const p = this.smokeTrailPool.find(item => !item.active);
+              // Find an inactive trail particle from pool (O(N) index loop, 0 GC allocations)
+              let p = null;
+              for (let poolI = 0; poolI < this.smokeTrailPool.length; poolI++) {
+                if (!this.smokeTrailPool[poolI].active) {
+                  p = this.smokeTrailPool[poolI];
+                  break;
+                }
+              }
               if (p) {
                 const trailScale = 0.35 + Math.random() * 0.35;
                 p.active = true;

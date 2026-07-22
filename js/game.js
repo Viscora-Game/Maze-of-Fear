@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=91";
-import { AudioEngine } from "./audio.js?v=91";
-import { CanvasRenderer } from "./canvas.js?v=91";
-import { translations } from "./translations.js?v=91";
-import { randomEvents, deathEvents } from "./events.js?v=91";
-import { getSeededRandom } from "./prng.js?v=91";
+import { generateMaze } from "./maze.js?v=92";
+import { AudioEngine } from "./audio.js?v=92";
+import { CanvasRenderer } from "./canvas.js?v=92";
+import { translations } from "./translations.js?v=92";
+import { randomEvents, deathEvents } from "./events.js?v=92";
+import { getSeededRandom } from "./prng.js?v=92";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -618,6 +618,12 @@ export class Game {
   // Continuous Physics Loop
   updatePhysics(dt) {
     const p = this.state.player;
+    
+    if (this.state.gameState !== "playing") {
+      this.stepSoundTimer = 0;
+      this.audio.stopStep();
+      return;
+    }
     
     if (p.isDead) {
       if (this.state.otherPlayer) {
@@ -1564,6 +1570,11 @@ export class Game {
   // Interacting with NPCs
   triggerNPCInteraction(cell) {
     this.state.gameState = "modal";
+    this.keys = {};
+    this.joystick = { x: 0, y: 0 };
+    this.stepSoundTimer = 0;
+    this.audio.stopStep();
+
     const npc = cell.npc;
     const p = this.state.player;
     const inv = p.inventory;

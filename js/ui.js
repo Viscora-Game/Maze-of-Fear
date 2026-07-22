@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=114";
-import { MultiplayerManager } from "./multiplayer.js?v=114";
+import { Game } from "./game.js?v=115";
+import { MultiplayerManager } from "./multiplayer.js?v=115";
 
 const init = () => {
   const game = new Game();
@@ -2737,7 +2737,7 @@ function setupUI(game) {
       let isFirst = true;
       s.playerTrail.forEach((pos) => {
         // Only draw segment if it matches the current active rendering floor!
-        if (pos.floor === s.currentFloor) {
+        if (Number(pos.floor) === Number(s.currentFloor)) {
           const cx = offsetX + (pos.x + 0.5) * cellSize;
           const cy = offsetY + (pos.y + 0.5) * cellSize;
           if (isFirst) {
@@ -2803,7 +2803,7 @@ function setupUI(game) {
       const op = s.otherPlayer;
       
       // Only draw on map grid if partner is on the current rendering floor
-      if (op.floor === s.currentFloor) {
+      if (Number(op.floor) === Number(s.currentFloor)) {
         const opx = offsetX + op.x * cellSize;
         const opy = offsetY + op.y * cellSize;
         

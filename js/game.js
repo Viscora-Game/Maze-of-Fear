@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=114";
-import { AudioEngine } from "./audio.js?v=114";
-import { CanvasRenderer } from "./canvas.js?v=114";
-import { translations } from "./translations.js?v=114";
-import { randomEvents, deathEvents } from "./events.js?v=114";
-import { getSeededRandom } from "./prng.js?v=114";
+import { generateMaze } from "./maze.js?v=115";
+import { AudioEngine } from "./audio.js?v=115";
+import { CanvasRenderer } from "./canvas.js?v=115";
+import { translations } from "./translations.js?v=115";
+import { randomEvents, deathEvents } from "./events.js?v=115";
+import { getSeededRandom } from "./prng.js?v=115";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -255,7 +255,7 @@ export class Game {
           bucket: 0,
           bucket_full: 0,
           axe: 0,
-          rope: isCoop ? 3 : 1,
+          rope: isCoop ? 2 : 1,
           compass: 0,
           map_piece: 0,
           fuel: 0,
@@ -274,9 +274,12 @@ export class Game {
       },
 
       merchantStock: {
-        fuel: { cost: 10, count: Math.floor(1 + Math.random() * 3) },
-        rope: { cost: 25, count: 1 },
-        axe: { cost: 20, count: 1 }
+        compass: { cost: 30, count: 1 },
+        map_piece: { cost: 25, count: 1 },
+        revival_scroll: { cost: 40, count: isCoop ? 1 : 0 },
+        fuel: { cost: 15, count: Math.floor(1 + Math.random() * 2) },
+        cheese: { cost: 15, count: 1 },
+        axe: { cost: 25, count: 1 }
       },
 
       otherPlayer: isCoop ? {

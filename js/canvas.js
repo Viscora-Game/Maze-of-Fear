@@ -1937,6 +1937,14 @@ export class CanvasRenderer {
     this.lookX = null;
     this.lookZ = null;
     this.occupiedWallFaces = new Set();
+    
+    // Reset 3D mesh pool pointers so new floor scene re-creates fresh valid WebGL meshes!
+    this.otherPlayerGroup = null;
+    this.otherPlayerMesh = null;
+    this.otherPlayerLight = null;
+    this.otherPlayerHasRealFlashlight = false;
+    this.shadowMonsterMeshes = [];
+    this.shadowLightsPool = [];
     // Traverse and dispose all geometry and material buffers to prevent WebGL VRAM memory leaks
     this.scene.traverse((node) => {
       if (node.isMesh) {
@@ -4806,7 +4814,7 @@ export class CanvasRenderer {
           this.shadowLightsPool[index] = shadowLight;
         }
 
-        if (sm.active) {
+        if (sm.active && sm.floor === currentFloor) {
           const time = Date.now() * 0.005 + index * 10.0;
           const burnRatio = Math.max(0.15, 1.0 - (sm.burnTime / 2.0));
           

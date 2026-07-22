@@ -437,8 +437,28 @@ export class MultiplayerManager {
         }
         break;
 
+      case "ROPE_DEPLOYED":
+        const rFloorGrid = state.floors[data.floor];
+        if (rFloorGrid && rFloorGrid[data.cellY] && rFloorGrid[data.cellY][data.cellX]) {
+          rFloorGrid[data.cellY][data.cellX].staircaseDeployed = true;
+        }
+        if (data.nextFloor !== undefined) {
+          const rNextFloorGrid = state.floors[data.nextFloor];
+          if (rNextFloorGrid && rNextFloorGrid[data.cellY] && rNextFloorGrid[data.cellY][data.cellX]) {
+            rNextFloorGrid[data.cellY][data.cellX].staircaseDeployed = true;
+          }
+        }
+        if (this.game && this.game.showToast) {
+          this.game.showToast(this.game.lang === "tr" ? "Arkadaşın bir halat sarkıttı!" : "Your friend deployed a rope!");
+        }
+        if (this.game && this.game.draw) this.game.draw();
+        break;
+
       case "AUDIO_EVENT":
         if (this.game && this.game.audio) {
+          if (this.game.audio.ctx && this.game.audio.ctx.state === "suspended") {
+            this.game.audio.ctx.resume().catch(() => {});
+          }
           if (data.sound === "shadow_spawn") {
             this.game.audio.playShadowSpawn();
           } else if (data.sound === "shadow_groan") {

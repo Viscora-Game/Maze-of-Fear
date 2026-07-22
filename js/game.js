@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=103";
-import { AudioEngine } from "./audio.js?v=103";
-import { CanvasRenderer } from "./canvas.js?v=103";
-import { translations } from "./translations.js?v=103";
-import { randomEvents, deathEvents } from "./events.js?v=103";
-import { getSeededRandom } from "./prng.js?v=103";
+import { generateMaze } from "./maze.js?v=104";
+import { AudioEngine } from "./audio.js?v=104";
+import { CanvasRenderer } from "./canvas.js?v=104";
+import { translations } from "./translations.js?v=104";
+import { randomEvents, deathEvents } from "./events.js?v=104";
+import { getSeededRandom } from "./prng.js?v=104";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -249,7 +249,7 @@ export class Game {
           bucket: 0,
           bucket_full: 0,
           axe: 0,
-          rope: 0,
+          rope: isCoop ? 3 : 1,
           compass: 0,
           map_piece: 0,
           fuel: 0,
@@ -881,6 +881,15 @@ export class Game {
             // Mark the corresponding staircase up cell on the destination floor as deployed
             if (this.state.floors[nextFloor] && this.state.floors[nextFloor][cellY] && this.state.floors[nextFloor][cellY][cellX]) {
               this.state.floors[nextFloor][cellY][cellX].staircaseDeployed = true;
+            }
+            if (this.multiplayer && this.multiplayer.isConnected) {
+              this.multiplayer.send({
+                type: "ROPE_DEPLOYED",
+                floor: this.state.currentFloor,
+                cellX: cellX,
+                cellY: cellY,
+                nextFloor: nextFloor
+              });
             }
             if (this.showToast) {
               this.showToast(this.t("obstacles.ropePitSuccess"));

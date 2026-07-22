@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=86";
-import { MultiplayerManager } from "./multiplayer.js?v=86";
+import { Game } from "./game.js?v=87";
+import { MultiplayerManager } from "./multiplayer.js?v=87";
 
 const init = () => {
   const game = new Game();
@@ -184,6 +184,18 @@ function setupUI(game) {
         el.classList.remove("screen-fade-in");
       }
     });
+
+    // Control Main Menu Background Music (drone_doom.wav loop)
+    if (["menu", "coop", "settings", "howtoplay", "achievements"].includes(screenName)) {
+      if (game.audio) {
+        game.audio.init();
+        game.audio.startMenuMusic();
+      }
+    } else if (screenName === "game") {
+      if (game.audio) {
+        game.audio.stopMenuMusic();
+      }
+    }
   };
 
   const translateUI = () => {

@@ -1185,6 +1185,45 @@ export class AudioEngine {
     this._playBuffer("door_squeak", 0.35);
   }
 
+  // Loop drone_doom.wav as terrifying background music for Main Menu & Lobby
+  startMenuMusic() {
+    if (this.muted || !this.ctx) return;
+    if (this.menuMusicObj && this.menuMusicObj.source) return; // already playing
+
+    try {
+      const result = this._playBuffer("drone_doom", 0.001, 1.0, true);
+      if (!result) return;
+
+      this.menuMusicObj = result;
+      // Smooth fade-in
+      const now = this.ctx.currentTime;
+      this.menuMusicObj.gain.gain.setValueAtTime(0.001, now);
+      this.menuMusicObj.gain.gain.exponentialRampToValueAtTime(0.40, now + 2.0);
+    } catch (e) {
+      console.warn("Failed to start menu music:", e);
+    }
+  }
+
+  stopMenuMusic() {
+    if (this.menuMusicObj && this.ctx) {
+      try {
+        const now = this.ctx.currentTime;
+        if (this.menuMusicObj.gain) {
+          this.menuMusicObj.gain.gain.linearRampToValueAtTime(0.001, now + 1.0);
+        }
+        const obj = this.menuMusicObj;
+        this.menuMusicObj = null;
+        setTimeout(() => {
+          if (obj && obj.source) {
+            try { obj.source.stop(); } catch (e) {}
+          }
+        }, 1050);
+      } catch (e) {
+        this.menuMusicObj = null;
+      }
+    }
+  }
+
   // Play a random ambient horror stinger
   playRandomStinger() {
     if (this.muted || !this.ctx) return;

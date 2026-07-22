@@ -1,20 +1,19 @@
-import { Game } from "./game.js?v=100";
-import { MultiplayerManager } from "./multiplayer.js?v=100";
+import { Game } from "./game.js?v=101";
+import { MultiplayerManager } from "./multiplayer.js?v=101";
 
 const init = () => {
   const game = new Game();
   setupUI(game);
 
-  // Initialize Web Audio context and start sound preloading on first user interaction in the menu
+  // Initialize Web Audio context and resume AudioContext on user interaction
   const initAudioOnGesture = () => {
     if (game.audio) {
       game.audio.init();
     }
-    document.removeEventListener("click", initAudioOnGesture);
-    document.removeEventListener("touchstart", initAudioOnGesture);
   };
-  document.addEventListener("click", initAudioOnGesture);
-  document.addEventListener("touchstart", initAudioOnGesture);
+  window.addEventListener("click", initAudioOnGesture, { passive: true });
+  window.addEventListener("touchstart", initAudioOnGesture, { passive: true });
+  window.addEventListener("pointerdown", initAudioOnGesture, { passive: true });
 };
 
 if (document.readyState === "loading") {
@@ -1978,6 +1977,22 @@ function setupUI(game) {
       
       // Rebuild the scene immediately while loading screen is covering the freeze
       game.renderer.rebuildScene(game.state);
+
+      // Immediately sync position and new floor to Co-op partner
+      if (game.multiplayer && game.multiplayer.isConnected) {
+        const p = game.state.player;
+        game.multiplayer.send({
+          type: "PLAYER_POS",
+          x: Math.round(p.x * 100) / 100,
+          y: Math.round(p.y * 100) / 100,
+          floor: nextFloor,
+          angle: Math.round(p.angle * 100) / 100,
+          pitch: Math.round((p.pitch || 0) * 100) / 100,
+          lanternOn: game.state.lanternOn,
+          fuel: Math.round(p.fuel),
+          isDead: p.isDead || false
+        });
+      }
       
       if (loadingBar) loadingBar.style.width = "100%";
       await delay(100);

@@ -4362,7 +4362,7 @@ export class CanvasRenderer {
       const isPartnerOnFloor = (op.floor === currentFloor && !op.isDead);
       
       if (isPartnerOnFloor) {
-        if (op.visualX === undefined || op.visualX === null) {
+        if (op.visualX === undefined || op.visualX === null || Math.hypot(op.x - op.visualX, op.y - op.visualY) > 4.0) {
           op.visualX = op.x;
           op.visualY = op.y;
         } else {

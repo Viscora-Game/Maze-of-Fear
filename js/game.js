@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=100";
-import { AudioEngine } from "./audio.js?v=100";
-import { CanvasRenderer } from "./canvas.js?v=100";
-import { translations } from "./translations.js?v=100";
-import { randomEvents, deathEvents } from "./events.js?v=100";
-import { getSeededRandom } from "./prng.js?v=100";
+import { generateMaze } from "./maze.js?v=101";
+import { AudioEngine } from "./audio.js?v=101";
+import { CanvasRenderer } from "./canvas.js?v=101";
+import { translations } from "./translations.js?v=101";
+import { randomEvents, deathEvents } from "./events.js?v=101";
+import { getSeededRandom } from "./prng.js?v=101";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -1403,6 +1403,9 @@ export class Game {
           const itemTrans = this.t(`items.${content.item}.name`);
           text = this.t("chest.itemReward", { item: itemTrans });
           this.state.player.inventory[content.item]++;
+          if (content.item === "fuel" || content.item === "fuel_half") {
+            this.state.player.fuel = 100;
+          }
           if (content.item === "compass") this.state.player.hasCompass = true;
           if (content.gold) this.state.player.gold += content.gold;
         }
@@ -2176,7 +2179,7 @@ export class Game {
           if (sm.burnTime === 0 && p.health > 0 && !p.isDead) {
             const localDist = Math.hypot(sm.x - p.x, sm.y - p.y);
             const grid = s.floors[s.currentFloor];
-            if (localDist < 0.65 && grid && this.hasLineOfSight(p.x, p.y, sm.x, sm.y, grid, s.width, s.height)) {
+            if (localDist < 0.42 && grid && this.hasLineOfSight(p.x, p.y, sm.x, sm.y, grid, s.width, s.height)) {
               this.triggerJumpscare();
             }
           }
@@ -2348,7 +2351,7 @@ export class Game {
       // Host/Singleplayer client: run full pathfinding, movement, fleeing, and collision checks
       // Check if player's flashlight is shining on this shadow monster
       let isBurned = false;
-      if (s.lanternOn && p.health > 0 && !p.isDead) {
+      if (s.lanternOn && p.fuel > 0 && p.health > 0 && !p.isDead) {
         if (dist < 8.0) {
           const lookX = Math.cos(p.angle);
           const lookY = Math.sin(p.angle);
@@ -2529,7 +2532,7 @@ export class Game {
         // A. Check Host local player collision
         if (p.health > 0 && !p.isDead) {
           const localDist = Math.hypot(sm.x - p.x, sm.y - p.y);
-          if (localDist < 0.65 && this.hasLineOfSight(p.x, p.y, sm.x, sm.y, grid, s.width, s.height)) {
+          if (localDist < 0.42 && this.hasLineOfSight(p.x, p.y, sm.x, sm.y, grid, s.width, s.height)) {
             this.triggerJumpscare();
             
             if (isCoop) {
@@ -2554,7 +2557,7 @@ export class Game {
         // B. Check Guest player collision on Host side
         if (isCoop && s.otherPlayer && !s.otherPlayer.isDead && s.otherPlayer.floor === sm.floor) {
           const guestDist = Math.hypot(sm.x - s.otherPlayer.x, sm.y - s.otherPlayer.y);
-          if (guestDist < 0.65 && this.hasLineOfSight(s.otherPlayer.x, s.otherPlayer.y, sm.x, sm.y, grid, s.width, s.height)) {
+          if (guestDist < 0.42 && this.hasLineOfSight(s.otherPlayer.x, s.otherPlayer.y, sm.x, sm.y, grid, s.width, s.height)) {
             sm.active = false;
             sm.spawnTimer = 15.0 + Math.random() * 10.0;
             this.multiplayer.send({

@@ -802,11 +802,14 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
       let chestContent = {};
       if (roll < 0.75) {
         const rewardRoll = Math.random();
-        // 65% Gold, 25% Fuel, 10% Unique Item (at most 1 of each per maze level)
-        if (rewardRoll < 0.65) {
+        // In Co-op: 45% Fuel, 40% Gold, 15% Unique Item; Singleplayer: 35% Fuel, 50% Gold, 15% Unique Item
+        const fuelThreshold = isCoop ? 0.45 : 0.35;
+        const goldThreshold = isCoop ? 0.85 : 0.85;
+        
+        if (rewardRoll < fuelThreshold) {
+          chestContent = { type: "item", item: "fuel", gold: 10 + Math.floor(Math.random() * 15) };
+        } else if (rewardRoll < goldThreshold) {
           chestContent = { type: "gold", amount: 15 + Math.floor(Math.random() * 25) };
-        } else if (rewardRoll < 0.90) {
-          chestContent = { type: "item", item: "fuel", gold: 5 + Math.floor(Math.random() * 10) };
         } else {
           // Unique item roll
           const availableUniques = uniqueItemsPool.filter(item => !placedUniqueItems.has(item));
@@ -815,8 +818,8 @@ export function generateMaze(width, height, numFloors = 1, rng = globalThis.Math
             placedUniqueItems.add(picked);
             chestContent = { type: "item", item: picked, gold: 5 + Math.floor(Math.random() * 10) };
           } else {
-            // Fallback to gold if all unique items have already been placed
-            chestContent = { type: "gold", amount: 20 + Math.floor(Math.random() * 15) };
+            // Fallback to fuel if all unique items have already been placed
+            chestContent = { type: "item", item: "fuel", gold: 15 };
           }
         }
       } else if (roll < 0.90) {

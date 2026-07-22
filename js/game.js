@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=93";
-import { AudioEngine } from "./audio.js?v=93";
-import { CanvasRenderer } from "./canvas.js?v=93";
-import { translations } from "./translations.js?v=93";
-import { randomEvents, deathEvents } from "./events.js?v=93";
-import { getSeededRandom } from "./prng.js?v=93";
+import { generateMaze } from "./maze.js?v=94";
+import { AudioEngine } from "./audio.js?v=94";
+import { CanvasRenderer } from "./canvas.js?v=94";
+import { translations } from "./translations.js?v=94";
+import { randomEvents, deathEvents } from "./events.js?v=94";
+import { getSeededRandom } from "./prng.js?v=94";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -527,7 +527,7 @@ export class Game {
     const tick = (now) => {
       if (!this.loopRunning) return;
       
-      const dt = Math.min(0.1, (now - this.lastTime) / 1000); // cap dt to 100ms
+      const dt = Math.min(0.033, (now - this.lastTime) / 1000); // cap dt to 33ms (30 FPS physics step cap)
       this.lastTime = now;
 
       if (this.state && this.state.gameState === "playing") {

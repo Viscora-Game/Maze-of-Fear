@@ -2388,10 +2388,42 @@ export class CanvasRenderer {
             const cellRand = Math.abs(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1;
             const bloodChance = isDeepestFloor ? 0.20 : (isUnderground ? 0.12 : 0.07);
             
+    // Pre-allocate shared puddle geometry and material to eliminate GPU allocation stutter
+    if (!this.bloodTexture) {
+      this.bloodTexture = this.buildBloodTexture();
+    }
+    const sharedPuddleGeo = new THREE.PlaneGeometry(1, 1);
+    const sharedPuddleMat = new THREE.MeshStandardMaterial({
+      map: this.bloodTexture,
+      transparent: true,
+      opacity: 0.82,
+      roughness: 0.05,
+      metalness: 0.25,
+      depthWrite: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1
+    });
+
+    for (let y = 0; y < height; y++) {
+      const row = [];
+      for (let x = 0; x < width; x++) {
+        const cell = grid[y][x];
+        const cellGroup = new THREE.Group();
+
+        if (cell.type !== "wall") {
+          // A. Path Floor Panel
+          const floorMesh = new THREE.Mesh(floorGeo, activeFloorMat);
+          floorMesh.rotation.x = -Math.PI / 2;
+          floorMesh.position.set(0, 0, 0);
+          cellGroup.add(floorMesh);
+
+          // Add realistic, wet, semi-transparent blood pools on paths!
+          if (cell.type === "floor" && !(x === 1 && y === 1)) {
+            const cellRand = Math.abs(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1;
+            const bloodChance = isDeepestFloor ? 0.20 : (isUnderground ? 0.12 : 0.07);
+            
             if (cellRand < bloodChance) {
-              if (!this.bloodTexture) {
-                this.bloodTexture = this.buildBloodTexture();
-              }
               const bloodGroup = new THREE.Group();
               const numDrops = 1 + Math.floor(cellRand * 30) % 2; // 1 to 2 pools
               for (let dIdx = 0; dIdx < numDrops; dIdx++) {
@@ -2403,19 +2435,8 @@ export class CanvasRenderer {
                 const offsetY = (dropRandY * 2.0 - 1.0) * 0.25;
                 const radius = 0.12 + Math.abs(radiusRand) * 0.22; // radius 0.12m to 0.34m
                 
-                const puddleGeo = new THREE.PlaneGeometry(radius * 2, radius * 2);
-                const puddleMat = new THREE.MeshStandardMaterial({
-                  map: this.bloodTexture,
-                  transparent: true,
-                  opacity: 0.82,
-                  roughness: 0.05, // Glossy specular reflection
-                  metalness: 0.25,
-                  depthWrite: false, // Prevents Z-fighting / box artifacts
-                  polygonOffset: true,
-                  polygonOffsetFactor: -1,
-                  polygonOffsetUnits: -1
-                });
-                const puddle = new THREE.Mesh(puddleGeo, puddleMat);
+                const puddle = new THREE.Mesh(sharedPuddleGeo, sharedPuddleMat);
+                puddle.scale.set(radius * 2, radius * 2, 1);
                 puddle.rotation.x = -Math.PI / 2;
                 puddle.rotation.z = dropRandX * Math.PI * 2;
                 puddle.position.set(offsetX, 0.003, offsetY);

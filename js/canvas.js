@@ -121,9 +121,16 @@ export class CanvasRenderer {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxDPR));
     this.renderer.setSize(canvas.width, canvas.height);
     
-    // Dynamic shadow mapping switch (default OFF on mobile for 60 FPS fluidity)
+    // Auto-migrate mobile performance settings (forces legacy savedShadows="true" to "false" on mobile)
+    const mobilePerfKey = "maze_mobile_perf_v96";
+    if (isMobileDevice && localStorage.getItem(mobilePerfKey) !== "true") {
+      localStorage.setItem("maze_shadows", "false");
+      localStorage.setItem(mobilePerfKey, "true");
+    }
+
+    // Dynamic shadow mapping switch (strictly OFF by default on mobile for 60 FPS fluidity)
     const savedShadows = localStorage.getItem("maze_shadows");
-    this.shadowsEnabled = savedShadows === null ? !isMobileDevice : (savedShadows === "true");
+    this.shadowsEnabled = isMobileDevice ? (savedShadows === "true") : (savedShadows !== "false");
     this.renderer.shadowMap.enabled = this.shadowsEnabled;
     this.renderer.shadowMap.type = isMobileDevice ? THREE.BasicShadowMap : THREE.PCFSoftShadowMap;
     

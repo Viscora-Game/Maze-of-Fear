@@ -106,18 +106,23 @@ export class CanvasRenderer {
   constructor(canvas) {
     this.canvas = canvas;
     
-    // 1. Initialize WebGL Renderer (optimized for mobile GPUs)
-    const isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    // 1. Initialize WebGL Renderer (optimized for Android WebView & Mobile Play Store APKs)
+    const isWebView = /wv|Android.*Version\/[0-9]/i.test(navigator.userAgent) || window.matchMedia('(display-mode: standalone)').matches;
+    const isMobileDevice = isWebView || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    
     this.renderer = new THREE.WebGLRenderer({
       canvas: canvas,
-      antialias: !isMobileDevice,
+      antialias: false,
       alpha: false,
-      powerPreference: "high-performance",
-      precision: isMobileDevice ? "mediump" : "highp"
+      stencil: false,
+      depth: true,
+      powerPreference: isMobileDevice ? "default" : "high-performance",
+      precision: isMobileDevice ? "mediump" : "highp",
+      failIfMajorPerformanceCaveat: false
     });
     
-    // Cap pixel ratio on mobile devices to 1.0 (prevents high-DPI tablets/phones from rendering at 4K resolution)
-    const maxDPR = isMobileDevice ? 1.0 : 1.5;
+    // Cap pixel ratio on mobile/WebView devices to 0.85 - 1.0 (prevents 2K/4K mobile screen GPU thermal throttling)
+    const maxDPR = isWebView ? 0.85 : (isMobileDevice ? 1.0 : 1.5);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1.0, maxDPR));
     this.renderer.setSize(canvas.width, canvas.height);
     
@@ -1912,9 +1917,10 @@ export class CanvasRenderer {
 
   resize(containerWidth, containerHeight, mazeWidth, mazeHeight) {
     if (this.renderer && this.camera) {
-      const isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-      const maxDPR = isMobileDevice ? 1.0 : 1.5;
-      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxDPR));
+      const isWebView = /wv|Android.*Version\/[0-9]/i.test(navigator.userAgent) || window.matchMedia('(display-mode: standalone)').matches;
+      const isMobileDevice = isWebView || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+      const maxDPR = isWebView ? 0.85 : (isMobileDevice ? 1.0 : 1.5);
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1.0, maxDPR));
       this.renderer.setSize(containerWidth, containerHeight);
       this.camera.aspect = containerWidth / containerHeight;
       this.camera.updateProjectionMatrix();

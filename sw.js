@@ -1,4 +1,4 @@
-const CACHE_NAME = "maze-of-fear-v107";
+const CACHE_NAME = "maze-of-fear-v108";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();

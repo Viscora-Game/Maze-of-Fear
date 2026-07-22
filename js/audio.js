@@ -81,9 +81,16 @@ export class AudioEngine {
 
   // Play a cached audio buffer with optional volume, playbackRate, and offset
   _playBuffer(name, volume = 1.0, playbackRate = 1.0, loop = false) {
+    this.init();
     if (this.muted || !this.ctx) return null;
+    if (this.ctx.state === "suspended") {
+      this.ctx.resume().catch(() => {});
+    }
     const buffer = this.soundBuffers[name];
-    if (!buffer) return null;
+    if (!buffer) {
+      this._loadSound(name);
+      return null;
+    }
 
     const source = this.ctx.createBufferSource();
     source.buffer = buffer;
@@ -360,8 +367,8 @@ export class AudioEngine {
 
   // Footstep sounds (Walk vs Run variations) - uses real audio assets
   playStep(isRunning = false) {
+    this.init();
     if (this.muted || !this.ctx) return;
-    this.init(); // Ensure initialized
 
     this.stopStep();
 

@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=107";
-import { AudioEngine } from "./audio.js?v=107";
-import { CanvasRenderer } from "./canvas.js?v=107";
-import { translations } from "./translations.js?v=107";
-import { randomEvents, deathEvents } from "./events.js?v=107";
-import { getSeededRandom } from "./prng.js?v=107";
+import { generateMaze } from "./maze.js?v=108";
+import { AudioEngine } from "./audio.js?v=108";
+import { CanvasRenderer } from "./canvas.js?v=108";
+import { translations } from "./translations.js?v=108";
+import { randomEvents, deathEvents } from "./events.js?v=108";
+import { getSeededRandom } from "./prng.js?v=108";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;

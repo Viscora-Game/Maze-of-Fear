@@ -1261,38 +1261,6 @@ export class AudioEngine {
       rumbleFilter.connect(this.fireRumbleGain);
       this.fireRumbleGain.connect(this.ctx.destination);
       this.fireRumbleNode.start(0);
-
-      // Crackling Snaps & Pops
-      const popFilter = this.ctx.createBiquadFilter();
-      popFilter.type = "highpass";
-      popFilter.frequency.value = 1800;
-
-      this.firePopGain = this.ctx.createGain();
-      this.firePopGain.gain.value = 0.0;
-
-      popFilter.connect(this.firePopGain);
-      this.firePopGain.connect(this.ctx.destination);
-
-      const triggerPop = () => {
-        if (!this.muted && this.firePopGain.gain.value > 0.002) {
-          const popNode = this.ctx.createBufferSource();
-          popNode.buffer = noiseBuffer;
-          
-          const popEnvelope = this.ctx.createGain();
-          const now = this.ctx.currentTime;
-          popEnvelope.gain.setValueAtTime(0.0, now);
-          popEnvelope.gain.linearRampToValueAtTime(Math.random() * 0.10 + 0.03, now + 0.001);
-          popEnvelope.gain.exponentialRampToValueAtTime(0.001, now + Math.random() * 0.03 + 0.01);
-
-          popNode.connect(popEnvelope);
-          popEnvelope.connect(popFilter);
-          popNode.start(now);
-          popNode.stop(now + 0.05);
-        }
-        this.firePopTimeout = setTimeout(triggerPop, 150 + Math.random() * 350);
-      };
-      triggerPop();
-
     } catch (e) {
       console.warn("Failed to initialize fire synthesizer:", e);
     }
@@ -1301,24 +1269,22 @@ export class AudioEngine {
   updateFireVolume(distance) {
     if (this.muted || !this.ctx) {
       if (this.fireRumbleGain) this.fireRumbleGain.gain.setValueAtTime(0, this.ctx.currentTime);
-      if (this.firePopGain) this.firePopGain.gain.setValueAtTime(0, this.ctx.currentTime);
       return;
     }
 
     if (!this.fireSynthInitialized) {
       this.initFireSynth();
     }
-    if (!this.fireRumbleGain || !this.firePopGain) return;
+    if (!this.fireRumbleGain) return;
 
     const maxDist = 3.2;
     let targetVol = 0.0;
     if (distance < maxDist) {
-      targetVol = (1.0 - (distance / maxDist)) * 0.055; // 0.055 max volume (very soft and subtle)
+      targetVol = (1.0 - (distance / maxDist)) * 0.055; // 0.055 max volume
     }
 
     const now = this.ctx.currentTime;
     this.fireRumbleGain.gain.setTargetAtTime(targetVol * 0.35, now, 0.12);
-    this.firePopGain.gain.setTargetAtTime(targetVol * 0.95, now, 0.12);
   }
 
   // Procedural Axe Wood Chop SFX (for Barricades)

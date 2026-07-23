@@ -2666,34 +2666,74 @@ export class CanvasRenderer {
             }
           }
 
-          // B.5. Ancient Altar (🗿 - Ancient Rune Pedestal)
+          // B.5. Ancient Altar (🗿 - Compact Mystic Obelisk Shrine)
           if (cell.altar) {
             const altarGroup = new THREE.Group();
             altarGroup.name = "altar";
 
-            // Stone base pedestal
-            const baseGeo = new THREE.BoxGeometry(0.7, 0.4, 0.7);
             const stoneMat = new THREE.MeshPhongMaterial({
-              color: "#334155",
+              color: "#1e293b", // Slate obsidian stone
               bumpMap: this.brickBump,
-              bumpScale: 0.08,
-              shininess: 25
+              bumpScale: 0.12,
+              shininess: 40
             });
+
+            const runeMat = new THREE.MeshBasicMaterial({
+              color: cell.altar.used ? "#475569" : "#fbbf24"
+            });
+
+            // 1. Stepped Stone Base
+            const baseGeo = new THREE.BoxGeometry(0.36, 0.08, 0.36);
             const baseMesh = new THREE.Mesh(baseGeo, stoneMat);
-            baseMesh.position.set(0, 0.2, 0);
+            baseMesh.position.set(0, 0.04, 0);
             altarGroup.add(baseMesh);
 
-            // Inner glowing rune crystal core
-            const crystalGeo = new THREE.OctahedronGeometry(0.2, 0);
+            // 2. Carved Obelisk Pillar
+            const pillarGeo = new THREE.BoxGeometry(0.24, 0.60, 0.24);
+            const pillarMesh = new THREE.Mesh(pillarGeo, stoneMat);
+            pillarMesh.position.set(0, 0.38, 0);
+            altarGroup.add(pillarMesh);
+
+            // 3. Golden Rune Inlays on 4 pillar faces
+            const runeGeo = new THREE.PlaneGeometry(0.06, 0.40);
+            const runeN = new THREE.Mesh(runeGeo, runeMat);
+            runeN.position.set(0, 0.38, -0.122);
+            const runeS = new THREE.Mesh(runeGeo, runeMat);
+            runeS.position.set(0, 0.38, 0.122);
+            runeS.rotation.y = Math.PI;
+            const runeE = new THREE.Mesh(runeGeo, runeMat);
+            runeE.position.set(0.122, 0.38, 0);
+            runeE.rotation.y = Math.PI / 2;
+            const runeW = new THREE.Mesh(runeGeo, runeMat);
+            runeW.position.set(-0.122, 0.38, 0);
+            runeW.rotation.y = -Math.PI / 2;
+            altarGroup.add(runeN, runeS, runeE, runeW);
+
+            // 4. Pillar Capital Top Plate
+            const capGeo = new THREE.BoxGeometry(0.30, 0.06, 0.30);
+            const capMesh = new THREE.Mesh(capGeo, stoneMat);
+            capMesh.position.set(0, 0.71, 0);
+            altarGroup.add(capMesh);
+
+            // 5. Floating Mystic Gem
+            const crystalGeo = new THREE.OctahedronGeometry(0.08, 0);
             const crystalMat = new THREE.MeshPhongMaterial({
-              color: "#fbbf24",
-              emissive: cell.altar.used ? "#332000" : "#d97706",
-              emissiveIntensity: cell.altar.used ? 0.2 : 0.85,
-              shininess: 80
+              color: cell.altar.used ? "#475569" : "#fbbf24",
+              emissive: cell.altar.used ? "#0f172a" : "#d97706",
+              emissiveIntensity: cell.altar.used ? 0.1 : 0.9,
+              shininess: 90
             });
             const crystalMesh = new THREE.Mesh(crystalGeo, crystalMat);
-            crystalMesh.position.set(0, 0.55, 0);
+            crystalMesh.name = "altarCrystal";
+            crystalMesh.position.set(0, 0.84, 0);
             altarGroup.add(crystalMesh);
+
+            // 6. Mystic PointLight (Warm golden glow)
+            if (!cell.altar.used) {
+              const altarLight = new THREE.PointLight("#fbbf24", 1.4, 4.0);
+              altarLight.position.set(0, 0.85, 0);
+              altarGroup.add(altarLight);
+            }
 
             cellGroup.add(altarGroup);
           }

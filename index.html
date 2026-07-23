@@ -11,7 +11,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js?v=117').catch(err => {
+        navigator.serviceWorker.register('sw.js?v=118').catch(err => {
           console.warn('Service Worker registration failed:', err);
         });
       });
@@ -629,7 +629,7 @@
   </div>
 
   <!-- Ancient Altar Upgrade Modal -->
-  <div id="modal-altar" class="modal hidden">
+  <div id="modal-altar" class="overlay hidden">
     <div class="modal-content glass text-center" style="max-width: 520px; width: 92%; padding: 24px;">
       <div style="font-size: 3.2rem; filter: drop-shadow(0 0 12px rgba(234,179,8,0.5)); margin-bottom: 4px;">🗿</div>
       <h2 class="modal-title glow-text text-amber text-2xl font-bold" data-t="altar.title">🗿 Kadim Sunak Lütfu</h2>
@@ -695,6 +695,6 @@
     <img src="assets/jumpscare.png" style="width: 100%; height: 100%; object-fit: contain; filter: brightness(1.2) contrast(1.3); transform: scale(1.1);" />
   </div>
 
-  <script type="module" src="js/ui.js?v=117"></script>
+  <script type="module" src="js/ui.js?v=118"></script>
 </body>
 </html>

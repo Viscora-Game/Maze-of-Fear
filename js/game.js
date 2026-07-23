@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=120";
-import { AudioEngine } from "./audio.js?v=120";
-import { CanvasRenderer } from "./canvas.js?v=120";
-import { translations } from "./translations.js?v=120";
-import { randomEvents, deathEvents } from "./events.js?v=120";
-import { getSeededRandom } from "./prng.js?v=120";
+import { generateMaze } from "./maze.js?v=121";
+import { AudioEngine } from "./audio.js?v=121";
+import { CanvasRenderer } from "./canvas.js?v=121";
+import { translations } from "./translations.js?v=121";
+import { randomEvents, deathEvents } from "./events.js?v=121";
+import { getSeededRandom } from "./prng.js?v=121";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -704,8 +704,14 @@ export class Game {
     } else {
       if (this.keys["w"] || this.keys["arrowup"]) moveDir = 1;
       if (this.keys["s"] || this.keys["arrowdown"]) moveDir = -1;
-      if (this.keys["a"] || this.keys["arrowleft"]) strafeDir = -1;
-      if (this.keys["d"] || this.keys["arrowright"]) strafeDir = 1;
+      if (this.keys["a"]) strafeDir -= 1;
+      if (this.keys["d"]) strafeDir += 1;
+
+      // Arrow keys turning (only when mouse pointer lock is NOT active to prevent mouse conflict)
+      if (typeof document !== "undefined" && !document.pointerLockElement) {
+        if (this.keys["arrowleft"]) p.angle -= dt * 2.2;
+        if (this.keys["arrowright"]) p.angle += dt * 2.2;
+      }
     }
 
     const isMoving = hasJoystick || moveDir !== 0 || strafeDir !== 0;

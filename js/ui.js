@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=119";
-import { MultiplayerManager } from "./multiplayer.js?v=119";
+import { Game } from "./game.js?v=120";
+import { MultiplayerManager } from "./multiplayer.js?v=120";
 
 const init = () => {
   const game = new Game();
@@ -1735,6 +1735,26 @@ function setupUI(game) {
     if (!modals.altar) return;
     modals.altar.classList.remove("hidden");
 
+    const cooldownBox = modals.altar.querySelector("#altar-cooldown-text");
+    const cooldownSecSpan = modals.altar.querySelector("#altar-cooldown-sec");
+
+    const checkCooldown = () => {
+      const p = game.state ? game.state.player : null;
+      const nowMs = Date.now();
+      const lastUse = (p && p.lastAltarUseTime) ? p.lastAltarUseTime : 0;
+      const rem = Math.max(0, Math.ceil((30000 - (nowMs - lastUse)) / 1000));
+
+      if (rem > 0) {
+        if (cooldownBox) cooldownBox.classList.remove("hidden");
+        if (cooldownSecSpan) cooldownSecSpan.textContent = rem;
+      } else {
+        if (cooldownBox) cooldownBox.classList.add("hidden");
+      }
+      return rem;
+    };
+
+    const remSeconds = checkCooldown();
+
     const setupBtn = (id, type) => {
       const btn = modals.altar.querySelector(id);
       if (!btn) return;
@@ -1742,11 +1762,12 @@ function setupUI(game) {
       const newBtn = btn.cloneNode(true);
       btn.parentNode.replaceChild(newBtn, btn);
 
-      if (config.cell && config.cell.altar && config.cell.altar.used) {
+      if (remSeconds > 0) {
         newBtn.style.opacity = "0.5";
         newBtn.style.cursor = "not-allowed";
         newBtn.onclick = () => {
-          if (game.showToast) game.showToast(game.t("altar.alreadyUsed"), true);
+          const rem = checkCooldown();
+          if (game.showToast) game.showToast(game.t("altar.coopCooldown", { sec: rem }), true);
         };
       } else {
         newBtn.style.opacity = "1.0";
@@ -1755,6 +1776,8 @@ function setupUI(game) {
           const success = config.onUpgrade(type);
           if (success) {
             modals.altar.classList.add("hidden");
+          } else {
+            checkCooldown();
           }
         };
       }

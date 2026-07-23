@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=119";
-import { AudioEngine } from "./audio.js?v=119";
-import { CanvasRenderer } from "./canvas.js?v=119";
-import { translations } from "./translations.js?v=119";
-import { randomEvents, deathEvents } from "./events.js?v=119";
-import { getSeededRandom } from "./prng.js?v=119";
+import { generateMaze } from "./maze.js?v=120";
+import { AudioEngine } from "./audio.js?v=120";
+import { CanvasRenderer } from "./canvas.js?v=120";
+import { translations } from "./translations.js?v=120";
+import { randomEvents, deathEvents } from "./events.js?v=120";
+import { getSeededRandom } from "./prng.js?v=120";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -283,6 +283,18 @@ export class Game {
       },
 
       otherPlayer: isCoop ? {
+        fuel: prevPlayer ? prevPlayer.fuel : 100,
+        gold: prevPlayer ? prevPlayer.gold : (isCoop ? 0 : 0),
+        ropes: prevPlayer ? prevPlayer.ropes : (isCoop ? 2 : 1),
+        matches: prevPlayer ? prevPlayer.matches : 0,
+        inventory: prevPlayer ? prevPlayer.inventory : [],
+        walkSpeedBonus: prevPlayer ? prevPlayer.walkSpeedBonus : 0,
+        staminaDrainRate: prevPlayer ? prevPlayer.staminaDrainRate : 1.0,
+        flashlightDrainRate: prevPlayer ? prevPlayer.flashlightDrainRate : 1.0,
+        flashlightRangeBonus: prevPlayer ? prevPlayer.flashlightRangeBonus : 0,
+        lastAltarUseTime: prevPlayer ? prevPlayer.lastAltarUseTime : 0,
+        altarCooldown: 0,
+        altarUses: 0,
         x: 1.5,
         y: 1.5,
         visualX: 1.5,
@@ -292,6 +304,8 @@ export class Game {
         pitch: 0,
         lanternOn: false,
         health: 100,
+        isShiftPressed: false,
+        isExhausted: false,
         isDead: false
       } : null,
       lastCheckPoint: { x: 1.5, y: 1.5, floor: 0 },
@@ -716,14 +730,12 @@ export class Game {
     p.isRunning = isRunning;
     p.isMoving = isMoving;
 
-    // Walking speed: 1.8 grid cells/sec, Running speed: 2.8 grid cells/sec (modified by Altar upgrades)
-    const walkSpeed = 1.8 * (1 + (p.walkSpeedBonus || 0));
-    const runSpeed = 2.8 * (1 + (p.walkSpeedBonus || 0));
-    const speed = isRunning ? runSpeed : walkSpeed;
+    const speedMultiplier = isRunning ? 1.6 : 1.0;
+    const speed = (1.8 + (p.walkSpeedBonus || 0)) * speedMultiplier;
 
     if (isRunning) {
-      // Drain stamina when running forward (depletes in 4 seconds, reduced by Altar upgrades)
-      p.stamina = Math.max(0, p.stamina - dt * 25 * (p.staminaDrainRate || 1.0));
+      // Drain stamina when sprinting forward (reduced significantly by Altar B2 upgrade)
+      p.stamina = Math.max(0, p.stamina - dt * 22.0 * (p.staminaDrainRate || 1.0));
     } else {
       // Regenerate stamina when walking or standing (fully recovers in 15 seconds: 6.6 per second)
       p.stamina = Math.min(p.maxStamina, p.stamina + dt * 6.6);
@@ -1315,7 +1327,7 @@ export class Game {
     }
   }
 
-  // Interacting with Ancient Altars (🗿)
+  // Interacting with Ancient Altars (💀)
   triggerAltarInteraction(cell) {
     this.state.gameState = "modal";
     if (this.onAltar) {
@@ -1323,24 +1335,35 @@ export class Game {
         cell: cell,
         onUpgrade: (upgradeType) => {
           const p = this.state.player;
-          if (p.gold < 60) {
-            if (this.showToast) this.showToast(this.t("altar.insufficientGold"));
+          const nowMs = Date.now();
+          const cooldownRemaining = 30000 - (nowMs - (p.lastAltarUseTime || 0));
+
+          if (cooldownRemaining > 0) {
+            const sec = Math.ceil(cooldownRemaining / 1000);
+            if (this.showToast) this.showToast(this.t("altar.coopCooldown", { sec: sec }), true);
             return false;
           }
+
+          if (p.gold < 60) {
+            if (this.showToast) this.showToast(this.t("altar.insufficientGold"), true);
+            return false;
+          }
+
           p.gold -= 60;
+          p.lastAltarUseTime = nowMs;
 
           if (upgradeType === "A1") {
             p.flashlightRangeBonus = (p.flashlightRangeBonus || 0) + 0.40;
             if (this.showToast) this.showToast(this.lang === "tr" ? "🔦 Uzun Menzilli Odak Kazanıldı! (+%40 Menzil)" : "🔦 Long-Range Focus Granted! (+40% Reach)");
           } else if (upgradeType === "A2") {
             p.flashlightDrainRate = (p.flashlightDrainRate || 1.0) * 0.60;
-            if (this.showToast) this.showToast(this.lang === "tr" ? "🔋 Güçlendirilmiş Hücre Kazanıldı! (%40 Yavaş Pil Tüketimi)" : "🔋 Reinforced Cell Granted! (40% Slower Battery Drain)");
+            if (this.showToast) this.showToast(this.lang === "tr" ? "🔋 Güçlendirilmiş Hücre Kazanıldı! (%40 Yavaş Pil Tüketimi)" : "🔋 Reinforced Cell Granted! (40% Slower Battery Depletion)");
           } else if (upgradeType === "B1") {
-            p.walkSpeedBonus = (p.walkSpeedBonus || 0) + 0.25;
-            if (this.showToast) this.showToast(this.lang === "tr" ? "👟 Hızlı Adımlar Kazanıldı! (+%25 Yürüme Hızı)" : "👟 Swift Stride Granted! (+25% Walk Speed)");
+            p.walkSpeedBonus = (p.walkSpeedBonus || 0) + 0.60; // +35% Walk speed boost
+            if (this.showToast) this.showToast(this.lang === "tr" ? "👟 Hızlı Adımlar Kazanıldı! (+%35 Yürüme Hızı)" : "👟 Swift Stride Granted! (+35% Walk Speed)");
           } else if (upgradeType === "B2") {
-            p.staminaDrainRate = (p.staminaDrainRate || 1.0) * 0.60;
-            if (this.showToast) this.showToast(this.lang === "tr" ? "🫁 Derin Soluk Kazanıldı! (%40 Yavaş Stamina Tüketimi)" : "🫁 Deep Breath Granted! (40% Slower Stamina Drain)");
+            p.staminaDrainRate = (p.staminaDrainRate || 1.0) * 0.40; // 60% Slower stamina drain
+            if (this.showToast) this.showToast(this.lang === "tr" ? "🫁 Derin Soluk Kazanıldı! (%60 Yavaş Stamina Tüketimi)" : "🫁 Deep Breath Granted! (60% Slower Stamina Drain)");
           }
 
           cell.altar.used = true;

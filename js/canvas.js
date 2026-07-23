@@ -170,6 +170,7 @@ export class CanvasRenderer {
     this.woodBump = null;
     this.floorTexture = this.buildFloorTexture();
     this.floorBump = this.buildFloorBump();
+    this.bloodStainTexture = this.buildBloodStainTexture();
 
     // Load jumpscare texture directly using URL constructor for Vite asset resolution compatibility
     const jumpscareUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
@@ -1713,6 +1714,39 @@ export class CanvasRenderer {
     return texture;
   }
 
+  buildBloodStainTexture() {
+    const canvas = document.createElement("canvas");
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext("2d");
+
+    // Gloomy dark slate stone background
+    ctx.fillStyle = "#0d1117";
+    ctx.fillRect(0, 0, 256, 256);
+
+    // Subtle dark blood stains & drips running down (tasteful dark crimson)
+    ctx.fillStyle = "rgba(102, 0, 0, 0.75)";
+    ctx.beginPath();
+    ctx.arc(80, 55, 20, 0, Math.PI * 2);
+    ctx.arc(175, 85, 16, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "rgba(68, 0, 0, 0.85)";
+    ctx.beginPath();
+    ctx.arc(80, 55, 12, 0, Math.PI * 2);
+    ctx.arc(175, 85, 9, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Subtle blood drips running downwards
+    ctx.fillStyle = "rgba(90, 0, 0, 0.80)";
+    ctx.fillRect(77, 55, 6, 110);
+    ctx.fillRect(172, 85, 5, 85);
+    ctx.fillRect(125, 35, 4, 75);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
+  }
+
   buildPaintingTexture(variant = 0) {
     const canvas = document.createElement("canvas");
     canvas.width = 256;
@@ -2672,10 +2706,11 @@ export class CanvasRenderer {
             altarGroup.name = "altar";
 
             const stoneMat = new THREE.MeshPhongMaterial({
-              color: "#1e293b", // Slate obsidian stone
+              color: "#182030", // Gloomy dark obsidian gothic stone
+              map: this.bloodStainTexture,
               bumpMap: this.brickBump,
-              bumpScale: 0.12,
-              shininess: 40
+              bumpScale: 0.16,
+              shininess: 15
             });
 
             const runeMat = new THREE.MeshBasicMaterial({

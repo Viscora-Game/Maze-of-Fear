@@ -296,8 +296,8 @@ export class CanvasRenderer {
       if (p.pitch === undefined) p.pitch = 0.0;
 
       if (document.pointerLockElement === this.canvas) {
-        // Pointer lock: direct smooth mouse movement
-        if (Math.abs(e.movementX) > 150 || Math.abs(e.movementY) > 150) return;
+        // Pointer lock: direct smooth mouse movement (allow fast mouse reversal flicks up to 400px)
+        if (Math.abs(e.movementX) > 400 || Math.abs(e.movementY) > 400) return;
         const sensitivity = 0.0026;
         p.angle += e.movementX * sensitivity;
         p.pitch = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, p.pitch - e.movementY * sensitivity));
@@ -4690,12 +4690,19 @@ export class CanvasRenderer {
       this.lookY = lookY;
       this.lookZ = lookZ;
     } else {
-      const lookLerp = (document.pointerLockElement === this.canvas) ? 0.70 : 0.55;
-      this.camX += (targetCamX - this.camX) * 0.22;
-      this.camZ += (targetCamZ - this.camZ) * 0.22;
-      this.lookX += (lookX - this.lookX) * lookLerp;
-      this.lookY += (lookY - this.lookY) * lookLerp;
-      this.lookZ += (lookZ - this.lookZ) * lookLerp;
+      this.camX += (targetCamX - this.camX) * 0.28;
+      this.camZ += (targetCamZ - this.camZ) * 0.28;
+      
+      if (document.pointerLockElement === this.canvas) {
+        // Direct instant 1:1 camera look target (zero reversal lag/hitching when reversing mouse spin direction)
+        this.lookX = lookX;
+        this.lookY = lookY;
+        this.lookZ = lookZ;
+      } else {
+        this.lookX += (lookX - this.lookX) * 0.65;
+        this.lookY += (lookY - this.lookY) * 0.65;
+        this.lookZ += (lookZ - this.lookZ) * 0.65;
+      }
     }
 
     this.camera.position.set(this.camX, camHeight, this.camZ);

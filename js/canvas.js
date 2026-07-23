@@ -4109,20 +4109,25 @@ export class CanvasRenderer {
         
         // If the exit is on a different floor, point the compass to the staircase leading to it!
         if (state.exitCell.floor !== currentFloor) {
-          let foundStair = null;
-          for (let y = 0; y < height; y++) {
-            if (!grid[y]) continue;
-            for (let x = 0; x < width; x++) {
-              if (grid[y][x] && grid[y][x].staircase) {
-                foundStair = grid[y][x];
-                break;
+          if (state.staircaseCell) {
+            targetX = state.staircaseCell.x;
+            targetY = state.staircaseCell.y;
+          } else {
+            let foundStair = null;
+            for (let y = 0; y < height; y++) {
+              if (!grid[y]) continue;
+              for (let x = 0; x < width; x++) {
+                if (grid[y][x] && grid[y][x].staircase) {
+                  foundStair = grid[y][x];
+                  break;
+                }
               }
+              if (foundStair) break;
             }
-            if (foundStair) break;
-          }
-          if (foundStair) {
-            targetX = foundStair.x;
-            targetY = foundStair.y;
+            if (foundStair) {
+              targetX = foundStair.x;
+              targetY = foundStair.y;
+            }
           }
         }
 
@@ -4462,7 +4467,8 @@ export class CanvasRenderer {
             const { lensMat, beamMat } = this.otherPlayerMesh.userData;
             const isFlickerDim = baseIntensity < 2.0;
             if (lensMat) lensMat.opacity = isFlickerDim ? 0.2 : 1.0;
-            if (beamMat) beamMat.opacity = isFlickerDim ? 0.04 : 0.22;
+            // Disable volumetric beam overdraw on mobile GPUs to eliminate FPS drops
+            if (beamMat) beamMat.opacity = isMobileDevice ? 0.0 : (isFlickerDim ? 0.04 : 0.22);
           }
         } else {
           this.otherPlayerLight.intensity = 0.0;
@@ -4768,15 +4774,17 @@ export class CanvasRenderer {
       const bonus = (player && player.flashlightRangeBonus ? player.flashlightRangeBonus : 0);
       this.lantern.distance = baseDist * (1.0 + bonus);
 
-      const dir = new THREE.Vector3();
-      this.camera.getWorldDirection(dir);
+      if (!this._tempDirVec) this._tempDirVec = new THREE.Vector3();
+      if (!this._tempLightPosVec) this._tempLightPosVec = new THREE.Vector3();
+
+      this.camera.getWorldDirection(this._tempDirVec);
 
       // Position the light source 0.15 units behind the camera to prevent clipping when looking nose-to-nose with walls
-      const lightPos = new THREE.Vector3().copy(this.camera.position).addScaledVector(dir, -0.15);
-      this.lantern.position.copy(lightPos);
+      this._tempLightPosVec.copy(this.camera.position).addScaledVector(this._tempDirVec, -0.15);
+      this.lantern.position.copy(this._tempLightPosVec);
 
       // Position the target 5 units straight ahead in world coordinates
-      this.lantern.target.position.copy(this.camera.position).addScaledVector(dir, 5.0);
+      this.lantern.target.position.copy(this.camera.position).addScaledVector(this._tempDirVec, 5.0);
 
       // Force immediate matrix updates to make sure the renderer compiles positions correctly
       this.lantern.updateMatrixWorld(true);

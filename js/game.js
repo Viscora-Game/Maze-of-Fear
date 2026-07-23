@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=116";
-import { AudioEngine } from "./audio.js?v=116";
-import { CanvasRenderer } from "./canvas.js?v=116";
-import { translations } from "./translations.js?v=116";
-import { randomEvents, deathEvents } from "./events.js?v=116";
-import { getSeededRandom } from "./prng.js?v=116";
+import { generateMaze } from "./maze.js?v=117";
+import { AudioEngine } from "./audio.js?v=117";
+import { CanvasRenderer } from "./canvas.js?v=117";
+import { translations } from "./translations.js?v=117";
+import { randomEvents, deathEvents } from "./events.js?v=117";
+import { getSeededRandom } from "./prng.js?v=117";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -555,10 +555,10 @@ export class Game {
         this.updatePhysics(dt);
         this.checkSageDisappearance();
         
-        // Sync player coordinates to buddy in co-op mode (rate-limited to 22 updates/sec to keep framerate high)
+        // Sync player coordinates to buddy in co-op mode (rate-limited to 16 updates/sec to keep framerate high & avoid GC spikes)
         if (this.multiplayer && this.multiplayer.isConnected) {
           const nowMs = Date.now();
-          if (!this.lastSendTime || nowMs - this.lastSendTime > 45) {
+          if (!this.lastSendTime || nowMs - this.lastSendTime > 60) {
             this.lastSendTime = nowMs;
             const p = this.state.player;
             this.multiplayer.send({
@@ -2575,10 +2575,10 @@ export class Game {
         }
       }
 
-      // Sync position updates from Host periodically using a time-based threshold (45ms ~ 22Hz)
+      // Sync position updates from Host periodically using a time-based threshold (65ms ~ 15Hz)
       if (isCoop) {
         const nowMs = Date.now();
-        if (!sm.lastSyncTime || nowMs - sm.lastSyncTime > 45) {
+        if (!sm.lastSyncTime || nowMs - sm.lastSyncTime > 65) {
           sm.lastSyncTime = nowMs;
           this.multiplayer.send({
             type: "MONSTER_SYNC",

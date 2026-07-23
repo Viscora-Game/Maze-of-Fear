@@ -366,8 +366,14 @@ export class MultiplayerManager {
         state.otherPlayer.health = data.health;
         state.otherPlayer.isDead = data.isDead;
         
-        // Sync fog of war map cells visited by remote player
-        this.game.syncRemotePlayerVisited(data.x, data.y, data.floor);
+        // Sync fog of war map cells visited by remote player only when crossing into a new cell (saves 95% CPU cell grid scans)
+        const cellChanged = (state.otherPlayer.lastCellX === undefined || Math.floor(data.x) !== state.otherPlayer.lastCellX || Math.floor(data.y) !== state.otherPlayer.lastCellY || data.floor !== state.otherPlayer.lastCellFloor);
+        if (cellChanged) {
+          state.otherPlayer.lastCellX = Math.floor(data.x);
+          state.otherPlayer.lastCellY = Math.floor(data.y);
+          state.otherPlayer.lastCellFloor = data.floor;
+          this.game.syncRemotePlayerVisited(data.x, data.y, data.floor);
+        }
         this.updateSpatialVoice();
         break;
 

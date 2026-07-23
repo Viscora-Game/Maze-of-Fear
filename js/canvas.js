@@ -295,9 +295,9 @@ export class CanvasRenderer {
       if (p.pitch === undefined) p.pitch = 0.0;
 
       if (document.pointerLockElement === this.canvas) {
-        // Pointer lock: direct mouse movement (ignore browser pointer lock entry/exit cursor centering jumps > 120px)
-        if (Math.abs(e.movementX) > 120 || Math.abs(e.movementY) > 120) return;
-        const sensitivity = 0.0022;
+        // Pointer lock: direct mouse movement (ignore browser pointer lock entry/exit cursor centering jumps > 150px)
+        if (Math.abs(e.movementX) > 150 || Math.abs(e.movementY) > 150) return;
+        const sensitivity = 0.0048;
         p.angle += e.movementX * sensitivity;
         p.pitch = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, p.pitch - e.movementY * sensitivity));
       } else if (isDragging) {
@@ -305,14 +305,14 @@ export class CanvasRenderer {
         const dx = e.clientX - prevMouseX;
         const dy = e.clientY - prevMouseY;
         
-        // Ignore sudden coordinates jumps > 120px when clicking/dragging
-        if (Math.abs(dx) > 120 || Math.abs(dy) > 120) {
+        // Ignore sudden coordinates jumps > 150px when clicking/dragging
+        if (Math.abs(dx) > 150 || Math.abs(dy) > 150) {
           prevMouseX = e.clientX;
           prevMouseY = e.clientY;
           return;
         }
         
-        const sensitivity = 0.0035;
+        const sensitivity = 0.0055;
         p.angle += dx * sensitivity;
         p.pitch = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, p.pitch - dy * sensitivity));
         prevMouseX = e.clientX;
@@ -4658,11 +4658,12 @@ export class CanvasRenderer {
       this.lookY = lookY;
       this.lookZ = lookZ;
     } else {
+      const lookLerp = (document.pointerLockElement === this.canvas) ? 0.92 : 0.75;
       this.camX += (targetCamX - this.camX) * 0.22;
       this.camZ += (targetCamZ - this.camZ) * 0.22;
-      this.lookX += (lookX - this.lookX) * 0.22;
-      this.lookY += (lookY - this.lookY) * 0.22;
-      this.lookZ += (lookZ - this.lookZ) * 0.22;
+      this.lookX += (lookX - this.lookX) * lookLerp;
+      this.lookY += (lookY - this.lookY) * lookLerp;
+      this.lookZ += (lookZ - this.lookZ) * lookLerp;
     }
 
     this.camera.position.set(this.camX, camHeight, this.camZ);

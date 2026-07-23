@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=121";
-import { MultiplayerManager } from "./multiplayer.js?v=121";
+import { Game } from "./game.js?v=122";
+import { MultiplayerManager } from "./multiplayer.js?v=122";
 
 const init = () => {
   const game = new Game();
@@ -1788,11 +1788,28 @@ function setupUI(game) {
     setupBtn("#btn-altar-b1", "B1");
     setupBtn("#btn-altar-b2", "B2");
 
+    // Live real-time cooldown ticker while modal is open
+    if (window._altarTimerInterval) clearInterval(window._altarTimerInterval);
+    window._altarTimerInterval = setInterval(() => {
+      if (modals.altar.classList.contains("hidden")) {
+        clearInterval(window._altarTimerInterval);
+        return;
+      }
+      const rem = checkCooldown();
+      if (rem === 0) {
+        setupBtn("#btn-altar-a1", "A1");
+        setupBtn("#btn-altar-a2", "A2");
+        setupBtn("#btn-altar-b1", "B1");
+        setupBtn("#btn-altar-b2", "B2");
+      }
+    }, 500);
+
     const closeBtn = modals.altar.querySelector("#btn-altar-close");
     if (closeBtn) {
       const newClose = closeBtn.cloneNode(true);
       closeBtn.parentNode.replaceChild(newClose, closeBtn);
       newClose.onclick = () => {
+        if (window._altarTimerInterval) clearInterval(window._altarTimerInterval);
         modals.altar.classList.add("hidden");
         config.onClose();
       };

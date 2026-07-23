@@ -2705,11 +2705,9 @@ export class CanvasRenderer {
             altarGroup.name = "altar";
 
             const stoneMat = new THREE.MeshPhongMaterial({
-              color: "#182030", // Gloomy dark obsidian gothic stone
+              color: "#111827", // Deep Gothic obsidian dark stone
               map: this.bloodStainTexture,
-              bumpMap: this.brickBump,
-              bumpScale: 0.16,
-              shininess: 15
+              shininess: 8
             });
 
             const runeMat = new THREE.MeshBasicMaterial({
@@ -2728,18 +2726,18 @@ export class CanvasRenderer {
             pillarMesh.position.set(0, 0.38, 0);
             altarGroup.add(pillarMesh);
 
-            // 3. Golden Rune Inlays on 4 pillar faces
+            // 3. Golden Rune Inlays on 4 pillar faces (Offset z=0.125 to eliminate z-fighting lines)
             const runeGeo = new THREE.PlaneGeometry(0.06, 0.40);
             const runeN = new THREE.Mesh(runeGeo, runeMat);
-            runeN.position.set(0, 0.38, -0.122);
+            runeN.position.set(0, 0.38, -0.125);
             const runeS = new THREE.Mesh(runeGeo, runeMat);
-            runeS.position.set(0, 0.38, 0.122);
+            runeS.position.set(0, 0.38, 0.125);
             runeS.rotation.y = Math.PI;
             const runeE = new THREE.Mesh(runeGeo, runeMat);
-            runeE.position.set(0.122, 0.38, 0);
+            runeE.position.set(0.125, 0.38, 0);
             runeE.rotation.y = Math.PI / 2;
             const runeW = new THREE.Mesh(runeGeo, runeMat);
-            runeW.position.set(-0.122, 0.38, 0);
+            runeW.position.set(-0.125, 0.38, 0);
             runeW.rotation.y = -Math.PI / 2;
             altarGroup.add(runeN, runeS, runeE, runeW);
 

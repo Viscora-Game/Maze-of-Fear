@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=121";
-import { AudioEngine } from "./audio.js?v=121";
-import { CanvasRenderer } from "./canvas.js?v=121";
-import { translations } from "./translations.js?v=121";
-import { randomEvents, deathEvents } from "./events.js?v=121";
-import { getSeededRandom } from "./prng.js?v=121";
+import { generateMaze } from "./maze.js?v=122";
+import { AudioEngine } from "./audio.js?v=122";
+import { CanvasRenderer } from "./canvas.js?v=122";
+import { translations } from "./translations.js?v=122";
+import { randomEvents, deathEvents } from "./events.js?v=122";
+import { getSeededRandom } from "./prng.js?v=122";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -2155,7 +2155,7 @@ export class Game {
     const dxs = [0, 0, 1, -1];
     const dys = [1, -1, 0, 0];
     
-    while (qHead < queue.length) {
+    while (qHead < queue.length && qHead < 120) {
       const currIdx = queue[qHead++];
       if (currIdx === targetIdx) {
         found = true;

@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=123";
-import { MultiplayerManager } from "./multiplayer.js?v=123";
+import { Game } from "./game.js?v=124";
+import { MultiplayerManager } from "./multiplayer.js?v=124";
 
 const init = () => {
   const game = new Game();
@@ -2072,7 +2072,7 @@ function setupUI(game) {
       // Switch state floor
       game.state.currentFloor = nextFloor;
       
-      // Rebuild the scene immediately while loading screen is covering the freeze
+      // Rebuild scene for new floor
       game.renderer.rebuildScene(game.state);
 
       // Immediately sync position and new floor to Co-op partner

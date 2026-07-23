@@ -3491,14 +3491,25 @@ export class CanvasRenderer {
               // 1. Solid Outer Door Frame (left post, right post, top header)
               const frameL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.25, 0.04), ironMat);
               frameL.position.set(-0.52, 0.625, 0);
-              const frameR = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.25, 0.04), ironMat);
-              frameR.position.set(0.52, 0.625, 0);
-              const frameTop = new THREE.Mesh(new THREE.BoxGeometry(1.08, 0.04, 0.04), ironMat);
-              frameTop.position.set(0, 1.23, 0);
-              obsSubGroup.add(frameL, frameR, frameTop);
+              // 1. Solid Gothic Gateway Archway Frame (Full 1.04m width x 0.42m depth portal box)
+              const framePostGeo = new THREE.BoxGeometry(0.24, 2.10, 0.42);
+              const framePostL = new THREE.Mesh(framePostGeo, ironMat);
+              framePostL.position.set(-0.40, 1.05, 0);
+              const framePostR = new THREE.Mesh(framePostGeo, ironMat);
+              framePostR.position.set(0.40, 1.05, 0);
 
-              // 2. Vertical bars (spaced between the frames)
-              for (let i = -0.40; i <= 0.40; i += 0.133) {
+              const frameTopGeo = new THREE.BoxGeometry(1.04, 0.32, 0.42);
+              const frameTop = new THREE.Mesh(frameTopGeo, ironMat);
+              frameTop.position.set(0, 1.94, 0);
+
+              // Side Wall Connectors (Spans flush to cell boundaries so door is never floating in empty space)
+              const wingGeo = new THREE.BoxGeometry(0.28, 2.10, 0.42);
+              const wingL = new THREE.Mesh(wingGeo, ironMat);
+              wingL.position.set(-0.42, 1.05, 0);
+              const wingR = new THREE.Mesh(wingGeo, ironMat);
+              wingR.position.set(0.42, 1.05, 0);
+
+              obGroup.add(framePostL, framePostR, frameTop, wingL, wingR);
                 const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 1.21), ironMat);
                 bar.position.set(i, 0.605, 0);
                 obsSubGroup.add(bar);

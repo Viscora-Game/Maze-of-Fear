@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=128";
-import { MultiplayerManager } from "./multiplayer.js?v=128";
+import { Game } from "./game.js?v=129";
+import { MultiplayerManager } from "./multiplayer.js?v=129";
 
 const init = () => {
   const game = new Game();
@@ -696,11 +696,11 @@ function setupUI(game) {
 
       card.addEventListener("click", () => {
         if (!isUnlocked) {
-          soundEngine.playError && soundEngine.playError();
+          if (game.audio) game.audio.playStep();
           game.showNotification(`🔒 ${game.lang === 'tr' ? 'KİLİTLİ: ' + s.questTr : 'LOCKED: ' + s.questEn}`);
           return;
         }
-        soundEngine.playClick();
+        if (game.audio) game.audio.playStep();
         game.characterSkin = s.id;
         localStorage.setItem("selected_character_skin", s.id);
         if (game.state && game.state.player) {
@@ -716,7 +716,7 @@ function setupUI(game) {
   const btnCharSelect = document.getElementById("btn-character-select");
   if (btnCharSelect) {
     btnCharSelect.addEventListener("click", () => {
-      soundEngine.playClick();
+      if (game.audio) game.audio.playStep();
       updateCharacterModalUI();
       document.getElementById("modal-character").classList.remove("hidden");
     });
@@ -725,7 +725,7 @@ function setupUI(game) {
   const btnCharClose = document.getElementById("btn-character-close");
   if (btnCharClose) {
     btnCharClose.addEventListener("click", () => {
-      soundEngine.playClick();
+      if (game.audio) game.audio.playStep();
       document.getElementById("modal-character").classList.add("hidden");
     });
   }

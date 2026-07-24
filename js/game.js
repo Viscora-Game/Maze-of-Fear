@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=129";
-import { AudioEngine } from "./audio.js?v=129";
-import { CanvasRenderer } from "./canvas.js?v=129";
-import { translations } from "./translations.js?v=129";
-import { randomEvents, deathEvents } from "./events.js?v=129";
-import { getSeededRandom } from "./prng.js?v=129";
+import { generateMaze } from "./maze.js?v=130";
+import { AudioEngine } from "./audio.js?v=130";
+import { CanvasRenderer } from "./canvas.js?v=130";
+import { translations } from "./translations.js?v=130";
+import { randomEvents, deathEvents } from "./events.js?v=130";
+import { getSeededRandom } from "./prng.js?v=130";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -290,16 +290,16 @@ export class Game {
       },
 
       otherPlayer: isCoop ? {
-        fuel: prevPlayer ? prevPlayer.fuel : 100,
-        gold: prevPlayer ? prevPlayer.gold : (isCoop ? 0 : 0),
-        ropes: prevPlayer ? prevPlayer.ropes : (isCoop ? 2 : 1),
-        matches: prevPlayer ? prevPlayer.matches : 0,
-        inventory: prevPlayer ? prevPlayer.inventory : [],
-        walkSpeedBonus: prevPlayer ? prevPlayer.walkSpeedBonus : 0,
-        staminaDrainRate: prevPlayer ? prevPlayer.staminaDrainRate : 1.0,
-        flashlightDrainRate: prevPlayer ? prevPlayer.flashlightDrainRate : 1.0,
-        flashlightRangeBonus: prevPlayer ? prevPlayer.flashlightRangeBonus : 0,
-        lastAltarUseTime: prevPlayer ? prevPlayer.lastAltarUseTime : 0,
+        fuel: 100,
+        gold: 0,
+        ropes: 2,
+        matches: 0,
+        inventory: [],
+        walkSpeedBonus: 0,
+        staminaDrainRate: 1.0,
+        flashlightDrainRate: 1.0,
+        flashlightRangeBonus: 0,
+        lastAltarUseTime: 0,
         altarCooldown: 0,
         altarUses: 0,
         x: 1.5,

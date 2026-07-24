@@ -3781,28 +3781,34 @@ export class CanvasRenderer {
               obsSubGroup.add(keyPlate);
             }
             
-            // Determine orientation of gate/barricade/codeLock/ivy obstacles based strictly on physical corridor walls
-            if (type === "gate" || type === "barricade" || type === "codeLock" || type === "ivy") {
-              const isWall = (tx, ty) => {
+            // Determine orientation of gate/barricade/codeLock/ivy/pit obstacles based strictly on physical corridor walls
+            if (type === "gate" || type === "barricade" || type === "codeLock" || type === "ivy" || type === "pit") {
+              const isSolid = (tx, ty) => {
                 if (tx < 0 || tx >= width || ty < 0 || ty >= height) return true;
-                return grid[ty][tx].type === "wall";
+                const c = grid[ty][tx];
+                return c.type === "wall" || c.type === "pillar" || c.type === "arch";
               };
 
-              const westIsWall = isWall(x - 1, y);
-              const eastIsWall = isWall(x + 1, y);
-              const northIsWall = isWall(x, y - 1);
-              const southIsWall = isWall(x, y + 1);
+              const wWall = isSolid(x - 1, y);
+              const eWall = isSolid(x + 1, y);
+              const nWall = isSolid(x, y - 1);
+              const sWall = isSolid(x, y + 1);
 
-              if (westIsWall && eastIsWall) {
-                // Corridor runs North-South (walls on West and East). Spans East-West (rotation 0) to block passage.
+              const lrWallCount = (wWall ? 1 : 0) + (eWall ? 1 : 0);
+              const tbWallCount = (nWall ? 1 : 0) + (sWall ? 1 : 0);
+
+              if (lrWallCount > tbWallCount) {
+                // Corridor runs North-South (walls on West and East). Spans East-West (X-axis, rotation 0) to seal corridor.
                 obsSubGroup.rotation.y = 0;
-              } else if (northIsWall && southIsWall) {
-                // Corridor runs East-West (walls on North and South). Spans North-South (rotation 90deg) to block passage.
+              } else if (tbWallCount > lrWallCount) {
+                // Corridor runs East-West (walls on North and South). Spans North-South (Z-axis, rotation 90 deg) to seal corridor.
                 obsSubGroup.rotation.y = Math.PI / 2;
-              } else if (westIsWall || eastIsWall) {
-                obsSubGroup.rotation.y = 0;
               } else {
-                obsSubGroup.rotation.y = Math.PI / 2;
+                if (wWall || eWall) {
+                  obsSubGroup.rotation.y = 0;
+                } else {
+                  obsSubGroup.rotation.y = Math.PI / 2;
+                }
               }
             }
 

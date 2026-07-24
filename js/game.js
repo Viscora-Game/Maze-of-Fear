@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=126";
-import { AudioEngine } from "./audio.js?v=126";
-import { CanvasRenderer } from "./canvas.js?v=126";
-import { translations } from "./translations.js?v=126";
-import { randomEvents, deathEvents } from "./events.js?v=126";
-import { getSeededRandom } from "./prng.js?v=126";
+import { generateMaze } from "./maze.js?v=127";
+import { AudioEngine } from "./audio.js?v=127";
+import { CanvasRenderer } from "./canvas.js?v=127";
+import { translations } from "./translations.js?v=127";
+import { randomEvents, deathEvents } from "./events.js?v=127";
+import { getSeededRandom } from "./prng.js?v=127";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -1073,8 +1073,11 @@ export class Game {
     if (this.audio) this.audio.playAchievementUnlock();
 
     const skinNames = {
-      child: { tr: "Kayıp Çocuk", en: "Lost Child" },
-      merchant: { tr: "Gizemli Tüccar", en: "Merchant" },
+      police: { tr: "Polis Memuru", en: "Police Officer" },
+      child: { tr: "Kayıp Kız", en: "Lost Girl" },
+      doctor: { tr: "Doktor", en: "Doctor" },
+      firefighter: { tr: "İtfaiyeci", en: "Firefighter" },
+      killer: { tr: "Maskeli Katil", en: "Masked Killer" },
       monster: { tr: "Gölge Canavarı", en: "Shadow Monster" }
     };
     const sName = skinNames[skinId] ? (this.lang === "tr" ? skinNames[skinId].tr : skinNames[skinId].en) : skinId;
@@ -2887,6 +2890,13 @@ export class Game {
       if (elapsedSec < 90) {
         this.unlockAchievement("speedrunner");
       }
+      // Unlock Character Skins based on Level Quests
+      if (this.currentLevel >= 3) this.unlockSkin("police");
+      if (this.currentLevel >= 5) this.unlockSkin("child");
+      if (this.currentLevel >= 7) this.unlockSkin("doctor");
+      if (this.currentLevel >= 12) this.unlockSkin("firefighter");
+      if (this.currentLevel >= 15) this.unlockSkin("killer");
+      if (gameCompleted) this.unlockSkin("monster");
     }
 
     // In co-op, don't advance the singleplayer level save

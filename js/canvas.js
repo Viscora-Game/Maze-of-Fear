@@ -505,7 +505,7 @@ export class CanvasRenderer {
     const loader = new THREE.FBXLoader();
     const textureLoader = new THREE.TextureLoader();
 
-    ["traveler", "child", "merchant", "monster"].forEach(name => {
+    ["traveler", "police", "doctor", "firefighter", "child", "killer", "monster"].forEach(name => {
       loader.load(`assets/models/characters/${name}.fbx`, (fbx) => {
         textureLoader.load(`assets/models/characters/${name}.png`, (texture) => {
           texture.flipY = false;

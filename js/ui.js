@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=133";
-import { MultiplayerManager } from "./multiplayer.js?v=133";
+import { Game } from "./game.js?v=134";
+import { MultiplayerManager } from "./multiplayer.js?v=134";
 
 const init = () => {
   const game = new Game();
@@ -639,7 +639,7 @@ function setupUI(game) {
   if (btnHelpTop) {
     btnHelpTop.addEventListener("click", () => {
       if (game.audio) game.audio.playStep();
-      showScreen("how-to-play");
+      showScreen("howtoplay");
     });
   }
 
@@ -694,8 +694,7 @@ function setupUI(game) {
   const launchCoopMode = () => {
     if (game.audio) game.audio.playStep();
     if (modalPlayMode) modalPlayMode.classList.add("hidden");
-    const modalCoop = document.getElementById("modal-coop-setup");
-    if (modalCoop) modalCoop.classList.remove("hidden");
+    showScreen("coop");
   };
 
   const btnLaunchCoop = document.getElementById("btn-launch-coop");

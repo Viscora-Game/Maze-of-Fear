@@ -733,23 +733,24 @@ export class CanvasRenderer {
             const isLeft = nameLower.endsWith(".l") || nameLower.endsWith("_l") || nameLower.includes("left") || nameLower.includes("l_");
             const isRight = nameLower.endsWith(".r") || nameLower.endsWith("_r") || nameLower.includes("right") || nameLower.includes("r_");
 
-            if (nameLower.includes("upper_arm") || nameLower.includes("upperarm") || nameLower.includes("arm") || nameLower.includes("shoulder")) {
-              if (!nameLower.includes("fore") && !nameLower.includes("lower")) {
-                if (isLeft) {
-                  child.rotation.x = 1.35;
-                  child.rotation.z = -0.25;
-                }
-                if (isRight) {
-                  child.rotation.x = -1.35;
-                  child.rotation.z = 0.25;
-                }
-                child.updateMatrix();
-                child.updateMatrixWorld(true);
+            if (nameLower.includes("upper_arm") || nameLower.includes("upperarm") || nameLower.includes("shoulder") || (nameLower.includes("arm") && !nameLower.includes("fore") && !nameLower.includes("lower") && !nameLower.includes("armature"))) {
+              if (isLeft) {
+                child.rotation.x = 0;
+                child.rotation.y = 0;
+                child.rotation.z = -1.35;
               }
+              if (isRight) {
+                child.rotation.x = 0;
+                child.rotation.y = 0;
+                child.rotation.z = 1.35;
+              }
+              child.updateMatrix();
+              child.updateMatrixWorld(true);
             }
             if (nameLower.includes("forearm") || nameLower.includes("fore_arm") || nameLower.includes("lowerarm")) {
               if (isRight) {
-                child.rotation.y = -0.4;
+                child.rotation.x = 0.2;
+                child.rotation.y = -0.3;
                 child.updateMatrix();
                 child.updateMatrixWorld(true);
               }
@@ -3242,36 +3243,21 @@ export class CanvasRenderer {
                 const whR = new THREE.Mesh(new THREE.CylinderGeometry(0.001, 0.001, 0.07, 4), whiskerMat);
                 whR.rotation.x = Math.PI / 2;
                 whR.rotation.y = -i * 0.25;
-                whR.position.set(0.13, 0.075, -0.02);
                 npcSubGroup.add(whL, whR);
               }
-             } else if (cell.npc.id === "traveler") {
-               if (this.travelerModel) {
-                 const clone = this.travelerModel.clone();
+            } else if (cell.npc.id === "traveler" || cell.npc.id === "sage") {
+               const travelerFBX = this.getCharacterModel("traveler");
+               if (travelerFBX) {
+                 const clone = travelerFBX.clone();
                  clone.position.set(0, 0, 0);
                  npcSubGroup.add(clone);
-               } else {
-                 const coat = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 0.45, 8), new THREE.MeshStandardMaterial({ color: "#1a4731", roughness: 0.85 }));
-                 coat.position.y = 0.50; npcSubGroup.add(coat);
-                 const head = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 10), new THREE.MeshStandardMaterial({ color: "#dbb896", roughness: 0.8 }));
-                 head.position.y = 0.85; npcSubGroup.add(head);
-                 const hood = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 8, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: "#14532d", roughness: 0.9 }));
-                 hood.position.set(0, 0.88, -0.02); npcSubGroup.add(hood);
-                 const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.022, 1.1, 6), new THREE.MeshStandardMaterial({ color: "#5c3310", roughness: 0.85 }));
-                 staff.position.set(-0.20, 0.50, 0.18); npcSubGroup.add(staff);
                }
              } else if (cell.npc.id === "merchant") {
-               if (this.merchantModel) {
-                 const clone = this.merchantModel.clone();
+               const merchantFBX = this.getCharacterModel("vampire") || this.getCharacterModel("traveler");
+               if (merchantFBX) {
+                 const clone = merchantFBX.clone();
                  clone.position.set(0, 0, 0);
                  npcSubGroup.add(clone);
-               } else {
-                 const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.20, 0.48, 8), new THREE.MeshStandardMaterial({ color: "#4c1d95", roughness: 0.8 }));
-                 robe.position.y = 0.49; npcSubGroup.add(robe);
-                 const head = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 10), new THREE.MeshStandardMaterial({ color: "#dbb896", roughness: 0.8 }));
-                 head.position.y = 0.85; npcSubGroup.add(head);
-                 const turban = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 8), new THREE.MeshStandardMaterial({ color: "#b45309", roughness: 0.6 }));
-                 turban.position.y = 0.95; turban.scale.set(1.1, 0.75, 1.1); npcSubGroup.add(turban);
                }
             } else if (cell.npc.id === "well") {
               // Resized Stone Well Base (Formal scale, does not block the corridor passage)
@@ -3320,26 +3306,21 @@ export class CanvasRenderer {
 
               npcSubGroup.add(roofL, roofR);
              } else if (cell.npc.id === "child") {
-               if (this.childModel) {
-                 const clone = this.childModel.clone();
+               const childFBX = this.getCharacterModel("ghoul") || this.getCharacterModel("skeleton");
+               if (childFBX) {
+                 const clone = childFBX.clone();
+                 clone.scale.set(0.75, 0.75, 0.75); // scaled down for youth
                  clone.position.set(0, 0, 0);
                  npcSubGroup.add(clone);
-               } else {
-                 const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.10, 0.24, 8), new THREE.MeshStandardMaterial({ color: "#ea580c", roughness: 0.8 }));
-                 torso.position.y = 0.32; npcSubGroup.add(torso);
-                 const head = new THREE.Mesh(new THREE.SphereGeometry(0.10, 10, 10), new THREE.MeshStandardMaterial({ color: "#f5d5b8", roughness: 0.8 }));
-                 head.position.y = 0.56; npcSubGroup.add(head);
-                 const cap = new THREE.Mesh(new THREE.SphereGeometry(0.105, 10, 10, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: "#dc2626", roughness: 0.75 }));
-                 cap.position.set(0, 0.60, 0); npcSubGroup.add(cap);
                }
              } else {
-              const npcMesh = new THREE.Mesh(
-                new THREE.SphereGeometry(0.10, 12, 12),
-                new THREE.MeshStandardMaterial({ color: "#10b981", emissive: "#065f46", roughness: 0.2 })
-              );
-              npcMesh.position.y = 0.10;
-              npcSubGroup.add(npcMesh);
-            }
+              const fallbackFBX = this.getCharacterModel("traveler") || this.getCharacterModel("ghost");
+              if (fallbackFBX) {
+                const clone = fallbackFBX.clone();
+                clone.position.set(0, 0, 0);
+                npcSubGroup.add(clone);
+              }
+             }
 
             // Cache bone lookups on model for O(1) animation updates
             const model = npcSubGroup.children[0];
@@ -4483,23 +4464,24 @@ export class CanvasRenderer {
             const isLeft = nameLower.endsWith(".l") || nameLower.endsWith("_l") || nameLower.includes("left") || nameLower.includes("l_");
             const isRight = nameLower.endsWith(".r") || nameLower.endsWith("_r") || nameLower.includes("right") || nameLower.includes("r_");
 
-            if (nameLower.includes("upper_arm") || nameLower.includes("upperarm") || nameLower.includes("arm") || nameLower.includes("shoulder")) {
-              if (!nameLower.includes("fore") && !nameLower.includes("lower")) {
-                if (isLeft) {
-                  child.rotation.x = 1.35;
-                  child.rotation.z = -0.25;
-                }
-                if (isRight) {
-                  child.rotation.x = -1.35;
-                  child.rotation.z = 0.25;
-                }
-                child.updateMatrix();
-                child.updateMatrixWorld(true);
+            if (nameLower.includes("upper_arm") || nameLower.includes("upperarm") || nameLower.includes("shoulder") || (nameLower.includes("arm") && !nameLower.includes("fore") && !nameLower.includes("lower") && !nameLower.includes("armature"))) {
+              if (isLeft) {
+                child.rotation.x = 0;
+                child.rotation.y = 0;
+                child.rotation.z = -1.35;
               }
+              if (isRight) {
+                child.rotation.x = 0;
+                child.rotation.y = 0;
+                child.rotation.z = 1.35;
+              }
+              child.updateMatrix();
+              child.updateMatrixWorld(true);
             }
             if (nameLower.includes("forearm") || nameLower.includes("fore_arm") || nameLower.includes("lowerarm")) {
               if (isRight) {
-                child.rotation.y = -0.4;
+                child.rotation.x = 0.2;
+                child.rotation.y = -0.3;
                 child.updateMatrix();
                 child.updateMatrixWorld(true);
               }

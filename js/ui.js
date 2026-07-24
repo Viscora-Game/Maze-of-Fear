@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=130";
-import { MultiplayerManager } from "./multiplayer.js?v=130";
+import { Game } from "./game.js?v=131";
+import { MultiplayerManager } from "./multiplayer.js?v=131";
 
 const init = () => {
   const game = new Game();
@@ -634,26 +634,74 @@ function setupUI(game) {
     }
   }, 100);
 
-  document.getElementById("btn-play").addEventListener("click", () => {
-    // If WebGL context failed to initialize previously, try to initialize it now
-    if (!game.renderer) {
-      try {
-        const canvas = document.getElementById("game-canvas");
-        game.setCanvas(canvas);
-      } catch (err) {
-        console.error("Critical: Canvas re-initialization failed on Play click:", err);
-        const isEn = localStorage.getItem("maze_lang") === "en";
-        alert(isEn 
-          ? "WebGL / 3D initialization failed. Please restart your device or ensure WebGL is enabled in your browser settings."
-          : "WebGL / 3D başlatılamadı. Lütfen cihazınızı yeniden başlatın veya tarayıcı ayarlarında WebGL'nin açık olduğundan emin olun."
-        );
-        return;
+  // Top Right Question Mark Help Button
+  const btnHelpTop = document.getElementById("btn-help-top");
+  if (btnHelpTop) {
+    btnHelpTop.addEventListener("click", () => {
+      if (game.audio) game.audio.playStep();
+      showScreen("how-to-play");
+    });
+  }
+
+  // Play Mode Selection Modal Listeners
+  const modalPlayMode = document.getElementById("modal-play-mode");
+  const openPlayModal = () => {
+    if (game.audio) game.audio.playStep();
+    if (modalPlayMode) {
+      const badge = document.getElementById("play-mode-level-badge");
+      if (badge) {
+        badge.textContent = game.lang === "tr" 
+          ? `Seviye ${game.currentLevel}` 
+          : `Level ${game.currentLevel}`;
       }
+      modalPlayMode.classList.remove("hidden");
+    } else {
+      triggerLoadingAndStart(false, true);
     }
-    
-    // Call the beautiful async loading screen and start transition
+  };
+
+  const btnStartGame = document.getElementById("btn-start-game");
+  if (btnStartGame) btnStartGame.addEventListener("click", openPlayModal);
+  const btnPlay = document.getElementById("btn-play");
+  if (btnPlay) btnPlay.addEventListener("click", openPlayModal);
+
+  const btnPlayModeClose = document.getElementById("btn-play-mode-close");
+  if (btnPlayModeClose) {
+    btnPlayModeClose.addEventListener("click", () => {
+      if (game.audio) game.audio.playStep();
+      if (modalPlayMode) modalPlayMode.classList.add("hidden");
+    });
+  }
+
+  const launchStoryMode = () => {
+    if (game.audio) {
+      game.audio.init();
+      game.audio.playStep();
+      game.audio.stopMenuMusic();
+    }
+    if (modalPlayMode) modalPlayMode.classList.add("hidden");
+    if (multiplayer && multiplayer.isConnected) {
+      multiplayer.disconnect();
+    }
     triggerLoadingAndStart(false, true);
-  });
+  };
+
+  const btnLaunchStory = document.getElementById("btn-launch-story");
+  if (btnLaunchStory) btnLaunchStory.addEventListener("click", launchStoryMode);
+  const cardModeStory = document.getElementById("card-mode-story");
+  if (cardModeStory) cardModeStory.addEventListener("click", launchStoryMode);
+
+  const launchCoopMode = () => {
+    if (game.audio) game.audio.playStep();
+    if (modalPlayMode) modalPlayMode.classList.add("hidden");
+    const modalCoop = document.getElementById("modal-coop-setup");
+    if (modalCoop) modalCoop.classList.remove("hidden");
+  };
+
+  const btnLaunchCoop = document.getElementById("btn-launch-coop");
+  if (btnLaunchCoop) btnLaunchCoop.addEventListener("click", launchCoopMode);
+  const cardModeCoop = document.getElementById("card-mode-coop");
+  if (cardModeCoop) cardModeCoop.addEventListener("click", launchCoopMode);
 
 
   // --- CHARACTER SKIN SELECTION MODAL LOGIC ---
@@ -667,12 +715,12 @@ function setupUI(game) {
 
     const skins = [
       { id: "traveler", nameTr: "Gezgin", nameEn: "Explorer", portrait: "assets/portrait_explorer.png", questTr: "Ücretsiz Standart Karakter", questEn: "Free Standard Character" },
-      { id: "police", nameTr: "Polis Memuru", nameEn: "Police Officer", portrait: "assets/portrait_merchant.png", questTr: "Görev: Seviye 3'e Ulaş", questEn: "Quest: Reach Level 3" },
+      { id: "police", nameTr: "Polis Memuru", nameEn: "Police Officer", portrait: "assets/portrait_police.png", questTr: "Görev: Seviye 3'e Ulaş", questEn: "Quest: Reach Level 3" },
       { id: "child", nameTr: "Kayıp Kız", nameEn: "Lost Girl", portrait: "assets/portrait_child.png", questTr: "Görev: Seviye 5'e Ulaş", questEn: "Quest: Reach Level 5" },
-      { id: "doctor", nameTr: "Doktor", nameEn: "Doctor", portrait: "assets/portrait_sage.png", questTr: "Görev: Seviye 7'ye Ulaş", questEn: "Quest: Reach Level 7" },
-      { id: "firefighter", nameTr: "İtfaiyeci", nameEn: "Firefighter", portrait: "assets/portrait_explorer.png", questTr: "Görev: Seviye 12'ye Ulaş", questEn: "Quest: Reach Level 12" },
-      { id: "killer", nameTr: "Maskeli Katil", nameEn: "Masked Killer", portrait: "assets/portrait_mouse.png", questTr: "Görev: Seviye 15'e Ulaş", questEn: "Quest: Reach Level 15" },
-      { id: "monster", nameTr: "Gölge Canavarı", nameEn: "Shadow Monster", portrait: "assets/portrait_sage.png", questTr: "Görev: Seviye 20'yi Tamamla", questEn: "Quest: Beat Level 20" }
+      { id: "doctor", nameTr: "Doktor", nameEn: "Doctor", portrait: "assets/portrait_doctor.png", questTr: "Görev: Seviye 7'ye Ulaş", questEn: "Quest: Reach Level 7" },
+      { id: "firefighter", nameTr: "İtfaiyeci", nameEn: "Firefighter", portrait: "assets/portrait_firefighter.png", questTr: "Görev: Seviye 12'ye Ulaş", questEn: "Quest: Reach Level 12" },
+      { id: "killer", nameTr: "Maskeli Katil", nameEn: "Masked Killer", portrait: "assets/portrait_killer.png", questTr: "Görev: Seviye 15'e Ulaş", questEn: "Quest: Reach Level 15" },
+      { id: "monster", nameTr: "Gölge Canavarı", nameEn: "Shadow Monster", portrait: "assets/portrait_monster.png", questTr: "Görev: Seviye 20'yi Tamamla", questEn: "Quest: Beat Level 20" }
     ];
 
     skins.forEach(s => {

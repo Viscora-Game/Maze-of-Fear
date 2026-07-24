@@ -806,12 +806,15 @@ export class CanvasRenderer {
       });
     };
 
+    // In-game 3D Character FBX models (Classic legacy models)
     loadChar('traveler', 0.75, 'travelerModel');
-    loadChar('ghost', 0.75, 'ghostModel');
-    loadChar('vampire', 0.75, 'vampireModel');
-    loadChar('zombie', 0.75, 'zombieModel');
-    loadChar('skeleton', 0.75, 'skeletonModel');
-    loadChar('ghoul', 0.75, 'ghoulModel');
+    loadChar('monster', 0.75, 'ghostModel');
+    loadChar('doctor', 0.75, 'vampireModel');
+    loadChar('killer', 0.75, 'zombieModel');
+    loadChar('police', 0.75, 'skeletonModel');
+    loadChar('firefighter', 0.75, 'ghoulModel');
+    loadChar('child', 0.65, 'childModel');
+    loadChar('merchant', 0.75, 'merchantModel');
   }
 
   getCharacterModel(skinId) {
@@ -3246,14 +3249,14 @@ export class CanvasRenderer {
                 npcSubGroup.add(whL, whR);
               }
             } else if (cell.npc.id === "traveler" || cell.npc.id === "sage") {
-               const travelerFBX = this.getCharacterModel("traveler");
+               const travelerFBX = this.travelerModel || this.getCharacterModel("traveler");
                if (travelerFBX) {
                  const clone = travelerFBX.clone();
                  clone.position.set(0, 0, 0);
                  npcSubGroup.add(clone);
                }
              } else if (cell.npc.id === "merchant") {
-               const merchantFBX = this.getCharacterModel("vampire") || this.getCharacterModel("traveler");
+               const merchantFBX = this.merchantModel || this.travelerModel;
                if (merchantFBX) {
                  const clone = merchantFBX.clone();
                  clone.position.set(0, 0, 0);
@@ -3306,10 +3309,9 @@ export class CanvasRenderer {
 
               npcSubGroup.add(roofL, roofR);
              } else if (cell.npc.id === "child") {
-               const childFBX = this.getCharacterModel("ghoul") || this.getCharacterModel("skeleton");
+               const childFBX = this.childModel || this.travelerModel;
                if (childFBX) {
                  const clone = childFBX.clone();
-                 clone.scale.set(0.75, 0.75, 0.75); // scaled down for youth
                  clone.position.set(0, 0, 0);
                  npcSubGroup.add(clone);
                }
@@ -4687,7 +4689,17 @@ export class CanvasRenderer {
       const oy = obsMesh.userData ? obsMesh.userData.gridY : 0;
       const cell = grid[oy] ? grid[oy][ox] : null;
       if (cell && cell.obstacle) {
-        obsMesh.visible = !cell.obstacle.resolved;
+        if (cell.obstacle.resolved) {
+          if (obsMesh.position.y < 2.2) {
+            obsMesh.position.y += 0.08;
+            obsMesh.visible = true;
+          } else {
+            obsMesh.visible = false;
+          }
+        } else {
+          obsMesh.position.y = 0;
+          obsMesh.visible = true;
+        }
       }
     }
 

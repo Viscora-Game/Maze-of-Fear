@@ -226,6 +226,10 @@ export class MultiplayerManager {
     }
   }
 
+  disconnect() {
+    this.cleanup();
+  }
+
   cleanup() {
     this.stopHeartbeat();
     this.isConnected = false;

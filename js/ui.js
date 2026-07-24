@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=146";
-import { MultiplayerManager } from "./multiplayer.js?v=146";
+import { Game } from "./game.js?v=147";
+import { MultiplayerManager } from "./multiplayer.js?v=147";
 
 const init = () => {
   const game = new Game();
@@ -233,6 +233,10 @@ function setupUI(game) {
     document.querySelectorAll("[data-t-placeholder]").forEach(el => {
       const key = el.getAttribute("data-t-placeholder");
       el.placeholder = game.t(key);
+    });
+    document.querySelectorAll("[data-tr-placeholder][data-en-placeholder]").forEach(el => {
+      const phVal = isTr ? el.getAttribute("data-tr-placeholder") : el.getAttribute("data-en-placeholder");
+      if (phVal) el.placeholder = phVal;
     });
 
     // Re-render settings buttons check
@@ -1005,7 +1009,11 @@ function setupUI(game) {
     btnCoopBack.addEventListener("click", () => {
       if (game.audio) game.audio.playClick();
       if (game.multiplayer) {
-        game.multiplayer.disconnect();
+        if (typeof game.multiplayer.disconnect === "function") {
+          game.multiplayer.disconnect();
+        } else if (typeof game.multiplayer.cleanup === "function") {
+          game.multiplayer.cleanup();
+        }
       }
       showScreen("menu");
     });

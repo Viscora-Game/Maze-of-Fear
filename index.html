@@ -11,7 +11,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js?v=146').catch(err => {
+        navigator.serviceWorker.register('sw.js?v=147').catch(err => {
           console.warn('Service Worker registration failed:', err);
         });
       });
@@ -59,7 +59,8 @@
         header.style.marginBottom = '8px';
         header.style.display = 'flex';
         header.style.justifyContent = 'space-between';
-        header.innerHTML = '<span>⚠️ GAME DEBUG CONSOLE</span><button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:white;font-weight:bold;cursor:pointer;">[Kapat]</button>';
+        const isEnConsole = (localStorage.getItem('selected_language') || 'tr') === 'en';
+        header.innerHTML = '<span>⚠️ GAME DEBUG CONSOLE</span><button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:white;font-weight:bold;cursor:pointer;">' + (isEnConsole ? '[Close]' : '[Kapat]') + '</button>';
         errContainer.appendChild(header);
         
         document.body.appendChild(errContainer);
@@ -211,7 +212,7 @@
           <div class="settings-card-title">🔌 <span data-t="joinRoom">Odaya Katıl</span></div>
           <div class="settings-group" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 0;">
             <div style="display: flex; gap: 8px; width: 100%;">
-              <input type="text" id="coop-join-input" placeholder="Oda Kodu" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-light); color: white; font-weight: bold; text-align: center; text-transform: uppercase; letter-spacing: 2px; outline: none; border-color: var(--border-violet);">
+              <input type="text" id="coop-join-input" placeholder="Enter Room Code" data-t-placeholder="roomCodePlaceholder" data-tr-placeholder="Oda Kodu" data-en-placeholder="Enter Room Code" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-light); color: white; font-weight: bold; text-align: center; text-transform: uppercase; letter-spacing: 2px; outline: none; border-color: var(--border-violet);">
               <button class="btn btn-success" id="btn-coop-join" style="padding: 10px 20px; font-weight: bold;" data-t="btnJoin">Katıl</button>
             </div>
           </div>
@@ -757,6 +758,6 @@
     <img src="assets/jumpscare.png" style="width: 100%; height: 100%; object-fit: contain; filter: brightness(1.2) contrast(1.3); transform: scale(1.1);" />
   </div>
 
-  <script type="module" src="js/ui.js?v=146"></script>
+  <script type="module" src="js/ui.js?v=147"></script>
 </body>
 </html>

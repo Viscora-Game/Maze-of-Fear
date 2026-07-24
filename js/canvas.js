@@ -762,9 +762,6 @@ export class CanvasRenderer {
     };
 
     loadChar('traveler', 0.75, 'travelerModel');
-    loadChar('merchant', 0.75, 'merchantModel');
-    loadChar('child', 0.45, 'childModel');
-    loadChar('monster', 0.75, 'monsterModel');
     loadChar('ghost', 0.75, 'ghostModel');
     loadChar('vampire', 0.75, 'vampireModel');
     loadChar('zombie', 0.75, 'zombieModel');
@@ -774,12 +771,6 @@ export class CanvasRenderer {
 
   getCharacterModel(skinId) {
     switch (skinId) {
-      case "police": return this.policeModel;
-      case "doctor": return this.doctorModel;
-      case "firefighter": return this.firefighterModel;
-      case "child": return this.childModel;
-      case "killer": return this.killerModel;
-      case "monster": return this.monsterModel;
       case "ghost": return this.ghostModel;
       case "vampire": return this.vampireModel;
       case "zombie": return this.zombieModel;

@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=144";
-import { MultiplayerManager } from "./multiplayer.js?v=144";
+import { Game } from "./game.js?v=145";
+import { MultiplayerManager } from "./multiplayer.js?v=145";
 
 const init = () => {
   const game = new Game();
@@ -731,11 +731,11 @@ function setupUI(game) {
     const activeSkin = game.characterSkin || "ghost";
 
     const skins = [
-      { id: "ghost", nameTr: "Hayalet", nameEn: "Ghost", portrait: "assets/portrait_monster.png", questTr: "Başlangıç Karakteri", questEn: "Starter Character" },
-      { id: "vampire", nameTr: "Vampir", nameEn: "Vampire", portrait: "assets/portrait_doctor.png", questTr: "Horror Free Paketi", questEn: "Horror Free Pack" },
-      { id: "zombie", nameTr: "Zombi", nameEn: "Zombie", portrait: "assets/portrait_killer.png", questTr: "Horror Free Paketi", questEn: "Horror Free Pack" },
-      { id: "skeleton", nameTr: "İskelet", nameEn: "Skeleton", portrait: "assets/portrait_police.png", questTr: "Undead Free Paketi", questEn: "Undead Free Pack" },
-      { id: "ghoul", nameTr: "Hortlak", nameEn: "Ghoul", portrait: "assets/portrait_firefighter.png", questTr: "Undead Free Paketi", questEn: "Undead Free Pack" },
+      { id: "ghost", nameTr: "Hayalet", nameEn: "Ghost", portrait: "assets/portrait_ghost.png", questTr: "Başlangıç Karakteri", questEn: "Starter Character" },
+      { id: "vampire", nameTr: "Vampir", nameEn: "Vampire", portrait: "assets/portrait_vampire.png", questTr: "Horror Free Paketi", questEn: "Horror Free Pack" },
+      { id: "zombie", nameTr: "Zombi", nameEn: "Zombie", portrait: "assets/portrait_zombie.png", questTr: "Horror Free Paketi", questEn: "Horror Free Pack" },
+      { id: "skeleton", nameTr: "İskelet", nameEn: "Skeleton", portrait: "assets/portrait_skeleton.png", questTr: "Undead Free Paketi", questEn: "Undead Free Pack" },
+      { id: "ghoul", nameTr: "Hortlak", nameEn: "Ghoul", portrait: "assets/portrait_ghoul.png", questTr: "Undead Free Paketi", questEn: "Undead Free Pack" },
       { id: "traveler", nameTr: "Gezgin", nameEn: "Explorer", portrait: "assets/portrait_explorer.png", questTr: "Ücretsiz Karakter", questEn: "Free Character" }
     ];
 

@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=131";
-import { MultiplayerManager } from "./multiplayer.js?v=131";
+import { Game } from "./game.js?v=132";
+import { MultiplayerManager } from "./multiplayer.js?v=132";
 
 const init = () => {
   const game = new Game();
@@ -744,8 +744,14 @@ function setupUI(game) {
 
       card.addEventListener("click", () => {
         if (!isUnlocked) {
-          if (game.audio) game.audio.playStep();
-          game.showNotification(`🔒 ${game.lang === 'tr' ? 'KİLİTLİ: ' + s.questTr : 'LOCKED: ' + s.questEn}`);
+          const lockMsg = `🔒 ${game.lang === 'tr' ? 'KİLİTLİ: ' + s.questTr : 'LOCKED: ' + s.questEn}`;
+          if (typeof game.showNotification === "function") {
+            game.showNotification(lockMsg);
+          } else if (typeof game.showToast === "function") {
+            game.showToast(lockMsg);
+          } else {
+            console.log(lockMsg);
+          }
           return;
         }
         if (game.audio) game.audio.playStep();

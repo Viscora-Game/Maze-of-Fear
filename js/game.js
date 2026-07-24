@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=131";
-import { AudioEngine } from "./audio.js?v=131";
-import { CanvasRenderer } from "./canvas.js?v=131";
-import { translations } from "./translations.js?v=131";
-import { randomEvents, deathEvents } from "./events.js?v=131";
-import { getSeededRandom } from "./prng.js?v=131";
+import { generateMaze } from "./maze.js?v=132";
+import { AudioEngine } from "./audio.js?v=132";
+import { CanvasRenderer } from "./canvas.js?v=132";
+import { translations } from "./translations.js?v=132";
+import { randomEvents, deathEvents } from "./events.js?v=132";
+import { getSeededRandom } from "./prng.js?v=132";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -1082,6 +1082,14 @@ export class Game {
     };
     const sName = skinNames[skinId] ? (this.lang === "tr" ? skinNames[skinId].tr : skinNames[skinId].en) : skinId;
     this.showNotification(`🎭 YENİ KARAKTER AÇILDI: ${sName}!`);
+  }
+
+  showNotification(msg) {
+    if (typeof this.showToast === "function") {
+      this.showToast(msg);
+    } else if (typeof alert !== "undefined") {
+      console.log("Notification:", msg);
+    }
   }
 
   showAchievementToast(icon, name) {

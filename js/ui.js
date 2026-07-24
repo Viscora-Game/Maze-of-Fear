@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=145";
-import { MultiplayerManager } from "./multiplayer.js?v=145";
+import { Game } from "./game.js?v=146";
+import { MultiplayerManager } from "./multiplayer.js?v=146";
 
 const init = () => {
   const game = new Game();
@@ -209,13 +209,27 @@ function setupUI(game) {
   };
 
   const translateUI = () => {
+    const isTr = game.lang === "tr";
+
     // Translate all elements with [data-t]
     document.querySelectorAll("[data-t]").forEach(el => {
       const key = el.getAttribute("data-t");
       el.textContent = game.t(key);
     });
 
-    // Translate input placeholders or specific tags
+    // Translate all elements with [data-tr] and [data-en]
+    document.querySelectorAll("[data-tr][data-en]").forEach(el => {
+      const val = isTr ? el.getAttribute("data-tr") : el.getAttribute("data-en");
+      if (val) el.textContent = val;
+    });
+
+    // Translate tooltips and titles with [data-tr-title] and [data-en-title]
+    document.querySelectorAll("[data-tr-title][data-en-title]").forEach(el => {
+      const titleVal = isTr ? el.getAttribute("data-tr-title") : el.getAttribute("data-en-title");
+      if (titleVal) el.title = titleVal;
+    });
+
+    // Translate input placeholders
     document.querySelectorAll("[data-t-placeholder]").forEach(el => {
       const key = el.getAttribute("data-t-placeholder");
       el.placeholder = game.t(key);

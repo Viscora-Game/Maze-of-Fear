@@ -11,7 +11,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js?v=145').catch(err => {
+        navigator.serviceWorker.register('sw.js?v=146').catch(err => {
           console.warn('Service Worker registration failed:', err);
         });
       });
@@ -136,7 +136,7 @@
       </div>
 
       <!-- Top Right Question Mark Help Button -->
-      <button id="btn-help-top" title="Nasıl Oynanır" style="position: absolute; top: 20px; right: 20px; z-index: 100; width: 44px; height: 44px; border-radius: 50%; background: rgba(15, 23, 42, 0.85); border: 1.5px solid rgba(245, 158, 11, 0.6); color: #fbbf24; font-size: 1.3rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(0,0,0,0.8), 0 0 8px rgba(245,158,11,0.3); transition: all 0.2s ease;">
+      <button id="btn-help-top" title="Nasıl Oynanır" data-tr-title="Nasıl Oynanır" data-en-title="How to Play" style="position: absolute; top: 20px; right: 20px; z-index: 100; width: 44px; height: 44px; border-radius: 50%; background: rgba(15, 23, 42, 0.85); border: 1.5px solid rgba(245, 158, 11, 0.6); color: #fbbf24; font-size: 1.3rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(0,0,0,0.8), 0 0 8px rgba(245,158,11,0.3); transition: all 0.2s ease;">
         ❓
       </button>
 
@@ -462,7 +462,7 @@
       <!-- Floating HUD Left Cluster (Joystick + Map/Bag buttons) -->
       <div class="floating-left-controls">
         <div class="left-btn-row">
-          <button id="btn-open-inventory" class="circle-btn btn-primary" title="Çanta">🎒</button>
+          <button id="btn-open-inventory" class="circle-btn btn-primary" title="Çanta" data-tr-title="Çanta" data-en-title="Backpack">🎒</button>
           <button id="btn-open-map" class="circle-btn btn-secondary" title="Harita">🗺️</button>
           <button id="btn-mic-toggle" class="circle-btn btn-secondary hidden" title="Mikrofon">🎤</button>
         </div>
@@ -491,9 +491,9 @@
           <!-- Flashlight Toggle (Yellow/Gold glow) -->
           <button id="btn-toggle-lantern" class="circle-btn action-btn-lantern" title="Fener">🔦</button>
           <!-- Run / Sprint (Orange/Red glow) -->
-          <button id="btn-run" class="circle-btn action-btn-run" title="Koş">🏃</button>
+          <button id="btn-run" class="circle-btn action-btn-run" title="Koş" data-tr-title="Koş" data-en-title="Run">🏃</button>
           <!-- Interact (Green glow, larger primary button) -->
-          <button id="btn-interact" class="circle-btn action-btn-interact" title="Etkileşim">🖐️</button>
+          <button id="btn-interact" class="circle-btn action-btn-interact" title="Etkileşim" data-tr-title="Etkileşim" data-en-title="Interact">🖐️</button>
         </div>
       </div>
 
@@ -544,9 +544,9 @@
           <div style="display: flex; flex-direction: column; gap: 6px;">
             <div style="display: flex; gap: 6px;">
               <button id="btn-inv-use" class="btn-modal btn-primary" style="flex: 1; padding: 6px 0; font-size: 0.75rem; border-radius: 6px; font-weight: bold;">Kullan</button>
-              <button id="btn-inv-equip" class="btn-modal btn-warning" style="flex: 1; padding: 6px 0; font-size: 0.75rem; border-radius: 6px; font-weight: bold;">Kuşan</button>
+              <button id="btn-inv-equip" class="btn-modal btn-warning" style="flex: 1; padding: 6px 0; font-size: 0.75rem; border-radius: 6px; font-weight: bold;" data-tr="Kuşan" data-en="Equip">Kuşan</button>
             </div>
-            <button id="btn-inv-send" class="btn-modal btn-success hidden" style="width: 100%; padding: 6px 0; font-size: 0.75rem; border-radius: 6px; font-weight: bold; background: linear-gradient(135deg, #10b981, #059669); border: none;">Arkadaşına Gönder</button>
+            <button id="btn-inv-send" class="btn-modal btn-success hidden" style="width: 100%; padding: 6px 0; font-size: 0.75rem; border-radius: 6px; font-weight: bold; background: linear-gradient(135deg, #10b981, #059669); border: none;" data-tr="Arkadaşına Gönder" data-en="Send to Friend">Arkadaşına Gönder</button>
           </div>
         </div>
       </div>
@@ -645,7 +645,7 @@
 
       <!-- Cooldown Warning Banner -->
       <div id="altar-cooldown-text" class="hidden" style="background: rgba(225, 29, 72, 0.2); border: 1px solid #f43f5e; border-radius: 8px; padding: 8px; color: #fecdd3; font-weight: bold; font-size: 0.88rem; margin-bottom: 14px;">
-        ⏳ Sunak Yeniden Dolum Bekleme Süresi: <span id="altar-cooldown-sec" style="color: #fbbf24; font-size: 1rem;">30</span>s
+        <span data-tr="⏳ Sunak Yeniden Dolum Bekleme Süresi:" data-en="⏳ Altar Cooldown Remaining:">⏳ Sunak Yeniden Dolum Bekleme Süresi:</span> <span id="altar-cooldown-sec" style="color: #fbbf24; font-size: 1rem;">30</span>s
       </div>
 
       <!-- Upgrade Options Container -->
@@ -733,8 +733,8 @@
   <!-- 🎭 Character Skin Selection Modal -->
   <div id="modal-character" class="overlay hidden" style="z-index: 1000;">
     <div class="modal-content glass text-center" style="max-width: 540px; width: 92%; padding: 22px; background: rgba(15, 23, 42, 0.96); border: 1px solid rgba(139, 92, 246, 0.4); box-shadow: 0 0 35px rgba(0, 0, 0, 0.9); border-radius: 18px;">
-      <h2 class="modal-title text-violet text-xl font-bold" style="color: #a78bfa; text-shadow: 0 0 10px rgba(167,139,250,0.5); display: flex; align-items: center; justify-content: center; gap: 8px;">🎭 Karakter Seçimi (Co-Op & Solo)</h2>
-      <p class="modal-text text-slate-300 text-sm my-2" style="color: #cbd5e1; font-size: 0.88rem; line-height: 1.4;">Co-op modunda arkadaşının seni göreceği karakter kostümünü seç. Bölüm görevlerini tamamlayarak yeni karakterlerin kilidini aç!</p>
+      <h2 class="modal-title text-violet text-xl font-bold" style="color: #a78bfa; text-shadow: 0 0 10px rgba(167,139,250,0.5); display: flex; align-items: center; justify-content: center; gap: 8px;" data-tr="🎭 Karakter Seçimi" data-en="🎭 Character Selection">🎭 Karakter Seçimi</h2>
+      <p class="modal-text text-slate-300 text-sm my-2" style="color: #cbd5e1; font-size: 0.88rem; line-height: 1.4;" data-tr="Zindanda kullanmak istediğin karakter kostümünü seç." data-en="Select the character skin you want to use in the dungeon.">Zindanda kullanmak istediğin karakter kostümünü seç.</p>
       
       <div id="character-skins-list" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 16px 0; max-height: 360px; overflow-y: auto; padding-right: 4px;">
         <!-- Character Cards injected dynamically by js/ui.js -->
@@ -757,6 +757,6 @@
     <img src="assets/jumpscare.png" style="width: 100%; height: 100%; object-fit: contain; filter: brightness(1.2) contrast(1.3); transform: scale(1.1);" />
   </div>
 
-  <script type="module" src="js/ui.js?v=145"></script>
+  <script type="module" src="js/ui.js?v=146"></script>
 </body>
 </html>

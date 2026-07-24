@@ -2850,15 +2850,39 @@ export class CanvasRenderer {
             lintel.position.set(0, 1.25, 0);
             portalGroup.add(colL, colR, lintel);
 
-            // 2. Bright Golden Light Plane behind the doors (representing safety & sunlight beyond)
-            const lightPlaneGeo = new THREE.PlaneGeometry(0.76, 1.18);
-            const lightPlaneMat = new THREE.MeshBasicMaterial({ 
-              color: "#fef08a", 
+            // 3. Dynamic Radiant Exit Portal Light (Fiery Red Embers for Lvl 1-19 vs Divine Golden Sunburst for Lvl 20 Final Exit)
+            const currentLvl = (state && state.currentLevel) ? Number(state.currentLevel) : 1;
+            const isFinalLevelExit = (currentLvl >= 20);
+            const planeColor = isFinalLevelExit ? "#fbbf24" : "#f97316"; // Divine Gold vs Fiery Infernal Orange
+            const beamColor  = isFinalLevelExit ? "#fef08a" : "#ef4444"; // Golden Rays vs Fiery Crimson Embers
+            const lightColor = isFinalLevelExit ? "#fde047" : "#ea580c"; // Golden Sunlit Glow vs Fiery Burning Red
+
+            const portalMat = new THREE.MeshBasicMaterial({
+              color: planeColor,
               side: THREE.DoubleSide
             });
-            const lightPlane = new THREE.Mesh(lightPlaneGeo, lightPlaneMat);
-            lightPlane.position.set(0, 0.59, -0.06);
-            portalGroup.add(lightPlane);
+            const portalPlane = new THREE.Mesh(new THREE.PlaneGeometry(0.92, 1.90), portalMat);
+            portalPlane.position.set(0, 0.95, -0.12);
+            portalGroup.add(portalPlane);
+
+            // 4. Volumetric Light Beam Cone Leaking from the Door
+            const beamGeo = new THREE.ConeGeometry(0.85, 2.2, 16, 1, true);
+            beamGeo.rotateX(Math.PI / 2);
+            const beamMat = new THREE.MeshBasicMaterial({
+              color: beamColor,
+              transparent: true,
+              opacity: isMobile ? 0.0 : 0.26, // Disabled on mobile GPUs to save 25-30 FPS!
+              side: THREE.DoubleSide,
+              blending: THREE.AdditiveBlending
+            });
+            const lightBeam = new THREE.Mesh(beamGeo, beamMat);
+            lightBeam.position.set(0, 0.95, 0.90);
+            portalGroup.add(lightBeam);
+
+            // 5. High Intensity PointLight emitting warm glow from behind the door gap
+            const exitLight = new THREE.PointLight(lightColor, 2.5, 6.0);
+            exitLight.position.set(0, 0.58, -0.15); // Behind the door
+            portalGroup.add(exitLight);
 
             // 3. Ancient Heavy Wooden Dungeon Double-Doors (slightly ajar/open outwards)
             const doorL = new THREE.Mesh(new THREE.BoxGeometry(0.38, 1.15, 0.04), woodMat);
@@ -5199,10 +5223,9 @@ export class CanvasRenderer {
     // Update exit portals (soft warm light pulse leaking from behind the gothic doors)
     if (this.exitPortals && this.exitPortals.length > 0) {
       this.exitPortals.forEach(portal => {
-        const t = (Date.now() * 0.001) + portal.timeOffset;
         if (portal.light) {
           // Intense warm golden breathing pulse
-          portal.light.intensity = 4.0 + Math.sin(t * 3.5) * 1.5;
+          portal.light.intensity = 2.3 + Math.sin(time * 4.8) * 0.6;
         }
       });
     }

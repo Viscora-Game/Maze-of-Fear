@@ -717,33 +717,47 @@ export class CanvasRenderer {
           });
 
           // Lower arms down from T-pose to natural standing posture
+          const bonesToUpdate = [];
+          const skinnedMeshesToUpdate = [];
           fbx.traverse((child) => {
-            if (child.isBone || child.type === "Bone" || (child.name && child.name.match(/(arm|shoulder|hand|forearm)/i))) {
-              const nameLower = child.name.toLowerCase();
-              
-              // Upper arm bones (left & right)
-              if (nameLower.includes("upper_arm") || nameLower.includes("upperarm") || nameLower.includes("shoulder") || (nameLower.includes("arm") && !nameLower.includes("fore"))) {
-                if (nameLower.includes("left") || nameLower.endsWith("_l") || nameLower.endsWith(".l") || nameLower.includes("l_")) {
-                  child.rotation.z = -Math.PI / 2.3;
-                  child.rotation.x = Math.PI / 16;
-                }
-                if (nameLower.includes("right") || nameLower.endsWith("_r") || nameLower.endsWith(".r") || nameLower.includes("r_")) {
-                  child.rotation.z = Math.PI / 2.3;
-                  child.rotation.x = Math.PI / 16;
-                }
-              }
-              
-              // Forearm bones - bend right forearm slightly forward for holding flashlight
-              if (nameLower.includes("forearm") || nameLower.includes("fore_arm") || nameLower.includes("lowerarm")) {
-                if (nameLower.includes("right") || nameLower.endsWith("_r") || nameLower.endsWith(".r") || nameLower.includes("r_")) {
-                  child.rotation.y = -Math.PI / 5;
-                  child.rotation.x = Math.PI / 8;
-                }
-              }
+            if (child.isBone || child.type === "Bone") {
+              bonesToUpdate.push(child);
             }
             if (child.isSkinnedMesh && child.skeleton) {
-              child.skeleton.update();
+              skinnedMeshesToUpdate.push(child);
             }
+          });
+
+          bonesToUpdate.forEach((child) => {
+            const nameLower = child.name.toLowerCase();
+            const isLeft = nameLower.endsWith(".l") || nameLower.endsWith("_l") || nameLower.includes("left") || nameLower.includes("l_");
+            const isRight = nameLower.endsWith(".r") || nameLower.endsWith("_r") || nameLower.includes("right") || nameLower.includes("r_");
+
+            if (nameLower.includes("upper_arm") || nameLower.includes("upperarm") || nameLower.includes("arm") || nameLower.includes("shoulder")) {
+              if (!nameLower.includes("fore") && !nameLower.includes("lower")) {
+                if (isLeft) {
+                  child.rotation.x = 1.35;
+                  child.rotation.z = -0.25;
+                }
+                if (isRight) {
+                  child.rotation.x = -1.35;
+                  child.rotation.z = 0.25;
+                }
+                child.updateMatrix();
+                child.updateMatrixWorld(true);
+              }
+            }
+            if (nameLower.includes("forearm") || nameLower.includes("fore_arm") || nameLower.includes("lowerarm")) {
+              if (isRight) {
+                child.rotation.y = -0.4;
+                child.updateMatrix();
+                child.updateMatrixWorld(true);
+              }
+            }
+          });
+
+          skinnedMeshesToUpdate.forEach(sm => {
+            if (sm.skeleton) sm.skeleton.update();
           });
 
           // Create a wrapper group to normalize positions and offsets
@@ -4453,29 +4467,47 @@ export class CanvasRenderer {
 
         if (targetCharModel) {
           const charClone = targetCharModel.clone();
+          const bonesToUpdate = [];
+          const skinnedMeshesToUpdate = [];
           charClone.traverse((child) => {
-            if (child.isBone || child.type === "Bone" || (child.name && child.name.match(/(arm|shoulder|hand|forearm)/i))) {
-              const nameLower = child.name.toLowerCase();
-              if (nameLower.includes("upper_arm") || nameLower.includes("upperarm") || nameLower.includes("shoulder") || (nameLower.includes("arm") && !nameLower.includes("fore"))) {
-                if (nameLower.includes("left") || nameLower.endsWith("_l") || nameLower.endsWith(".l") || nameLower.includes("l_")) {
-                  child.rotation.z = -Math.PI / 2.3;
-                  child.rotation.x = Math.PI / 16;
-                }
-                if (nameLower.includes("right") || nameLower.endsWith("_r") || nameLower.endsWith(".r") || nameLower.includes("r_")) {
-                  child.rotation.z = Math.PI / 2.3;
-                  child.rotation.x = Math.PI / 16;
-                }
-              }
-              if (nameLower.includes("forearm") || nameLower.includes("fore_arm") || nameLower.includes("lowerarm")) {
-                if (nameLower.includes("right") || nameLower.endsWith("_r") || nameLower.endsWith(".r") || nameLower.includes("r_")) {
-                  child.rotation.y = -Math.PI / 5;
-                  child.rotation.x = Math.PI / 8;
-                }
-              }
+            if (child.isBone || child.type === "Bone") {
+              bonesToUpdate.push(child);
             }
             if (child.isSkinnedMesh && child.skeleton) {
-              child.skeleton.update();
+              skinnedMeshesToUpdate.push(child);
             }
+          });
+
+          bonesToUpdate.forEach((child) => {
+            const nameLower = child.name.toLowerCase();
+            const isLeft = nameLower.endsWith(".l") || nameLower.endsWith("_l") || nameLower.includes("left") || nameLower.includes("l_");
+            const isRight = nameLower.endsWith(".r") || nameLower.endsWith("_r") || nameLower.includes("right") || nameLower.includes("r_");
+
+            if (nameLower.includes("upper_arm") || nameLower.includes("upperarm") || nameLower.includes("arm") || nameLower.includes("shoulder")) {
+              if (!nameLower.includes("fore") && !nameLower.includes("lower")) {
+                if (isLeft) {
+                  child.rotation.x = 1.35;
+                  child.rotation.z = -0.25;
+                }
+                if (isRight) {
+                  child.rotation.x = -1.35;
+                  child.rotation.z = 0.25;
+                }
+                child.updateMatrix();
+                child.updateMatrixWorld(true);
+              }
+            }
+            if (nameLower.includes("forearm") || nameLower.includes("fore_arm") || nameLower.includes("lowerarm")) {
+              if (isRight) {
+                child.rotation.y = -0.4;
+                child.updateMatrix();
+                child.updateMatrixWorld(true);
+              }
+            }
+          });
+
+          skinnedMeshesToUpdate.forEach(sm => {
+            if (sm.skeleton) sm.skeleton.update();
           });
           charClone.position.y = 0;
           playerBodyGroup.add(charClone);
@@ -4551,8 +4583,14 @@ export class CanvasRenderer {
           op.visualY += (op.y - op.visualY) * interpolationFactor;
         }
         
-        // Float the ghost slightly and bob up/down using a sine wave
-        const hoverY = 0.08 + Math.sin(Date.now() * 0.004) * 0.035;
+        // Grounded characters (Vampire, Zombie, Skeleton, Ghoul, Traveler) feet touch floor (Y = 0); Ghost floats slightly
+        const skinId = (op && op.characterSkin) ? op.characterSkin : "ghost";
+        let hoverY = 0.0;
+        if (skinId === "ghost") {
+          hoverY = 0.04 + Math.sin(Date.now() * 0.002) * 0.012; // subtle slow floating
+        } else {
+          hoverY = 0.0; // feet firmly on floor
+        }
         this.otherPlayerGroup.position.set(op.visualX, hoverY, op.visualY);
         
         // Orient character model to match look angle

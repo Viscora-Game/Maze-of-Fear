@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=134";
-import { MultiplayerManager } from "./multiplayer.js?v=134";
+import { Game } from "./game.js?v=135";
+import { MultiplayerManager } from "./multiplayer.js?v=135";
 
 const init = () => {
   const game = new Game();
@@ -813,12 +813,14 @@ function setupUI(game) {
     showScreen("menu");
   });
 
-  document.getElementById("btn-howtoplay").addEventListener("click", () => {
+  const btnHowToPlayOld = document.getElementById("btn-howtoplay");
+  if (btnHowToPlayOld) btnHowToPlayOld.addEventListener("click", () => {
     showScreen("howtoplay");
   });
 
   // --- Co-op Lobby Screen Event Listeners ---
-  document.getElementById("btn-coop").addEventListener("click", () => {
+  const btnCoopOld = document.getElementById("btn-coop");
+  if (btnCoopOld) btnCoopOld.addEventListener("click", () => {
     showScreen("coop");
     if (!game.multiplayer) {
       game.multiplayer = new MultiplayerManager(game);

@@ -764,7 +764,21 @@ export class CanvasRenderer {
     loadChar('traveler', 0.75, 'travelerModel');
     loadChar('merchant', 0.75, 'merchantModel');
     loadChar('child', 0.45, 'childModel');
-    // loadChar('monster', 0.85, 'monsterModel'); // Disabled to use custom smoke/mist demon model
+    loadChar('monster', 0.75, 'monsterModel');
+  }
+
+  getCharacterModel(skinId) {
+    switch (skinId) {
+      case "police": return this.policeModel;
+      case "doctor": return this.doctorModel;
+      case "firefighter": return this.firefighterModel;
+      case "child": return this.childModel;
+      case "killer": return this.killerModel;
+      case "monster": return this.monsterModel;
+      case "traveler":
+      default:
+        return this.travelerModel;
+    }
   }
 
   hasLineOfSight(x1, y1, x2, y2, grid, width, height) {
@@ -4378,104 +4392,94 @@ export class CanvasRenderer {
         this.otherPlayerLight.target = targetObj;
       }
       
-      // Lazily build or update the 3D Ghost character model (rebuilds if the real flashlight finishes loading)
+      // Update first person sleeve color based on active character skin
+      const currentSkin = (state && state.player && state.player.characterSkin) ? state.player.characterSkin : "traveler";
+      if (this.playerSleeveMat) {
+        const sleeveColors = {
+          police: "#1e3a8a",
+          doctor: "#f8fafc",
+          firefighter: "#ca8a04",
+          killer: "#450a0a",
+          monster: "#3b0764",
+          child: "#db2777",
+          traveler: "#1e293b"
+        };
+        this.playerSleeveMat.color.set(sleeveColors[currentSkin] || "#1e293b");
+      }
+
+      const op = state.otherPlayer;
+      const targetSkinId = (op && op.characterSkin) ? op.characterSkin : currentSkin;
+      const targetCharModel = this.getCharacterModel(targetSkinId);
+
+      // Lazily build or update the 3D character model
       const hasRealFl = !!this.flashlightModel;
-      if (!this.otherPlayerMesh || (hasRealFl && !this.otherPlayerHasRealFlashlight)) {
+      if (!this.otherPlayerMesh || (hasRealFl && !this.otherPlayerHasRealFlashlight) || (this.otherPlayerSkin !== targetSkinId)) {
         // Clear any existing children
         while (this.otherPlayerGroup.children.length > 0) {
           this.otherPlayerGroup.remove(this.otherPlayerGroup.children[0]);
         }
         
-        const ghostGroup = new THREE.Group();
+        const playerBodyGroup = new THREE.Group();
 
-        // 1. Ghost Head (Sphere)
-        const headGeom = new THREE.SphereGeometry(0.12, 16, 16);
-        const ghostMat = new THREE.MeshStandardMaterial({
-          color: "#a78bfa", // violet sheet color
-          emissive: "#5b21b6", // dark purple glow
-          emissiveIntensity: 0.85,
-          transparent: true,
-          opacity: 0.65,
-          roughness: 0.15,
-          metalness: 0.1
-        });
-        const head = new THREE.Mesh(headGeom, ghostMat);
-        head.position.y = 0.55;
-        ghostGroup.add(head);
+        if (targetCharModel) {
+          const charClone = targetCharModel.clone();
+          charClone.position.y = 0;
+          playerBodyGroup.add(charClone);
+        } else {
+          // Fallback Ghost Shroud while model is loading
+          const headGeom = new THREE.SphereGeometry(0.12, 16, 16);
+          const ghostMat = new THREE.MeshStandardMaterial({
+            color: "#a78bfa",
+            emissive: "#5b21b6",
+            emissiveIntensity: 0.85,
+            transparent: true,
+            opacity: 0.65
+          });
+          const head = new THREE.Mesh(headGeom, ghostMat);
+          head.position.y = 0.55;
+          playerBodyGroup.add(head);
 
-        // 2. Ghost Eyes (Two small glowing yellow beads)
-        const eyeGeom = new THREE.SphereGeometry(0.016, 8, 8);
-        const eyeMat = new THREE.MeshBasicMaterial({ color: "#fde047" });
-        const leftEye = new THREE.Mesh(eyeGeom, eyeMat);
-        leftEye.position.set(0.045, 0.57, 0.10);
-        const rightEye = new THREE.Mesh(eyeGeom, eyeMat);
-        rightEye.position.set(-0.045, 0.57, 0.10);
-        ghostGroup.add(leftEye);
-        ghostGroup.add(rightEye);
+          const bodyGeom = new THREE.ConeGeometry(0.13, 0.40, 16, 1, true);
+          bodyGeom.rotateX(Math.PI);
+          const body = new THREE.Mesh(bodyGeom, ghostMat);
+          body.position.y = 0.32;
+          playerBodyGroup.add(body);
+        }
 
-        // 3. Ghost Body (Cone pointing down to mimic a floating cloth shroud)
-        const bodyGeom = new THREE.ConeGeometry(0.13, 0.40, 16, 1, true);
-        bodyGeom.rotateX(Math.PI);
-        const body = new THREE.Mesh(bodyGeom, ghostMat);
-        body.position.y = 0.32;
-        ghostGroup.add(body);
-
-        // 4. Flashlight on the right side
+        // Flashlight attached to character
         const handGroup = new THREE.Group();
-        handGroup.position.set(0.16, 0.35, 0.08); // Right side
+        handGroup.position.set(0.16, 0.35, 0.08);
         
         if (hasRealFl) {
           const flModel = this.flashlightModel.clone();
           flModel.scale.set(0.5, 0.5, 0.5);
-          flModel.rotation.set(0, -Math.PI / 2, 0); // point forward (rotates -X lens to +Z ghost face direction)
+          flModel.rotation.set(0, -Math.PI / 2, 0);
           handGroup.add(flModel);
-        } else {
-          // Fallback cylinder flashlight while loading assets
-          const cylGeom = new THREE.CylinderGeometry(0.015, 0.015, 0.1, 8);
-          cylGeom.rotateX(Math.PI / 2);
-          const cylMat = new THREE.MeshStandardMaterial({ color: "#1e293b", metalness: 0.8 });
-          const fallbackFl = new THREE.Mesh(cylGeom, cylMat);
-          handGroup.add(fallbackFl);
         }
         
-        // 5. Glowing Flashlight Lens & Volumetric Light Beam Cone for Partner
-        const lensMat = new THREE.MeshBasicMaterial({
-          color: "#fef08a",
-          transparent: true,
-          opacity: 0.0
-        });
-        const lensMesh = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.022, 0.022, 0.005, 12),
-          lensMat
-        );
+        const lensMat = new THREE.MeshBasicMaterial({ color: "#fef08a", transparent: true, opacity: 0.0 });
+        const lensMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.005, 12), lensMat);
         lensMesh.rotation.x = Math.PI / 2;
         lensMesh.position.set(0, 0, 0.12);
         handGroup.add(lensMesh);
 
-        // Volumetric Light Cone extending from flashlight lens
         const coneGeom = new THREE.ConeGeometry(0.65, 3.5, 16, 1, true);
         coneGeom.rotateX(-Math.PI / 2);
         coneGeom.translate(0, 0, 1.75);
 
-        const beamMat = new THREE.MeshBasicMaterial({
-          color: "#fef08a",
-          transparent: true,
-          opacity: 0.0,
-          side: THREE.DoubleSide,
-          depthWrite: false
-        });
+        const beamMat = new THREE.MeshBasicMaterial({ color: "#fef08a", transparent: true, opacity: 0.0, side: THREE.DoubleSide, depthWrite: false });
         const beamMesh = new THREE.Mesh(coneGeom, beamMat);
         handGroup.add(beamMesh);
 
-        ghostGroup.add(handGroup);
-        ghostGroup.userData = { lensMat, beamMat };
+        playerBodyGroup.add(handGroup);
+        playerBodyGroup.userData = { lensMat, beamMat };
         
-        this.otherPlayerMesh = ghostGroup;
+        this.otherPlayerMesh = playerBodyGroup;
         this.otherPlayerGroup.add(this.otherPlayerMesh);
         this.otherPlayerHasRealFlashlight = hasRealFl;
+        this.otherPlayerSkin = targetSkinId;
       }
       
-      const op = state.otherPlayer;
       if (!op || op.x === undefined || op.y === undefined) {
         if (this.otherPlayerGroup) this.otherPlayerGroup.visible = false;
         if (this.otherPlayerLight) this.otherPlayerLight.intensity = 0.0;

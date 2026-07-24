@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=125";
-import { MultiplayerManager } from "./multiplayer.js?v=125";
+import { Game } from "./game.js?v=126";
+import { MultiplayerManager } from "./multiplayer.js?v=126";
 
 const init = () => {
   const game = new Game();
@@ -654,6 +654,78 @@ function setupUI(game) {
     // Call the beautiful async loading screen and start transition
     triggerLoadingAndStart(false, true);
   });
+
+
+  // --- CHARACTER SKIN SELECTION MODAL LOGIC ---
+  const updateCharacterModalUI = () => {
+    const list = document.getElementById("character-skins-list");
+    if (!list) return;
+    list.innerHTML = "";
+
+    const unlocked = game.unlockedSkins || ["traveler"];
+    const activeSkin = game.characterSkin || "traveler";
+
+    const skins = [
+      { id: "traveler", nameTr: "Gezgin", nameEn: "Explorer", portrait: "assets/portrait_explorer.png", questTr: "Ücretsiz Standart Karakter", questEn: "Free Standard Character" },
+      { id: "child", nameTr: "Kayıp Çocuk", nameEn: "Lost Child", portrait: "assets/portrait_child.png", questTr: "Görev: Seviye 5'e Ulaş", questEn: "Quest: Reach Level 5" },
+      { id: "merchant", nameTr: "Gizemli Tüccar", nameEn: "Merchant", portrait: "assets/portrait_merchant.png", questTr: "Görev: Seviye 10'a Ulaş", questEn: "Quest: Reach Level 10" },
+      { id: "monster", nameTr: "Gölge Canavarı", nameEn: "Shadow Monster", portrait: "assets/portrait_sage.png", questTr: "Görev: Seviye 20'yi Tamamla", questEn: "Quest: Beat Level 20" }
+    ];
+
+    skins.forEach(s => {
+      const isUnlocked = unlocked.includes(s.id);
+      const isSelected = activeSkin === s.id;
+
+      const card = document.createElement("div");
+      card.style.cssText = `background: ${isSelected ? 'rgba(217, 119, 6, 0.22)' : isUnlocked ? 'rgba(30, 41, 59, 0.85)' : 'rgba(15, 23, 42, 0.95)'}; border: 1.5px solid ${isSelected ? '#f59e0b' : isUnlocked ? 'rgba(148, 163, 184, 0.3)' : 'rgba(220, 38, 38, 0.4)'}; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; cursor: pointer; transition: all 0.15s ease;`;
+      
+      card.innerHTML = `
+        <div style="position: relative; width: 68px; height: 68px; border-radius: 50%; overflow: hidden; border: 2px solid ${isSelected ? '#f59e0b' : isUnlocked ? '#94a3b8' : '#ef4444'};">
+          <img src="${s.portrait}" style="width: 100%; height: 100%; object-fit: cover; ${!isUnlocked ? 'filter: grayscale(1) brightness(0.5);' : ''}" />
+          ${!isUnlocked ? '<div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; background: rgba(0,0,0,0.6);">🔒</div>' : ''}
+        </div>
+        <div style="font-weight: bold; color: ${isSelected ? '#fbbf24' : '#f8fafc'}; font-size: 0.90rem;">${game.lang === 'tr' ? s.nameTr : s.nameEn}</div>
+        <div style="font-size: 0.72rem; color: ${isUnlocked ? '#94a3b8' : '#ef4444'}; line-height: 1.2;">${game.lang === 'tr' ? s.questTr : s.questEn}</div>
+        <button class="btn-modal ${isSelected ? 'btn-warning' : isUnlocked ? 'btn-primary' : 'btn-muted'}" style="margin-top: 4px; padding: 4px 12px; font-size: 0.75rem; border-radius: 6px; font-weight: bold; width: 100%;">
+          ${isSelected ? 'SEÇİLDİ' : isUnlocked ? 'SEÇ' : 'KİLİTLİ'}
+        </button>
+      `;
+
+      card.addEventListener("click", () => {
+        if (!isUnlocked) {
+          soundEngine.playError && soundEngine.playError();
+          game.showNotification(`🔒 ${game.lang === 'tr' ? 'KİLİTLİ: ' + s.questTr : 'LOCKED: ' + s.questEn}`);
+          return;
+        }
+        soundEngine.playClick();
+        game.characterSkin = s.id;
+        localStorage.setItem("selected_character_skin", s.id);
+        if (game.state && game.state.player) {
+          game.state.player.characterSkin = s.id;
+        }
+        updateCharacterModalUI();
+      });
+
+      list.appendChild(card);
+    });
+  };
+
+  const btnCharSelect = document.getElementById("btn-character-select");
+  if (btnCharSelect) {
+    btnCharSelect.addEventListener("click", () => {
+      soundEngine.playClick();
+      updateCharacterModalUI();
+      document.getElementById("modal-character").classList.remove("hidden");
+    });
+  }
+
+  const btnCharClose = document.getElementById("btn-character-close");
+  if (btnCharClose) {
+    btnCharClose.addEventListener("click", () => {
+      soundEngine.playClick();
+      document.getElementById("modal-character").classList.add("hidden");
+    });
+  }
 
   document.getElementById("btn-settings").addEventListener("click", () => {
     settingsFromGame = false;

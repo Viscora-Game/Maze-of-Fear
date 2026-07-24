@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=125";
-import { AudioEngine } from "./audio.js?v=125";
-import { CanvasRenderer } from "./canvas.js?v=125";
-import { translations } from "./translations.js?v=125";
-import { randomEvents, deathEvents } from "./events.js?v=125";
-import { getSeededRandom } from "./prng.js?v=125";
+import { generateMaze } from "./maze.js?v=126";
+import { AudioEngine } from "./audio.js?v=126";
+import { CanvasRenderer } from "./canvas.js?v=126";
+import { translations } from "./translations.js?v=126";
+import { randomEvents, deathEvents } from "./events.js?v=126";
+import { getSeededRandom } from "./prng.js?v=126";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -73,6 +73,10 @@ export class Game {
 
     // Level progression
     this.currentLevel = parseInt(localStorage.getItem("maze_level")) || 1;
+    this.currentVariation = 0; // 0, 1, or 2 (rotated per level generation)
+    this.unlockedAchievements = JSON.parse(localStorage.getItem("unlocked_achievements") || "[]");
+    this.characterSkin = localStorage.getItem("selected_character_skin") || "traveler";
+    this.unlockedSkins = JSON.parse(localStorage.getItem("unlocked_skins") || '["traveler"]');
 
     this.audio = new AudioEngine();
     if (!this.audioEnabled) this.audio.muted = true;
@@ -263,6 +267,9 @@ export class Game {
           cheese: 0,
           revival_scroll: 0
         },
+        equippedBoots: null,
+        activeBlessing: null,
+        characterSkin: this.characterSkin,
         hasCompass: false,
         equippedItem: null
       },
@@ -1052,8 +1059,27 @@ export class Game {
     const ach = this.achievements.find(a => a.id === id);
     if (ach) {
       const name = this.lang === "tr" ? ach.nameTr : ach.nameEn;
-      this.showAchievementToast(ach.icon, name);
+      const icon = ach.icon || "🏆";
+      this.showNotification(`${icon} BAŞARIM KAZANILDI: ${name}!`);
     }
+  }
+
+  unlockSkin(skinId) {
+    if (!this.unlockedSkins) this.unlockedSkins = ["traveler"];
+    if (this.unlockedSkins.includes(skinId)) return;
+    this.unlockedSkins.push(skinId);
+    localStorage.setItem("unlocked_skins", JSON.stringify(this.unlockedSkins));
+
+    if (this.audio) this.audio.playAchievementUnlock();
+
+    const skinNames = {
+      child: { tr: "Kayıp Çocuk", en: "Lost Child" },
+      merchant: { tr: "Gizemli Tüccar", en: "Merchant" },
+      monster: { tr: "Gölge Canavarı", en: "Shadow Monster" }
+    };
+    const sName = skinNames[skinId] ? (this.lang === "tr" ? skinNames[skinId].tr : skinNames[skinId].en) : skinId;
+    this.showNotification(`🎭 YENİ KARAKTER AÇILDI: ${sName}!`);
+  }
   }
 
   showAchievementToast(icon, name) {

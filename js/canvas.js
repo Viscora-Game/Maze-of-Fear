@@ -446,13 +446,20 @@ export class CanvasRenderer {
     // Load custom GLTF first-person arms model
     this.armsModel = null;
     this.armsAnimations = null;
-    this.loadArmsAsset();
+    
+    this.decorations = {};
+    this.characterModels = {};
+    this.monsterMesh = null;
+    this.monsterRedLights = [];
+    this.exitPortals = [];
 
-    // Load custom FBX decoration assets (flowers, rocks, grass)
-    this.flowerModels = [];
-    this.rockModels = [];
-    this.grassModel = null;
+    this.buildProceduralTextures();
+    this.loadMonsterModel();
+    this.loadFlashlightModel();
+    this.loadChestModel();
+    this.loadArmRigModel();
     this.loadDecorationsAssets();
+    this.loadCharacterModels();
   }
 
   loadArmsAsset() {
@@ -487,6 +494,76 @@ export class CanvasRenderer {
     }, undefined, (err) => {
       console.error("Failed to load GLTF arms model:", err);
     });
+  }
+
+  // Load 3D Character FBX Models (traveler, child, merchant, monster)
+  loadCharacterModels() {
+    if (typeof THREE.FBXLoader === "undefined") {
+      console.warn("THREE.FBXLoader is not available.");
+      return;
+    }
+    const loader = new THREE.FBXLoader();
+    const textureLoader = new THREE.TextureLoader();
+
+    ["traveler", "child", "merchant", "monster"].forEach(name => {
+      loader.load(`assets/models/characters/${name}.fbx`, (fbx) => {
+        textureLoader.load(`assets/models/characters/${name}.png`, (texture) => {
+          texture.flipY = false;
+          fbx.traverse(child => {
+            if (child.isMesh) {
+              child.material = new THREE.MeshStandardMaterial({
+                map: texture,
+                roughness: 0.8,
+                metalness: 0.1
+              });
+            }
+          });
+          fbx.scale.set(0.008, 0.008, 0.008);
+          this.adjustCharacterPose(fbx);
+          this.characterModels[name] = fbx;
+          console.log(`Loaded character FBX model: ${name}`);
+          if (this.lastState) this.rebuildScene(this.lastState);
+        });
+      });
+    });
+  }
+
+  // Adjust FBX character T-pose / A-pose arms inward and attach held flashlight
+  adjustCharacterPose(charMesh) {
+    if (!charMesh) return;
+    charMesh.traverse(child => {
+      if (child.isBone || child.name) {
+        const lowerName = child.name.toLowerCase();
+        // Left Arm: rotate inward towards torso
+        if (lowerName.includes("leftarm") || lowerName.includes("leftshoulder") || lowerName.includes("left_arm")) {
+          child.rotation.z = 0.85;
+          child.rotation.x = 0.15;
+        }
+        // Right Arm: lower and point forward holding flashlight
+        if (lowerName.includes("rightarm") || lowerName.includes("rightshoulder") || lowerName.includes("right_arm")) {
+          child.rotation.z = -0.85;
+          child.rotation.x = -0.75;
+        }
+      }
+    });
+
+    // Attach 3D Flashlight to character's right hand side
+    const torchMesh = new THREE.Group();
+    const bodyMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.03, 0.04, 0.25, 10),
+      new THREE.MeshStandardMaterial({ color: "#1e293b", metalness: 0.85, roughness: 0.2 })
+    );
+    bodyMesh.rotation.x = Math.PI / 2;
+    torchMesh.add(bodyMesh);
+
+    const spotLight = new THREE.SpotLight("#fef08a", 2.2, 8.0, Math.PI / 4, 0.4);
+    spotLight.position.set(0, 0, 0.12);
+    spotLight.target.position.set(0, 0, 3.0);
+    torchMesh.add(spotLight);
+    torchMesh.add(spotLight.target);
+
+    torchMesh.position.set(0.28, 1.05, 0.30);
+    charMesh.add(torchMesh);
   }
 
   loadDecorationsAssets() {

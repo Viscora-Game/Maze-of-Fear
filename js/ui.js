@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=136";
-import { MultiplayerManager } from "./multiplayer.js?v=136";
+import { Game } from "./game.js?v=137";
+import { MultiplayerManager } from "./multiplayer.js?v=137";
 
 const init = () => {
   const game = new Game();
@@ -691,9 +691,27 @@ function setupUI(game) {
   const cardModeStory = document.getElementById("card-mode-story");
   if (cardModeStory) cardModeStory.addEventListener("click", launchStoryMode);
 
+  const ensureMultiplayer = () => {
+    if (!game.multiplayer) {
+      game.multiplayer = new MultiplayerManager(game);
+      game.multiplayer.onStatusChange = (statusText, replacements = {}) => {
+        const statusEl = document.getElementById("coop-status");
+        if (statusEl) {
+          statusEl.textContent = statusText;
+        }
+        if (replacements.code) {
+          const codeEl = document.getElementById("coop-room-code");
+          if (codeEl) codeEl.textContent = replacements.code;
+        }
+      };
+    }
+    return game.multiplayer;
+  };
+
   const launchCoopMode = () => {
     if (game.audio) game.audio.playClick();
     if (modalPlayMode) modalPlayMode.classList.add("hidden");
+    ensureMultiplayer();
     showScreen("coop");
   };
 
@@ -819,27 +837,13 @@ function setupUI(game) {
   });
 
   // --- Co-op Lobby Screen Event Listeners ---
-  const btnCoopOld = document.getElementById("btn-coop");
-  if (btnCoopOld) btnCoopOld.addEventListener("click", () => {
-    showScreen("coop");
-    if (!game.multiplayer) {
-      game.multiplayer = new MultiplayerManager(game);
-      game.multiplayer.onStatusChange = (statusText, replacements = {}) => {
-        const statusEl = document.getElementById("coop-status");
-        if (statusEl) {
-          statusEl.textContent = statusText;
-        }
-        if (replacements.code) {
-          const codeEl = document.getElementById("coop-room-code");
-          if (codeEl) codeEl.textContent = replacements.code;
-        }
-      };
-    }
-    // Reset room code UI
-    document.getElementById("coop-room-code").textContent = "------";
-    document.getElementById("coop-host-details").classList.add("hidden");
-    document.getElementById("coop-status").textContent = "";
-    document.getElementById("coop-join-input").value = "";
+  const updateCoopLobbyUI = () => {
+    const hostDetails = document.getElementById("coop-host-details");
+    if (hostDetails) hostDetails.classList.add("hidden");
+    const statusEl = document.getElementById("coop-status");
+    if (statusEl) statusEl.textContent = "";
+    const joinInput = document.getElementById("coop-join-input");
+    if (joinInput) joinInput.value = "";
 
     // Sync Co-op lobby difficulty buttons with current game difficulty
     ["easy", "medium", "hard", "nightmare", "peaceful"].forEach(d => {
@@ -873,7 +877,7 @@ function setupUI(game) {
 
     // Apply translations to the co-op screen
     translateUI();
-  });
+  };
 
   // Co-op difficulty button listeners
   ["easy", "medium", "hard", "nightmare", "peaceful"].forEach(diff => {
@@ -982,6 +986,17 @@ function setupUI(game) {
       });
     }
   });
+
+  const btnCoopBack = document.getElementById("btn-coop-back");
+  if (btnCoopBack) {
+    btnCoopBack.addEventListener("click", () => {
+      if (game.audio) game.audio.playClick();
+      if (game.multiplayer) {
+        game.multiplayer.disconnect();
+      }
+      showScreen("menu");
+    });
+  }
 
   document.getElementById("btn-coop-join").addEventListener("click", () => {
     let inputVal = document.getElementById("coop-join-input").value.trim();

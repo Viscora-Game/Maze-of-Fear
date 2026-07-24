@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=137";
-import { MultiplayerManager } from "./multiplayer.js?v=137";
+import { Game } from "./game.js?v=138";
+import { MultiplayerManager } from "./multiplayer.js?v=138";
 
 const init = () => {
   const game = new Game();
@@ -680,8 +680,8 @@ function setupUI(game) {
       game.audio.stopMenuMusic();
     }
     if (modalPlayMode) modalPlayMode.classList.add("hidden");
-    if (multiplayer && multiplayer.isConnected) {
-      multiplayer.disconnect();
+    if (game.multiplayer && game.multiplayer.isConnected) {
+      game.multiplayer.disconnect();
     }
     triggerLoadingAndStart(false, true);
   };

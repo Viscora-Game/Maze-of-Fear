@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=135";
-import { MultiplayerManager } from "./multiplayer.js?v=135";
+import { Game } from "./game.js?v=136";
+import { MultiplayerManager } from "./multiplayer.js?v=136";
 
 const init = () => {
   const game = new Game();
@@ -638,7 +638,7 @@ function setupUI(game) {
   const btnHelpTop = document.getElementById("btn-help-top");
   if (btnHelpTop) {
     btnHelpTop.addEventListener("click", () => {
-      if (game.audio) game.audio.playStep();
+      if (game.audio) game.audio.playClick();
       showScreen("howtoplay");
     });
   }
@@ -646,7 +646,7 @@ function setupUI(game) {
   // Play Mode Selection Modal Listeners
   const modalPlayMode = document.getElementById("modal-play-mode");
   const openPlayModal = () => {
-    if (game.audio) game.audio.playStep();
+    if (game.audio) game.audio.playClick();
     if (modalPlayMode) {
       const badge = document.getElementById("play-mode-level-badge");
       if (badge) {
@@ -668,7 +668,7 @@ function setupUI(game) {
   const btnPlayModeClose = document.getElementById("btn-play-mode-close");
   if (btnPlayModeClose) {
     btnPlayModeClose.addEventListener("click", () => {
-      if (game.audio) game.audio.playStep();
+      if (game.audio) game.audio.playClick();
       if (modalPlayMode) modalPlayMode.classList.add("hidden");
     });
   }
@@ -676,7 +676,7 @@ function setupUI(game) {
   const launchStoryMode = () => {
     if (game.audio) {
       game.audio.init();
-      game.audio.playStep();
+      game.audio.playClick();
       game.audio.stopMenuMusic();
     }
     if (modalPlayMode) modalPlayMode.classList.add("hidden");
@@ -692,7 +692,7 @@ function setupUI(game) {
   if (cardModeStory) cardModeStory.addEventListener("click", launchStoryMode);
 
   const launchCoopMode = () => {
-    if (game.audio) game.audio.playStep();
+    if (game.audio) game.audio.playClick();
     if (modalPlayMode) modalPlayMode.classList.add("hidden");
     showScreen("coop");
   };

@@ -365,6 +365,24 @@ export class AudioEngine {
     }
   }
 
+  playClick() {
+    if (this.muted) return;
+    if (this._playBuffer("ui_button_click", 0.35)) return;
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(300, this.ctx.currentTime + 0.05);
+      gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.05);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.05);
+    } catch (e) {}
+  }
+
   // Footstep sounds (Walk vs Run variations) - uses real audio assets
   playStep(isRunning = false) {
     this.init();

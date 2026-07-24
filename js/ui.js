@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=132";
-import { MultiplayerManager } from "./multiplayer.js?v=132";
+import { Game } from "./game.js?v=133";
+import { MultiplayerManager } from "./multiplayer.js?v=133";
 
 const init = () => {
   const game = new Game();
@@ -710,17 +710,17 @@ function setupUI(game) {
     if (!list) return;
     list.innerHTML = "";
 
-    const unlocked = game.unlockedSkins || ["traveler"];
+    const unlocked = ["traveler", "police", "child", "doctor", "firefighter", "killer", "monster"];
     const activeSkin = game.characterSkin || "traveler";
 
     const skins = [
-      { id: "traveler", nameTr: "Gezgin", nameEn: "Explorer", portrait: "assets/portrait_explorer.png", questTr: "Ücretsiz Standart Karakter", questEn: "Free Standard Character" },
-      { id: "police", nameTr: "Polis Memuru", nameEn: "Police Officer", portrait: "assets/portrait_police.png", questTr: "Görev: Seviye 3'e Ulaş", questEn: "Quest: Reach Level 3" },
-      { id: "child", nameTr: "Kayıp Kız", nameEn: "Lost Girl", portrait: "assets/portrait_child.png", questTr: "Görev: Seviye 5'e Ulaş", questEn: "Quest: Reach Level 5" },
-      { id: "doctor", nameTr: "Doktor", nameEn: "Doctor", portrait: "assets/portrait_doctor.png", questTr: "Görev: Seviye 7'ye Ulaş", questEn: "Quest: Reach Level 7" },
-      { id: "firefighter", nameTr: "İtfaiyeci", nameEn: "Firefighter", portrait: "assets/portrait_firefighter.png", questTr: "Görev: Seviye 12'ye Ulaş", questEn: "Quest: Reach Level 12" },
-      { id: "killer", nameTr: "Maskeli Katil", nameEn: "Masked Killer", portrait: "assets/portrait_killer.png", questTr: "Görev: Seviye 15'e Ulaş", questEn: "Quest: Reach Level 15" },
-      { id: "monster", nameTr: "Gölge Canavarı", nameEn: "Shadow Monster", portrait: "assets/portrait_monster.png", questTr: "Görev: Seviye 20'yi Tamamla", questEn: "Quest: Beat Level 20" }
+      { id: "traveler", nameTr: "Gezgin", nameEn: "Explorer", portrait: "assets/portrait_explorer.png", questTr: "Ücretsiz Karakter", questEn: "Free Character" },
+      { id: "police", nameTr: "Polis Memuru", nameEn: "Police Officer", portrait: "assets/portrait_police.png", questTr: "Ücretsiz Karakter", questEn: "Free Character" },
+      { id: "child", nameTr: "Kayıp Kız", nameEn: "Lost Girl", portrait: "assets/portrait_child.png", questTr: "Ücretsiz Karakter", questEn: "Free Character" },
+      { id: "doctor", nameTr: "Doktor", nameEn: "Doctor", portrait: "assets/portrait_doctor.png", questTr: "Ücretsiz Karakter", questEn: "Free Character" },
+      { id: "firefighter", nameTr: "İtfaiyeci", nameEn: "Firefighter", portrait: "assets/portrait_firefighter.png", questTr: "Ücretsiz Karakter", questEn: "Free Character" },
+      { id: "killer", nameTr: "Maskeli Katil", nameEn: "Masked Killer", portrait: "assets/portrait_killer.png", questTr: "Ücretsiz Karakter", questEn: "Free Character" },
+      { id: "monster", nameTr: "Gölge Canavarı", nameEn: "Shadow Monster", portrait: "assets/portrait_monster.png", questTr: "Ücretsiz Karakter", questEn: "Free Character" }
     ];
 
     skins.forEach(s => {

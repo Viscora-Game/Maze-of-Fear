@@ -2466,7 +2466,6 @@ export class CanvasRenderer {
       for (let x = 0; x < width; x++) {
         const cell = grid[y][x];
         const cellGroup = new THREE.Group();
-
         if (cell.type !== "wall") {
           // A. Path Floor Panel
           const floorMesh = new THREE.Mesh(floorGeo, activeFloorMat);

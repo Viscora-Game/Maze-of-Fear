@@ -446,20 +446,13 @@ export class CanvasRenderer {
     // Load custom GLTF first-person arms model
     this.armsModel = null;
     this.armsAnimations = null;
-    
-    this.decorations = {};
-    this.characterModels = {};
-    this.monsterMesh = null;
-    this.monsterRedLights = [];
-    this.exitPortals = [];
+    this.loadArmsAsset();
 
-    this.buildProceduralTextures();
-    this.loadMonsterModel();
-    this.loadFlashlightModel();
-    this.loadChestModel();
-    this.loadArmRigModel();
+    // Load custom FBX decoration assets (flowers, rocks, grass)
+    this.flowerModels = [];
+    this.rockModels = [];
+    this.grassModel = null;
     this.loadDecorationsAssets();
-    this.loadCharacterModels();
   }
 
   loadArmsAsset() {
@@ -494,76 +487,6 @@ export class CanvasRenderer {
     }, undefined, (err) => {
       console.error("Failed to load GLTF arms model:", err);
     });
-  }
-
-  // Load 3D Character FBX Models (traveler, child, merchant, monster)
-  loadCharacterModels() {
-    if (typeof THREE.FBXLoader === "undefined") {
-      console.warn("THREE.FBXLoader is not available.");
-      return;
-    }
-    const loader = new THREE.FBXLoader();
-    const textureLoader = new THREE.TextureLoader();
-
-    ["traveler", "police", "doctor", "firefighter", "child", "killer", "monster"].forEach(name => {
-      loader.load(`assets/models/characters/${name}.fbx`, (fbx) => {
-        textureLoader.load(`assets/models/characters/${name}.png`, (texture) => {
-          texture.flipY = false;
-          fbx.traverse(child => {
-            if (child.isMesh) {
-              child.material = new THREE.MeshStandardMaterial({
-                map: texture,
-                roughness: 0.8,
-                metalness: 0.1
-              });
-            }
-          });
-          fbx.scale.set(0.008, 0.008, 0.008);
-          this.adjustCharacterPose(fbx);
-          this.characterModels[name] = fbx;
-          console.log(`Loaded character FBX model: ${name}`);
-          if (this.lastState) this.rebuildScene(this.lastState);
-        });
-      });
-    });
-  }
-
-  // Adjust FBX character T-pose / A-pose arms inward and attach held flashlight
-  adjustCharacterPose(charMesh) {
-    if (!charMesh) return;
-    charMesh.traverse(child => {
-      if (child.isBone || child.name) {
-        const lowerName = child.name.toLowerCase();
-        // Left Arm: rotate inward towards torso
-        if (lowerName.includes("leftarm") || lowerName.includes("leftshoulder") || lowerName.includes("left_arm")) {
-          child.rotation.z = 0.85;
-          child.rotation.x = 0.15;
-        }
-        // Right Arm: lower and point forward holding flashlight
-        if (lowerName.includes("rightarm") || lowerName.includes("rightshoulder") || lowerName.includes("right_arm")) {
-          child.rotation.z = -0.85;
-          child.rotation.x = -0.75;
-        }
-      }
-    });
-
-    // Attach 3D Flashlight to character's right hand side
-    const torchMesh = new THREE.Group();
-    const bodyMesh = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.03, 0.04, 0.25, 10),
-      new THREE.MeshStandardMaterial({ color: "#1e293b", metalness: 0.85, roughness: 0.2 })
-    );
-    bodyMesh.rotation.x = Math.PI / 2;
-    torchMesh.add(bodyMesh);
-
-    const spotLight = new THREE.SpotLight("#fef08a", 2.2, 8.0, Math.PI / 4, 0.4);
-    spotLight.position.set(0, 0, 0.12);
-    spotLight.target.position.set(0, 0, 3.0);
-    torchMesh.add(spotLight);
-    torchMesh.add(spotLight.target);
-
-    torchMesh.position.set(0.28, 1.05, 0.30);
-    charMesh.add(torchMesh);
   }
 
   loadDecorationsAssets() {
@@ -2927,39 +2850,15 @@ export class CanvasRenderer {
             lintel.position.set(0, 1.25, 0);
             portalGroup.add(colL, colR, lintel);
 
-            // 3. Dynamic Radiant Exit Portal Light (Fiery Red Embers for Lvl 1-19 vs Divine Golden Sunburst for Lvl 20 Final Exit)
-            const currentLvl = (state && state.currentLevel) ? Number(state.currentLevel) : 1;
-            const isFinalLevelExit = (currentLvl >= 20);
-            const planeColor = isFinalLevelExit ? "#fbbf24" : "#f97316"; // Divine Gold vs Fiery Infernal Orange
-            const beamColor  = isFinalLevelExit ? "#fef08a" : "#ef4444"; // Golden Rays vs Fiery Crimson Embers
-            const lightColor = isFinalLevelExit ? "#fde047" : "#ea580c"; // Golden Sunlit Glow vs Fiery Burning Red
-
-            const portalMat = new THREE.MeshBasicMaterial({
-              color: planeColor,
+            // 2. Bright Golden Light Plane behind the doors (representing safety & sunlight beyond)
+            const lightPlaneGeo = new THREE.PlaneGeometry(0.76, 1.18);
+            const lightPlaneMat = new THREE.MeshBasicMaterial({ 
+              color: "#fef08a", 
               side: THREE.DoubleSide
             });
-            const portalPlane = new THREE.Mesh(new THREE.PlaneGeometry(0.92, 1.90), portalMat);
-            portalPlane.position.set(0, 0.95, -0.12);
-            portalGroup.add(portalPlane);
-
-            // 4. Volumetric Light Beam Cone Leaking from the Door
-            const beamGeo = new THREE.ConeGeometry(0.85, 2.2, 16, 1, true);
-            beamGeo.rotateX(Math.PI / 2);
-            const beamMat = new THREE.MeshBasicMaterial({
-              color: beamColor,
-              transparent: true,
-              opacity: isMobile ? 0.0 : 0.26, // Disabled on mobile GPUs to save 25-30 FPS!
-              side: THREE.DoubleSide,
-              blending: THREE.AdditiveBlending
-            });
-            const lightBeam = new THREE.Mesh(beamGeo, beamMat);
-            lightBeam.position.set(0, 0.95, 0.90);
-            portalGroup.add(lightBeam);
-
-            // 5. High Intensity PointLight emitting warm glow from behind the door gap
-            const exitLight = new THREE.PointLight(lightColor, 2.5, 6.0);
-            exitLight.position.set(0, 0.58, -0.15); // Behind the door
-            portalGroup.add(exitLight);
+            const lightPlane = new THREE.Mesh(lightPlaneGeo, lightPlaneMat);
+            lightPlane.position.set(0, 0.59, -0.06);
+            portalGroup.add(lightPlane);
 
             // 3. Ancient Heavy Wooden Dungeon Double-Doors (slightly ajar/open outwards)
             const doorL = new THREE.Mesh(new THREE.BoxGeometry(0.38, 1.15, 0.04), woodMat);
@@ -3592,25 +3491,14 @@ export class CanvasRenderer {
               // 1. Solid Outer Door Frame (left post, right post, top header)
               const frameL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.25, 0.04), ironMat);
               frameL.position.set(-0.52, 0.625, 0);
-              // 1. Solid Gothic Gateway Archway Frame (Full 1.04m width x 0.42m depth portal box)
-              const framePostGeo = new THREE.BoxGeometry(0.24, 2.10, 0.42);
-              const framePostL = new THREE.Mesh(framePostGeo, ironMat);
-              framePostL.position.set(-0.40, 1.05, 0);
-              const framePostR = new THREE.Mesh(framePostGeo, ironMat);
-              framePostR.position.set(0.40, 1.05, 0);
+              const frameR = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.25, 0.04), ironMat);
+              frameR.position.set(0.52, 0.625, 0);
+              const frameTop = new THREE.Mesh(new THREE.BoxGeometry(1.08, 0.04, 0.04), ironMat);
+              frameTop.position.set(0, 1.23, 0);
+              obsSubGroup.add(frameL, frameR, frameTop);
 
-              const frameTopGeo = new THREE.BoxGeometry(1.04, 0.32, 0.42);
-              const frameTop = new THREE.Mesh(frameTopGeo, ironMat);
-              frameTop.position.set(0, 1.94, 0);
-
-              // Side Wall Connectors (Spans flush to cell boundaries so door is never floating in empty space)
-              const wingGeo = new THREE.BoxGeometry(0.28, 2.10, 0.42);
-              const wingL = new THREE.Mesh(wingGeo, ironMat);
-              wingL.position.set(-0.42, 1.05, 0);
-              const wingR = new THREE.Mesh(wingGeo, ironMat);
-              wingR.position.set(0.42, 1.05, 0);
-
-              obGroup.add(framePostL, framePostR, frameTop, wingL, wingR);
+              // 2. Vertical bars (spaced between the frames)
+              for (let i = -0.40; i <= 0.40; i += 0.133) {
                 const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 1.21), ironMat);
                 bar.position.set(i, 0.605, 0);
                 obsSubGroup.add(bar);
@@ -5300,9 +5188,10 @@ export class CanvasRenderer {
     // Update exit portals (soft warm light pulse leaking from behind the gothic doors)
     if (this.exitPortals && this.exitPortals.length > 0) {
       this.exitPortals.forEach(portal => {
+        const t = (Date.now() * 0.001) + portal.timeOffset;
         if (portal.light) {
           // Intense warm golden breathing pulse
-          portal.light.intensity = 2.3 + Math.sin(time * 4.8) * 0.6;
+          portal.light.intensity = 4.0 + Math.sin(t * 3.5) * 1.5;
         }
       });
     }

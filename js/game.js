@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=138";
-import { AudioEngine } from "./audio.js?v=138";
-import { CanvasRenderer } from "./canvas.js?v=138";
-import { translations } from "./translations.js?v=138";
-import { randomEvents, deathEvents } from "./events.js?v=138";
-import { getSeededRandom } from "./prng.js?v=138";
+import { generateMaze } from "./maze.js?v=139";
+import { AudioEngine } from "./audio.js?v=139";
+import { CanvasRenderer } from "./canvas.js?v=139";
+import { translations } from "./translations.js?v=139";
+import { randomEvents, deathEvents } from "./events.js?v=139";
+import { getSeededRandom } from "./prng.js?v=139";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -76,7 +76,7 @@ export class Game {
     this.currentVariation = 0; // 0, 1, or 2 (rotated per level generation)
     this.unlockedAchievements = JSON.parse(localStorage.getItem("unlocked_achievements") || "[]");
     this.characterSkin = localStorage.getItem("selected_character_skin") || "traveler";
-    this.unlockedSkins = ["traveler", "police", "child", "doctor", "firefighter", "killer", "monster"];
+    this.unlockedSkins = ["traveler", "police", "child", "doctor", "firefighter", "killer", "monster", "zombie", "vampire", "ghost", "skeleton", "ghoul"];
 
     this.audio = new AudioEngine();
     if (!this.audioEnabled) this.audio.muted = true;

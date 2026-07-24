@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=138";
-import { MultiplayerManager } from "./multiplayer.js?v=138";
+import { Game } from "./game.js?v=139";
+import { MultiplayerManager } from "./multiplayer.js?v=139";
 
 const init = () => {
   const game = new Game();
@@ -727,7 +727,7 @@ function setupUI(game) {
     if (!list) return;
     list.innerHTML = "";
 
-    const unlocked = ["traveler", "police", "child", "doctor", "firefighter", "killer", "monster"];
+    const unlocked = ["traveler", "police", "child", "doctor", "firefighter", "killer", "monster", "zombie", "vampire", "ghost", "skeleton", "ghoul"];
     const activeSkin = game.characterSkin || "traveler";
 
     const skins = [
@@ -737,7 +737,12 @@ function setupUI(game) {
       { id: "doctor", nameTr: "Doktor", nameEn: "Doctor", portrait: "assets/portrait_doctor.png", questTr: "Ücretsiz Karakter", questEn: "Free Character" },
       { id: "firefighter", nameTr: "İtfaiyeci", nameEn: "Firefighter", portrait: "assets/portrait_firefighter.png", questTr: "Ücretsiz Karakter", questEn: "Free Character" },
       { id: "killer", nameTr: "Maskeli Katil", nameEn: "Masked Killer", portrait: "assets/portrait_killer.png", questTr: "Ücretsiz Karakter", questEn: "Free Character" },
-      { id: "monster", nameTr: "Gölge Canavarı", nameEn: "Shadow Monster", portrait: "assets/portrait_monster.png", questTr: "Ücretsiz Karakter", questEn: "Free Character" }
+      { id: "monster", nameTr: "Gölge Canavarı", nameEn: "Shadow Monster", portrait: "assets/portrait_monster.png", questTr: "Ücretsiz Karakter", questEn: "Free Character" },
+      { id: "zombie", nameTr: "Zombi", nameEn: "Zombie", portrait: "assets/portrait_killer.png", questTr: "Horror Free Paketi", questEn: "Horror Free Pack" },
+      { id: "vampire", nameTr: "Vampir", nameEn: "Vampire", portrait: "assets/portrait_doctor.png", questTr: "Horror Free Paketi", questEn: "Horror Free Pack" },
+      { id: "ghost", nameTr: "Hayalet", nameEn: "Ghost", portrait: "assets/portrait_monster.png", questTr: "Horror Free Paketi", questEn: "Horror Free Pack" },
+      { id: "skeleton", nameTr: "İskelet", nameEn: "Skeleton", portrait: "assets/portrait_police.png", questTr: "Undead Free Paketi", questEn: "Undead Free Pack" },
+      { id: "ghoul", nameTr: "Hortlak", nameEn: "Ghoul", portrait: "assets/portrait_firefighter.png", questTr: "Undead Free Paketi", questEn: "Undead Free Pack" }
     ];
 
     skins.forEach(s => {

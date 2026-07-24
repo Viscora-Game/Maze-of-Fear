@@ -5274,6 +5274,8 @@ export class CanvasRenderer {
         
         if (p.life <= 0) {
           this.scene.remove(p.mesh);
+          if (p.mesh.geometry) p.mesh.geometry.dispose();
+          if (p.mesh.material) p.mesh.material.dispose();
           this.particles.splice(i, 1);
         } else {
           p.mesh.scale.set(p.life, p.life, p.life);

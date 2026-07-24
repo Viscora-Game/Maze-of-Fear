@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=150";
-import { AudioEngine } from "./audio.js?v=150";
-import { CanvasRenderer } from "./canvas.js?v=150";
-import { translations } from "./translations.js?v=150";
-import { randomEvents, deathEvents } from "./events.js?v=150";
-import { getSeededRandom } from "./prng.js?v=150";
+import { generateMaze } from "./maze.js?v=151";
+import { AudioEngine } from "./audio.js?v=151";
+import { CanvasRenderer } from "./canvas.js?v=151";
+import { translations } from "./translations.js?v=151";
+import { randomEvents, deathEvents } from "./events.js?v=151";
+import { getSeededRandom } from "./prng.js?v=151";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -2176,10 +2176,21 @@ export class Game {
     }
     
     const size = width * height;
-    const queue = [startX + startY * width];
+    if (!this._bfsVisited || this._bfsVisited.length < size) {
+      this._bfsVisited = new Uint8Array(size);
+      this._bfsParent = new Int32Array(size);
+      this._bfsQueue = new Int32Array(size);
+    }
+    const visited = this._bfsVisited;
+    const parent = this._bfsParent;
+    const queue = this._bfsQueue;
+    
+    visited.fill(0);
+    parent.fill(-1);
+    
+    queue[0] = startX + startY * width;
     let qHead = 0;
-    const visited = new Uint8Array(size);
-    const parent = new Int32Array(size).fill(-1);
+    let qTail = 1;
     
     const startIdx = startX + startY * width;
     visited[startIdx] = 1;
@@ -2191,7 +2202,7 @@ export class Game {
     const dxs = [0, 0, 1, -1];
     const dys = [1, -1, 0, 0];
     
-    while (qHead < queue.length && qHead < 120) {
+    while (qHead < qTail && qHead < 120) {
       const currIdx = queue[qHead++];
       if (currIdx === targetIdx) {
         found = true;
@@ -2212,7 +2223,7 @@ export class Game {
           if (!visited[nextIdx] && !isBlocked) {
             visited[nextIdx] = 1;
             parent[nextIdx] = currIdx;
-            queue.push(nextIdx);
+            queue[qTail++] = nextIdx;
           }
         }
       }

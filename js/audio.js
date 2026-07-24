@@ -256,8 +256,8 @@ export class AudioEngine {
       
       const randomDelay = 8000 + Math.random() * 7000; // Check every 8 to 15 seconds
       this.ambientTimeout = setTimeout(() => {
-        if (this.muted || !this.ctx) {
-          scheduleNextAmbient();
+        if (this.inMenu || this.muted || !this.ctx) {
+          if (!this.inMenu) scheduleNextAmbient();
           return;
         }
         
@@ -1224,6 +1224,11 @@ export class AudioEngine {
 
   // Loop drone_doom.wav as terrifying background music for Main Menu & Lobby
   startMenuMusic() {
+    this.inMenu = true;
+    if (this.ambientTimeout) {
+      clearTimeout(this.ambientTimeout);
+      this.ambientTimeout = null;
+    }
     if (this.muted || !this.ctx) return;
     if (this.menuMusicObj && this.menuMusicObj.source) return; // already playing
 
@@ -1242,6 +1247,7 @@ export class AudioEngine {
   }
 
   stopMenuMusic() {
+    this.inMenu = false;
     if (this.menuMusicObj && this.ctx) {
       try {
         const now = this.ctx.currentTime;

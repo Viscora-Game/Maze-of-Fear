@@ -11,7 +11,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js?v=142').catch(err => {
+        navigator.serviceWorker.register('sw.js?v=143').catch(err => {
           console.warn('Service Worker registration failed:', err);
         });
       });
@@ -147,7 +147,7 @@
 
       <div class="menu-buttons" style="width: 100%; max-width: 300px; display: flex; flex-direction: column; gap: 14px; margin: 0 auto;">
         <button class="btn btn-primary glow-box" id="btn-play" style="font-size: 1.2rem; padding: 14px 20px;" data-t="play">🎮 OYNA</button>
-        <button id="btn-character-select" class="btn" style="background: linear-gradient(135deg, #6d28d9, #4c1d95); border: 1px solid rgba(167,139,250,0.5);">🎭 Karakter Seçimi (Skin)</button>
+        <button id="btn-character-select" class="btn" style="background: linear-gradient(135deg, #6d28d9, #4c1d95); border: 1px solid rgba(167,139,250,0.5);" data-tr="🎭 Karakter Seçimi (Skin)" data-en="🎭 Character Selection (Skin)" data-t="characterSelect">🎭 Karakter Seçimi (Skin)</button>
         <button class="btn" id="btn-achievements" data-t="achievements">🏆 Başarımlar</button>
         <button class="btn" id="btn-settings" data-t="settings">⚙️ Ayarlar</button>
       </div>
@@ -757,6 +757,6 @@
     <img src="assets/jumpscare.png" style="width: 100%; height: 100%; object-fit: contain; filter: brightness(1.2) contrast(1.3); transform: scale(1.1);" />
   </div>
 
-  <script type="module" src="js/ui.js?v=142"></script>
+  <script type="module" src="js/ui.js?v=143"></script>
 </body>
 </html>

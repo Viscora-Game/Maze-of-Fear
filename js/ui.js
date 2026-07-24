@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=142";
-import { MultiplayerManager } from "./multiplayer.js?v=142";
+import { Game } from "./game.js?v=143";
+import { MultiplayerManager } from "./multiplayer.js?v=143";
 
 const init = () => {
   const game = new Game();
@@ -770,7 +770,7 @@ function setupUI(game) {
           }
           return;
         }
-        if (game.audio) game.audio.playStep();
+        if (game.audio) game.audio.playClick();
         game.characterSkin = s.id;
         localStorage.setItem("selected_character_skin", s.id);
         if (game.state && game.state.player) {
@@ -786,7 +786,7 @@ function setupUI(game) {
   const btnCharSelect = document.getElementById("btn-character-select");
   if (btnCharSelect) {
     btnCharSelect.addEventListener("click", () => {
-      if (game.audio) game.audio.playStep();
+      if (game.audio) game.audio.playClick();
       updateCharacterModalUI();
       document.getElementById("modal-character").classList.remove("hidden");
     });
@@ -795,7 +795,7 @@ function setupUI(game) {
   const btnCharClose = document.getElementById("btn-character-close");
   if (btnCharClose) {
     btnCharClose.addEventListener("click", () => {
-      if (game.audio) game.audio.playStep();
+      if (game.audio) game.audio.playClick();
       document.getElementById("modal-character").classList.add("hidden");
     });
   }
@@ -2043,7 +2043,7 @@ function setupUI(game) {
       btn.addEventListener("click", () => {
         if (entered.length < 4) {
           entered += btn.getAttribute("data-num");
-          game.audio.playStep(); // button beep
+          game.audio.playClick();
           updateDisplay();
         }
       });
@@ -2051,7 +2051,7 @@ function setupUI(game) {
 
     content.querySelector("#btn-key-clear").addEventListener("click", () => {
       entered = "";
-      game.audio.playStep();
+      game.audio.playClick();
       updateDisplay();
     });
 

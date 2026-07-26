@@ -4567,12 +4567,21 @@ export class CanvasRenderer {
         handGroup.add(beamMesh);
 
         if (rightHandBone) {
-          handGroup.position.set(0, -0.05, 0.08);
-          rightHandBone.add(handGroup);
+          rightHandBone.updateMatrixWorld(true);
+          playerBodyGroup.updateMatrixWorld(true);
+          const handWorldPos = new THREE.Vector3();
+          rightHandBone.getWorldPosition(handWorldPos);
+          playerBodyGroup.worldToLocal(handWorldPos);
+          if (handWorldPos.length() > 0.01) {
+            handGroup.position.copy(handWorldPos);
+            handGroup.position.z += 0.04;
+          } else {
+            handGroup.position.set(-0.18, 0.48, 0.14);
+          }
         } else {
-          handGroup.position.set(0.18, 0.48, 0.12);
-          playerBodyGroup.add(handGroup);
+          handGroup.position.set(-0.18, 0.48, 0.14);
         }
+        playerBodyGroup.add(handGroup);
         playerBodyGroup.userData = { lensMat, beamMat };
         
         this.otherPlayerMesh = playerBodyGroup;

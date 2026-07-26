@@ -4512,6 +4512,7 @@ export class CanvasRenderer {
           skinnedMeshesToUpdate.forEach(sm => {
             if (sm.skeleton) sm.skeleton.update();
           });
+          charClone.rotation.y = -Math.PI / 2;
           charClone.position.y = 0;
           playerBodyGroup.add(charClone);
         } else {

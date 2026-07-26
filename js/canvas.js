@@ -781,8 +781,8 @@ export class CanvasRenderer {
           const center = new THREE.Vector3();
           boxScaled.getCenter(center);
 
-          fbx.position.x = -center.x;
-          fbx.position.z = -center.z;
+          fbx.position.x = 0;
+          fbx.position.z = 0;
           fbx.position.y = -boxScaled.min.y;
           
           wrapper.userData = {
@@ -4532,13 +4532,26 @@ export class CanvasRenderer {
           playerBodyGroup.add(body);
         }
 
-        // Flashlight attached directly to right hand position
+        // Find actual right hand bone on character model
+        let rightHandBone = null;
+        if (targetCharModel) {
+          charClone.traverse((child) => {
+            if (child.isBone || child.type === "Bone") {
+              const n = child.name.toLowerCase();
+              if ((n.includes("hand") || n.includes("wrist") || n.includes("forearm")) && (n.includes(".r") || n.includes("_r") || n.includes("right") || n.startsWith("r_"))) {
+                if (!rightHandBone || n.includes("hand")) {
+                  rightHandBone = child;
+                }
+              }
+            }
+          });
+        }
+
         const handGroup = new THREE.Group();
-        handGroup.position.set(0.22, 0.48, 0.14);
         
         if (hasRealFl) {
           const flModel = this.flashlightModel.clone();
-          flModel.scale.set(0.45, 0.45, 0.45);
+          flModel.scale.set(0.40, 0.40, 0.40);
           flModel.rotation.set(0, -Math.PI / 2, 0);
           flModel.position.set(0, 0, 0.04);
           handGroup.add(flModel);
@@ -4559,7 +4572,13 @@ export class CanvasRenderer {
         beamMesh.position.set(0, 0, 0.18);
         handGroup.add(beamMesh);
 
-        playerBodyGroup.add(handGroup);
+        if (rightHandBone) {
+          handGroup.position.set(0, -0.05, 0.08);
+          rightHandBone.add(handGroup);
+        } else {
+          handGroup.position.set(0.18, 0.48, 0.12);
+          playerBodyGroup.add(handGroup);
+        }
         playerBodyGroup.userData = { lensMat, beamMat };
         
         this.otherPlayerMesh = playerBodyGroup;

@@ -4541,24 +4541,24 @@ export class CanvasRenderer {
         if (hasRealFl) {
           const flModel = this.flashlightModel.clone();
           flModel.scale.set(0.40, 0.40, 0.40);
-          flModel.rotation.set(0, Math.PI / 2, 0);
-          flModel.position.set(0, 0, 0.04);
+          flModel.rotation.set(0, 0, 0);
+          flModel.position.set(0, 0, 0.02);
           handGroup.add(flModel);
         }
         
         const lensMat = new THREE.MeshBasicMaterial({ color: "#fef08a", transparent: true, opacity: 0.0 });
-        const lensMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.005, 12), lensMat);
+        const lensMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.004, 12), lensMat);
         lensMesh.rotation.x = Math.PI / 2;
-        lensMesh.position.set(0, 0, -0.18);
+        lensMesh.position.set(0, 0, 0.12); // Right at the tip of the 3D flashlight barrel
         handGroup.add(lensMesh);
 
-        const coneGeom = new THREE.ConeGeometry(0.65, 3.5, 16, 1, true);
-        coneGeom.rotateX(Math.PI / 2);
-        coneGeom.translate(0, 0, -1.75);
+        const coneGeom = new THREE.ConeGeometry(0.55, 3.5, 16, 1, true);
+        coneGeom.rotateX(-Math.PI / 2);
+        coneGeom.translate(0, 0, 1.75); // Spreads forward from tip of flashlight
 
         const beamMat = new THREE.MeshBasicMaterial({ color: "#fef08a", transparent: true, opacity: 0.0, side: THREE.DoubleSide, depthWrite: false });
         const beamMesh = new THREE.Mesh(coneGeom, beamMat);
-        beamMesh.position.set(0, 0, -0.18);
+        beamMesh.position.set(0, 0, 0.12);
         handGroup.add(beamMesh);
 
         if (rightHandBone) {
@@ -4653,9 +4653,9 @@ export class CanvasRenderer {
           if (this.otherPlayerMesh && this.otherPlayerMesh.userData) {
             const { lensMat, beamMat } = this.otherPlayerMesh.userData;
             const isFlickerDim = baseIntensity < 2.0;
-            if (lensMat) lensMat.opacity = isFlickerDim ? 0.2 : 1.0;
+            if (lensMat) lensMat.opacity = isFlickerDim ? 0.08 : 0.28; // Translucent subtle glow at flashlight tip
             // Disable volumetric beam overdraw on mobile GPUs to eliminate FPS drops
-            if (beamMat) beamMat.opacity = isMobileDevice ? 0.0 : (isFlickerDim ? 0.04 : 0.22);
+            if (beamMat) beamMat.opacity = isMobileDevice ? 0.0 : (isFlickerDim ? 0.03 : 0.14);
           }
         } else {
           this.otherPlayerLight.intensity = 0.0;

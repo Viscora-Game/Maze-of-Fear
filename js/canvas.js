@@ -4541,27 +4541,27 @@ export class CanvasRenderer {
         if (hasRealFl) {
           const flModel = this.flashlightModel.clone();
           flModel.scale.set(0.40, 0.40, 0.40);
-          flModel.rotation.set(0, -Math.PI / 2, 0); // Flashlight lens barrel faces forward along local -X
+          flModel.rotation.set(0, Math.PI / 2, 0); // Flashlight lens barrel faces forward along local -Z
           flModel.position.set(0, 0, 0);
           handGroup.add(flModel);
         }
         
         const lensMat = new THREE.MeshBasicMaterial({ color: "#fef08a", transparent: true, opacity: 0.0 });
         const lensMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.004, 12), lensMat);
-        lensMesh.rotation.z = Math.PI / 2;
-        lensMesh.position.set(-0.18, 0, 0); // Positioned at tip of flashlight barrel (-X = -0.18)
+        lensMesh.rotation.x = Math.PI / 2;
+        lensMesh.position.set(0, 0, -0.18); // Positioned at tip of flashlight barrel (-Z = -0.18)
         handGroup.add(lensMesh);
 
         const coneGeom = new THREE.ConeGeometry(0.55, 3.5, 16, 1, true);
-        coneGeom.rotateZ(Math.PI / 2); // Cone apex (narrow tip) at origin, wide base extending forward along -X
-        coneGeom.translate(-1.75, 0, 0); // Spreads forward along -X from tip of flashlight
+        coneGeom.rotateX(Math.PI / 2); // Cone apex (narrow tip) at origin, wide base extending forward along -Z
+        coneGeom.translate(0, 0, -1.75); // Spreads forward along -Z from tip of flashlight
 
         const beamMat = new THREE.MeshBasicMaterial({ color: "#fef08a", transparent: true, opacity: 0.0, side: THREE.DoubleSide, depthWrite: false });
         const beamMesh = new THREE.Mesh(coneGeom, beamMat);
-        beamMesh.position.set(-0.18, 0, 0);
+        beamMesh.position.set(0, 0, -0.18);
         handGroup.add(beamMesh);
 
-        handGroup.position.set(-0.15, 0.46, -0.16); // Positioned firmly inside the character's right palm
+        handGroup.position.set(0.20, 0.45, -0.05); // Positioned right inside the character's hand palm
         playerBodyGroup.add(handGroup);
         playerBodyGroup.userData = { lensMat, beamMat };
         

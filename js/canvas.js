@@ -4547,7 +4547,7 @@ export class CanvasRenderer {
         if (hasRealFl) {
           const flModel = this.flashlightModel.clone();
           flModel.scale.set(0.40, 0.40, 0.40);
-          flModel.rotation.set(0, Math.PI / 2, 0); // Flashlight lens barrel faces forward along local -Z
+          flModel.rotation.set(0, Math.PI / 2, 0); // Flashlight lens barrel faces forward
           flModel.position.set(0, 0, 0);
           handGroup.add(flModel);
         }
@@ -4568,21 +4568,13 @@ export class CanvasRenderer {
         handGroup.add(beamMesh);
 
         if (rightHandBone) {
-          rightHandBone.updateMatrixWorld(true);
-          const handWorldPos = new THREE.Vector3();
-          rightHandBone.getWorldPosition(handWorldPos);
-          playerBodyGroup.worldToLocal(handWorldPos);
-          if (handWorldPos.length() > 0.01) {
-            handGroup.position.copy(handWorldPos);
-            handGroup.position.z -= 0.04; // Extend slightly forward along -Z so flashlight nozzle emerges from fingers
-          } else {
-            handGroup.position.set(0.20, 0.45, -0.05);
-          }
+          rightHandBone.add(handGroup);
+          handGroup.position.set(0, 0, 0);
         } else {
+          playerBodyGroup.add(handGroup);
           handGroup.position.set(0.20, 0.45, -0.05);
         }
-        playerBodyGroup.add(handGroup);
-        playerBodyGroup.userData = { lensMat, beamMat };
+        playerBodyGroup.userData = { lensMat, beamMat, lensMesh };
         
         this.otherPlayerMesh = playerBodyGroup;
         this.otherPlayerGroup.add(this.otherPlayerMesh);
@@ -4638,7 +4630,13 @@ export class CanvasRenderer {
             }
           }
 
-          this.otherPlayerLight.position.set(op.visualX, hoverY + 0.35, op.visualY);
+          const flTipPos = new THREE.Vector3();
+          if (this.otherPlayerMesh && this.otherPlayerMesh.userData && this.otherPlayerMesh.userData.lensMesh) {
+            this.otherPlayerMesh.userData.lensMesh.getWorldPosition(flTipPos);
+            this.otherPlayerLight.position.copy(flTipPos);
+          } else {
+            this.otherPlayerLight.position.set(op.visualX, hoverY + 0.35, op.visualY);
+          }
           
           const lookDirX = Math.cos(op.angle);
           const lookDirY = Math.sin(op.angle);

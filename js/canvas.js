@@ -4512,7 +4512,7 @@ export class CanvasRenderer {
           skinnedMeshesToUpdate.forEach(sm => {
             if (sm.skeleton) sm.skeleton.update();
           });
-          charClone.rotation.y = Math.PI / 2;
+          charClone.rotation.y = 0;
           charClone.position.y = 0;
           playerBodyGroup.add(charClone);
         } else {
@@ -4541,26 +4541,27 @@ export class CanvasRenderer {
         if (hasRealFl) {
           const flModel = this.flashlightModel.clone();
           flModel.scale.set(0.40, 0.40, 0.40);
-          flModel.rotation.set(0, Math.PI, 0); // Flashlight lens barrel faces forward along local +Z
+          flModel.rotation.set(0, Math.PI / 2, 0); // Flashlight lens barrel faces forward along local -Z
           flModel.position.set(0, 0, 0);
           handGroup.add(flModel);
         }
         
         const lensMat = new THREE.MeshBasicMaterial({ color: "#fef08a", transparent: true, opacity: 0.0 });
         const lensMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.004, 12), lensMat);
-        lensMesh.position.set(0, 0, 0.18); // Positioned at tip of flashlight barrel (+Z = 0.18)
+        lensMesh.rotation.x = Math.PI / 2;
+        lensMesh.position.set(0, 0, -0.18); // Positioned at tip of flashlight barrel (-Z = -0.18)
         handGroup.add(lensMesh);
 
         const coneGeom = new THREE.ConeGeometry(0.55, 3.5, 16, 1, true);
-        coneGeom.rotateX(-Math.PI / 2); // Cone apex (narrow tip) at origin, wide base extending forward along +Z
-        coneGeom.translate(0, 0, 1.75); // Spreads forward along +Z from tip of flashlight
+        coneGeom.rotateX(Math.PI / 2); // Cone apex (narrow tip) at origin, wide base extending forward along -Z
+        coneGeom.translate(0, 0, -1.75); // Spreads forward along -Z from tip of flashlight
 
         const beamMat = new THREE.MeshBasicMaterial({ color: "#fef08a", transparent: true, opacity: 0.0, side: THREE.DoubleSide, depthWrite: false });
         const beamMesh = new THREE.Mesh(coneGeom, beamMat);
-        beamMesh.position.set(0, 0, 0.18);
+        beamMesh.position.set(0, 0, -0.18);
         handGroup.add(beamMesh);
 
-        handGroup.position.set(-0.20, 0.26, 0.10); // Positioned right inside the character's palm
+        handGroup.position.set(0.20, 0.46, -0.15); // Positioned firmly inside the character's right palm
         playerBodyGroup.add(handGroup);
         playerBodyGroup.userData = { lensMat, beamMat };
         

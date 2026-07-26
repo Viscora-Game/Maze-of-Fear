@@ -91,7 +91,7 @@ export class MultiplayerManager {
     }
   }
 
-  joinRoom(code, onConnect) {
+  joinRoom(code, onConnect, attemptCount = 1) {
     this.isHost = false;
     let sanitizedCode = code || "";
     
@@ -112,13 +112,16 @@ export class MultiplayerManager {
     this.roomCode = sanitizedCode.toUpperCase().trim();
     const peerId = "mof-" + this.roomCode.toLowerCase();
     
-    this.updateStatus("Odaya bağlanılıyor...");
+    if (attemptCount === 1) {
+      this.updateStatus("Odaya bağlanılıyor...");
+    } else {
+      this.updateStatus("Oda aranıyor... (" + attemptCount + "/3)");
+    }
     
     // Clean up existing connections
     this.cleanup();
 
     try {
-      // Create peer with random ID and STUN configs
       const iceConfig = {
         iceServers: [
           { urls: "stun:stun.l.google.com:19302" },
@@ -151,8 +154,16 @@ export class MultiplayerManager {
       this.peer.on("error", (err) => {
         console.warn("Peer connection notice:", err ? (err.type || err.message || err) : err);
         const errType = err ? err.type : "";
-        if (errType === "peer-unavailable") {
-          this.updateStatus("Oda bulunamadı. Oda kodunu kontrol edin veya yeni oda oluşturun.");
+        
+        if (errType === "peer-unavailable" && attemptCount < 3) {
+          // Automatic retry up to 3 times with 1.2s delay to allow host PeerJS registration to complete
+          setTimeout(() => {
+            if (!this.isConnected) {
+              this.joinRoom(code, onConnect, attemptCount + 1);
+            }
+          }, 1200);
+        } else if (errType === "peer-unavailable") {
+          this.updateStatus("Oda henüz hazır değil veya kapandı. Kodu kontrol edip tekrar deneyin.");
         } else {
           this.updateStatus("Bağlanılamadı. Kodu kontrol edin.");
         }

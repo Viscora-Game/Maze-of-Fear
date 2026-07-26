@@ -4561,22 +4561,7 @@ export class CanvasRenderer {
         beamMesh.position.set(-0.18, 0, 0);
         handGroup.add(beamMesh);
 
-        if (rightHandBone) {
-          rightHandBone.updateMatrixWorld(true);
-          playerBodyGroup.updateMatrixWorld(true);
-          const handWorldPos = new THREE.Vector3();
-          rightHandBone.getWorldPosition(handWorldPos);
-          playerBodyGroup.worldToLocal(handWorldPos);
-          if (handWorldPos.length() > 0.01) {
-            handGroup.position.copy(handWorldPos);
-            handGroup.position.x -= 0.06; // Shift forward along -X so flashlight sits cleanly in hand
-            handGroup.position.z += 0.04;
-          } else {
-            handGroup.position.set(-0.24, 0.48, -0.14);
-          }
-        } else {
-          handGroup.position.set(-0.24, 0.48, -0.14);
-        }
+        handGroup.position.set(-0.15, 0.46, 0.22);
         playerBodyGroup.add(handGroup);
         playerBodyGroup.userData = { lensMat, beamMat };
         

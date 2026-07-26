@@ -4636,10 +4636,10 @@ export class CanvasRenderer {
             }
           }
 
-          const flTipPos = new THREE.Vector3();
+          this.tempFlTipPos = this.tempFlTipPos || new THREE.Vector3();
           if (this.otherPlayerMesh && this.otherPlayerMesh.userData && this.otherPlayerMesh.userData.lensMesh) {
-            this.otherPlayerMesh.userData.lensMesh.getWorldPosition(flTipPos);
-            this.otherPlayerLight.position.copy(flTipPos);
+            this.otherPlayerMesh.userData.lensMesh.getWorldPosition(this.tempFlTipPos);
+            this.otherPlayerLight.position.copy(this.tempFlTipPos);
           } else {
             this.otherPlayerLight.position.set(op.visualX, hoverY + 0.35, op.visualY);
           }
@@ -5294,8 +5294,9 @@ export class CanvasRenderer {
           const cellZ = chestGroup.userData.y + 0.5;
           const dx = camX - cellX;
           const dz = camZ - cellZ;
-          // Rotate around Y axis to face the camera directly
-          chestGroup.rotation.y = Math.atan2(dx, dz);
+          if (dx * dx + dz * dz < 100.0) { // Distance cull: Only rotate chests within 10m range
+            chestGroup.rotation.y = Math.atan2(dx, dz);
+          }
         }
       }
     }

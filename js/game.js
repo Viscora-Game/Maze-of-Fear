@@ -1,9 +1,9 @@
-import { generateMaze } from "./maze.js?v=180";
-import { AudioEngine } from "./audio.js?v=180";
-import { CanvasRenderer } from "./canvas.js?v=180";
-import { translations } from "./translations.js?v=180";
-import { randomEvents, deathEvents } from "./events.js?v=180";
-import { getSeededRandom } from "./prng.js?v=180";
+import { generateMaze } from "./maze.js?v=181";
+import { AudioEngine } from "./audio.js?v=181";
+import { CanvasRenderer } from "./canvas.js?v=181";
+import { translations } from "./translations.js?v=181";
+import { randomEvents, deathEvents } from "./events.js?v=181";
+import { getSeededRandom } from "./prng.js?v=181";
 
 const jumpscareNormalUrl = new URL('../assets/jumpscare.png', import.meta.url).href;
 const jumpscareChestUrl = new URL('../assets/jumpscare_chest.png', import.meta.url).href;
@@ -994,11 +994,10 @@ export class Game {
     const lastTrail = this.state.playerTrail[this.state.playerTrail.length - 1];
     if (!lastTrail || lastTrail.x !== currentCell.x || lastTrail.y !== currentCell.y || lastTrail.floor !== currentCell.floor) {
       this.state.playerTrail.push(currentCell);
-      if (this.onStateChange) this.onStateChange();
     }
 
-    // Trigger UI updates if stamina has changed (so stamina bar updates in real-time while standing/walking)
-    if (p.stamina !== prevStamina && this.onStateChange) {
+    // Trigger UI updates if stamina integer percentage has changed to eliminate 60fps DOM thrashing
+    if (Math.floor(p.stamina) !== Math.floor(prevStamina) && this.onStateChange) {
       this.onStateChange();
     }
 

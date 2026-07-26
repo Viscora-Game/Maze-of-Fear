@@ -4612,7 +4612,7 @@ export class CanvasRenderer {
         this.otherPlayerGroup.position.set(op.visualX, hoverY, op.visualY);
         
         // Orient character model to match look angle (face directly in direction player is looking)
-        this.otherPlayerGroup.rotation.y = op.angle + Math.PI / 2;
+        this.otherPlayerGroup.rotation.y = -op.angle - Math.PI / 2;
 
         // Hide ghost mesh only if camera is literally clipping inside body (<0.35m)
         this.otherPlayerGroup.visible = (localDist > 0.35);

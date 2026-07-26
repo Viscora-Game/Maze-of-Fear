@@ -4541,7 +4541,7 @@ export class CanvasRenderer {
         if (hasRealFl) {
           const flModel = this.flashlightModel.clone();
           flModel.scale.set(0.40, 0.40, 0.40);
-          flModel.rotation.set(0, -Math.PI / 2, 0); // Flashlight lens barrel points along local +X (forward)
+          flModel.rotation.set(0, Math.PI / 2, 0); // Flashlight lens bezel faces forward along local +X
           flModel.position.set(0.02, 0, 0);
           handGroup.add(flModel);
         }
@@ -4553,7 +4553,7 @@ export class CanvasRenderer {
         handGroup.add(lensMesh);
 
         const coneGeom = new THREE.ConeGeometry(0.55, 3.5, 16, 1, true);
-        coneGeom.rotateZ(-Math.PI / 2); // Rotate cone apex at origin, wide base extending along +X (forward)
+        coneGeom.rotateZ(Math.PI / 2); // Cone apex (narrow tip) at origin, wide base extending forward along +X
         coneGeom.translate(1.75, 0, 0); // Spreads forward along +X from tip of flashlight
 
         const beamMat = new THREE.MeshBasicMaterial({ color: "#fef08a", transparent: true, opacity: 0.0, side: THREE.DoubleSide, depthWrite: false });

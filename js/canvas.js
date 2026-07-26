@@ -2568,8 +2568,16 @@ export class CanvasRenderer {
             cellGroup.add(ceilingMesh);
           }
 
+          // Deterministic Cell PRNG helper for 100% multiplayer synchronization
+          const cellRand = (salt) => {
+            let h = (x * 73856093) ^ (y * 19349663) ^ (salt * 83492791);
+            h = Math.imul(h ^ (h >>> 16), 2246822507);
+            h = Math.imul(h ^ (h >>> 13), 3266489917);
+            return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+          };
+
           // Random Floor Details (ONLY small grass-like pieces and mushrooms)
-          const randVal = Math.random();
+          const randVal = cellRand(1);
           if (randVal < 0.15) {
             // Spooky Glowing Bioluminescent Mushrooms (Blue-cyan cap - performance optimized emissive material, no dynamic light)
             const mush = new THREE.Group();
@@ -2588,21 +2596,21 @@ export class CanvasRenderer {
             cap.userData.isDecoration = true;
             
             mush.add(stem, cap);
-            mush.position.set((Math.random() - 0.5) * 0.35, 0, (Math.random() - 0.5) * 0.35);
+            mush.position.set((cellRand(2) - 0.5) * 0.35, 0, (cellRand(3) - 0.5) * 0.35);
             cellGroup.add(mush);
           } else if (randVal < 0.35) {
              // Creeping Dark Green Vines / Ivy Sprouts on the stone path
              const vineGroup = new THREE.Group();
              
              // Randomly choose between grass model or procedural leaves
-             const chooseModel = Math.random();
+             const chooseModel = cellRand(4);
               if (chooseModel < 0.60 && this.grassModel) {
                 // Spawn actual FBX grass model!
                 const grassClone = this.grassModel.clone();
-                const s = 0.7 + Math.random() * 0.6;
+                const s = 0.7 + cellRand(5) * 0.6;
                 grassClone.scale.set(s * 0.0006, s * 0.0006, s * 0.0006);
                 grassClone.position.set(0, 0, 0);
-                grassClone.rotation.set(0, Math.random() * Math.PI, 0);
+                grassClone.rotation.set(0, cellRand(6) * Math.PI, 0);
                 vineGroup.add(grassClone);
               } else {
                 // Fallback: Procedural green leaves (spheres)
@@ -2612,19 +2620,17 @@ export class CanvasRenderer {
                   roughness: 0.95 
                 });
                 for (let i = 0; i < 3; i++) {
-                  const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.04 + Math.random() * 0.02, 6, 6), leafMat);
+                  const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.04 + cellRand(7 + i) * 0.02, 6, 6), leafMat);
                   leaf.scale.set(1.5, 0.2, 1.0);
-                  leaf.position.set((Math.random() - 0.5) * 0.22, 0.005, (Math.random() - 0.5) * 0.22);
-                  leaf.rotation.set(0, Math.random() * Math.PI, 0);
+                  leaf.position.set((cellRand(10 + i) - 0.5) * 0.22, 0.005, (cellRand(13 + i) - 0.5) * 0.22);
+                  leaf.rotation.set(0, cellRand(16 + i) * Math.PI, 0);
                   leaf.userData.isDecoration = true;
                   vineGroup.add(leaf);
                 }
               }
-              vineGroup.position.set((Math.random() - 0.5) * 0.35, 0, (Math.random() - 0.5) * 0.35);
+              vineGroup.position.set((cellRand(20) - 0.5) * 0.35, 0, (cellRand(21) - 0.5) * 0.35);
               cellGroup.add(vineGroup);
           }
-
-
 
           // D. Wall Torches (Spawns a glowing warm torch on adjacent walls with a very low 5.5% probability)
           {
@@ -2639,7 +2645,7 @@ export class CanvasRenderer {
             const wallW = isWall(x - 1, y);
 
             if (!cell.loreParchment && !cell.chest && !cell.puzzleClue && !cell.npc && !cell.obstacle && (wallN || wallS || wallE || wallW)) {
-              if (Math.random() < 0.055) { // 5.5% probability per path cell adjacent to a wall
+              if (cellRand(30) < 0.055) { // 5.5% deterministic probability per path cell adjacent to a wall
                 const walls = [];
                 if (wallN && !this.occupiedWallFaces.has(`${x},${y - 1},S`)) walls.push({ x: 0, z: -0.478, rotationY: 0, wx: x, wy: y - 1, face: "S" }); // mounts on North wall, faces South
                 if (wallS && !this.occupiedWallFaces.has(`${x},${y + 1},N`)) walls.push({ x: 0, z: 0.478, rotationY: Math.PI, wx: x, wy: y + 1, face: "N" }); // mounts on South wall, faces North
@@ -2647,7 +2653,7 @@ export class CanvasRenderer {
                 if (wallW && !this.occupiedWallFaces.has(`${x - 1},${y},E`)) walls.push({ x: -0.478, z: 0, rotationY: Math.PI / 2, wx: x - 1, wy: y, face: "E" }); // mounts on West wall, faces East
 
                 if (walls.length > 0) {
-                  const mount = walls[Math.floor(Math.random() * walls.length)];
+                  const mount = walls[Math.floor(cellRand(31) * walls.length)];
                   this.occupiedWallFaces.add(`${mount.wx},${mount.wy},${mount.face}`);
 
                   const torchGroup = new THREE.Group();

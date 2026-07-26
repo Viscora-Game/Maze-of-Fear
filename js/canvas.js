@@ -813,8 +813,8 @@ export class CanvasRenderer {
     loadChar('killer', 0.75, 'zombieModel');
     loadChar('police', 0.75, 'skeletonModel');
     loadChar('firefighter', 0.75, 'ghoulModel');
-    loadChar('child', 0.45, 'childModel');
-    loadChar('traveler', 0.80, 'merchantModel');
+    loadChar('doctor', 0.45, 'childModel'); // White t-shirt character shortened to child height
+    loadChar('merchant', 0.75, 'merchantModel');
   }
 
   getCharacterModel(skinId) {
@@ -3266,10 +3266,9 @@ export class CanvasRenderer {
                  npcSubGroup.add(clone);
                }
              } else if (cell.npc.id === "lost_child" || cell.npc.id === "child") {
-               const childFBX = this.childModel || this.travelerModel;
+               const childFBX = this.childModel || this.merchantModel || this.travelerModel;
                if (childFBX) {
                  const clone = childFBX.clone();
-                 clone.scale.set(0.55, 0.55, 0.55); // Scaled appropriately to child height
                  clone.position.set(0, 0, 0);
                  npcSubGroup.add(clone);
                }

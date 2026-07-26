@@ -4515,6 +4515,12 @@ export class CanvasRenderer {
           charClone.rotation.y = Math.PI / 2;
           charClone.position.y = 0;
           playerBodyGroup.add(charClone);
+          
+          // Force matrix update so rightHandBone world position is computed accurately per character skin
+          playerBodyGroup.updateMatrix();
+          playerBodyGroup.updateMatrixWorld(true);
+          charClone.updateMatrix();
+          charClone.updateMatrixWorld(true);
         } else {
           // Fallback Ghost Shroud while model is loading
           const headGeom = new THREE.SphereGeometry(0.12, 16, 16);
@@ -4561,7 +4567,20 @@ export class CanvasRenderer {
         beamMesh.position.set(0, 0, -0.18);
         handGroup.add(beamMesh);
 
-        handGroup.position.set(0.20, 0.45, -0.05); // Positioned right inside the character's hand palm
+        if (rightHandBone) {
+          rightHandBone.updateMatrixWorld(true);
+          const handWorldPos = new THREE.Vector3();
+          rightHandBone.getWorldPosition(handWorldPos);
+          playerBodyGroup.worldToLocal(handWorldPos);
+          if (handWorldPos.length() > 0.01) {
+            handGroup.position.copy(handWorldPos);
+            handGroup.position.z -= 0.04; // Extend slightly forward along -Z so flashlight nozzle emerges from fingers
+          } else {
+            handGroup.position.set(0.20, 0.45, -0.05);
+          }
+        } else {
+          handGroup.position.set(0.20, 0.45, -0.05);
+        }
         playerBodyGroup.add(handGroup);
         playerBodyGroup.userData = { lensMat, beamMat };
         

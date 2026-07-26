@@ -197,6 +197,11 @@ export class MultiplayerManager {
       
       if (this.enableVoice) {
         this.initVoiceChat();
+      } else {
+        if (this.localAudioStream) {
+          this.localAudioStream.getTracks().forEach(track => track.stop());
+          this.localAudioStream = null;
+        }
       }
       this.updateMicUI();
 

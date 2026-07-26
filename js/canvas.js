@@ -4546,7 +4546,7 @@ export class CanvasRenderer {
         if (hasRealFl) {
           const flModel = this.flashlightModel.clone();
           flModel.scale.set(0.40, 0.40, 0.40);
-          flModel.rotation.set(0, -Math.PI / 2, 0);
+          flModel.rotation.set(0, 0, 0);
           flModel.position.set(0, 0, 0.04);
           handGroup.add(flModel);
         }
@@ -4576,10 +4576,10 @@ export class CanvasRenderer {
             handGroup.position.copy(handWorldPos);
             handGroup.position.z += 0.04;
           } else {
-            handGroup.position.set(-0.18, 0.48, 0.14);
+            handGroup.position.set(0.18, 0.48, 0.14);
           }
         } else {
-          handGroup.position.set(-0.18, 0.48, 0.14);
+          handGroup.position.set(0.18, 0.48, 0.14);
         }
         playerBodyGroup.add(handGroup);
         playerBodyGroup.userData = { lensMat, beamMat };
@@ -4618,7 +4618,7 @@ export class CanvasRenderer {
         this.otherPlayerGroup.position.set(op.visualX, hoverY, op.visualY);
         
         // Orient character model to match look angle (face directly in direction player is looking)
-        this.otherPlayerGroup.rotation.y = -op.angle;
+        this.otherPlayerGroup.rotation.y = Math.PI / 2 - op.angle;
 
         // Hide ghost mesh only if camera is literally clipping inside body (<0.35m)
         this.otherPlayerGroup.visible = (localDist > 0.35);

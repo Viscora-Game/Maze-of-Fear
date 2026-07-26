@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=152";
-import { MultiplayerManager } from "./multiplayer.js?v=152";
+import { Game } from "./game.js?v=153";
+import { MultiplayerManager } from "./multiplayer.js?v=153";
 
 const init = () => {
   const game = new Game();
@@ -750,11 +750,11 @@ function setupUI(game) {
 
     const skins = [
       { id: "ghost", nameTr: "Hayalet", nameEn: "Ghost", portrait: "assets/portrait_ghost.png", questTr: "Başlangıç Karakteri", questEn: "Starter Character" },
-      { id: "vampire", nameTr: "Vampir", nameEn: "Vampire", portrait: "assets/portrait_vampire.png", questTr: "Horror Free Paketi", questEn: "Horror Free Pack" },
-      { id: "zombie", nameTr: "Zombi", nameEn: "Zombie", portrait: "assets/portrait_zombie.png", questTr: "Horror Free Paketi", questEn: "Horror Free Pack" },
-      { id: "skeleton", nameTr: "İskelet", nameEn: "Skeleton", portrait: "assets/portrait_skeleton.png", questTr: "Undead Free Paketi", questEn: "Undead Free Pack" },
-      { id: "ghoul", nameTr: "Hortlak", nameEn: "Ghoul", portrait: "assets/portrait_ghoul.png", questTr: "Undead Free Paketi", questEn: "Undead Free Pack" },
-      { id: "traveler", nameTr: "Gezgin", nameEn: "Explorer", portrait: "assets/portrait_explorer.png", questTr: "Ücretsiz Karakter", questEn: "Free Character" }
+      { id: "skeleton", nameTr: "Polis", nameEn: "Police Officer", portrait: "assets/portrait_police.png", questTr: "Güvenlik Paketi", questEn: "Security Pack" },
+      { id: "vampire", nameTr: "Doktor", nameEn: "Doctor", portrait: "assets/portrait_doctor.png", questTr: "Sağlık Paketi", questEn: "Medical Pack" },
+      { id: "zombie", nameTr: "Katil", nameEn: "Killer", portrait: "assets/portrait_killer.png", questTr: "Karanlık Paket", questEn: "Dark Pack" },
+      { id: "ghoul", nameTr: "İtfaiyeci", nameEn: "Firefighter", portrait: "assets/portrait_firefighter.png", questTr: "Kurtarma Paketi", questEn: "Rescue Pack" },
+      { id: "traveler", nameTr: "Gezgin", nameEn: "Explorer", portrait: "assets/portrait_explorer.png", questTr: "Maceracı Paketi", questEn: "Explorer Pack" }
     ];
 
     skins.forEach(s => {

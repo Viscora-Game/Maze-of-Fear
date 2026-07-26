@@ -819,11 +819,21 @@ export class CanvasRenderer {
 
   getCharacterModel(skinId) {
     switch (skinId) {
-      case "ghost": return this.ghostModel;
-      case "vampire": return this.vampireModel;
-      case "zombie": return this.zombieModel;
-      case "skeleton": return this.skeletonModel;
-      case "ghoul": return this.ghoulModel;
+      case "ghost":
+      case "monster":
+        return this.ghostModel;
+      case "vampire":
+      case "doctor":
+        return this.vampireModel;
+      case "zombie":
+      case "killer":
+        return this.zombieModel;
+      case "skeleton":
+      case "police":
+        return this.skeletonModel;
+      case "ghoul":
+      case "firefighter":
+        return this.ghoulModel;
       case "traveler":
       default:
         return this.travelerModel;

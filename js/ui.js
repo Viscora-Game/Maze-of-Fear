@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=157";
-import { MultiplayerManager } from "./multiplayer.js?v=157";
+import { Game } from "./game.js?v=158";
+import { MultiplayerManager } from "./multiplayer.js?v=158";
 
 const init = () => {
   const game = new Game();
@@ -947,12 +947,18 @@ function setupUI(game) {
   const btnVoiceOff = document.getElementById("btn-coop-voice-off");
   if (btnVoiceOn && btnVoiceOff) {
     btnVoiceOn.addEventListener("click", () => {
-      if (game.multiplayer) game.multiplayer.enableVoice = true;
+      if (game.multiplayer) {
+        game.multiplayer.enableVoice = true;
+        game.multiplayer.updateMicUI();
+      }
       btnVoiceOn.classList.add("active");
       btnVoiceOff.classList.remove("active");
     });
     btnVoiceOff.addEventListener("click", () => {
-      if (game.multiplayer) game.multiplayer.enableVoice = false;
+      if (game.multiplayer) {
+        game.multiplayer.enableVoice = false;
+        game.multiplayer.updateMicUI();
+      }
       btnVoiceOff.classList.add("active");
       btnVoiceOn.classList.remove("active");
     });

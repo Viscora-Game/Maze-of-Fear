@@ -4464,13 +4464,22 @@ export class CanvasRenderer {
         
         const playerBodyGroup = new THREE.Group();
 
+        let charClone = null;
+        let rightHandBone = null;
+
         if (targetCharModel) {
-          const charClone = targetCharModel.clone();
+          charClone = targetCharModel.clone();
           const bonesToUpdate = [];
           const skinnedMeshesToUpdate = [];
           charClone.traverse((child) => {
             if (child.isBone || child.type === "Bone") {
               bonesToUpdate.push(child);
+              const n = child.name.toLowerCase();
+              if ((n.includes("hand") || n.includes("wrist") || n.includes("forearm")) && (n.includes(".r") || n.includes("_r") || n.includes("right") || n.startsWith("r_"))) {
+                if (!rightHandBone || n.includes("hand")) {
+                  rightHandBone = child;
+                }
+              }
             }
             if (child.isSkinnedMesh && child.skeleton) {
               skinnedMeshesToUpdate.push(child);
@@ -4530,21 +4539,6 @@ export class CanvasRenderer {
           const body = new THREE.Mesh(bodyGeom, ghostMat);
           body.position.y = 0.32;
           playerBodyGroup.add(body);
-        }
-
-        // Find actual right hand bone on character model
-        let rightHandBone = null;
-        if (targetCharModel) {
-          charClone.traverse((child) => {
-            if (child.isBone || child.type === "Bone") {
-              const n = child.name.toLowerCase();
-              if ((n.includes("hand") || n.includes("wrist") || n.includes("forearm")) && (n.includes(".r") || n.includes("_r") || n.includes("right") || n.startsWith("r_"))) {
-                if (!rightHandBone || n.includes("hand")) {
-                  rightHandBone = child;
-                }
-              }
-            }
-          });
         }
 
         const handGroup = new THREE.Group();

@@ -1,5 +1,5 @@
-import { Game } from "./game.js?v=179";
-import { MultiplayerManager } from "./multiplayer.js?v=179";
+import { Game } from "./game.js?v=180";
+import { MultiplayerManager } from "./multiplayer.js?v=180";
 
 const init = () => {
   const game = new Game();
@@ -994,6 +994,16 @@ function setupUI(game) {
 
   document.getElementById("btn-coop-host").addEventListener("click", () => {
     if (game.multiplayer) {
+      const btnVoiceOff = document.getElementById("btn-coop-voice-off");
+      game.multiplayer.enableVoice = btnVoiceOff ? !btnVoiceOff.classList.contains("active") : true;
+      if (!game.multiplayer.enableVoice) {
+        if (game.multiplayer.localAudioStream) {
+          game.multiplayer.localAudioStream.getTracks().forEach(track => track.stop());
+          game.multiplayer.localAudioStream = null;
+        }
+        game.multiplayer.isMicMuted = true;
+      }
+      game.multiplayer.updateMicUI();
       game.multiplayer.hostRoom(() => {
         document.getElementById("coop-host-details").classList.remove("hidden");
       });
@@ -1047,6 +1057,16 @@ function setupUI(game) {
     
     inputVal = inputVal.toUpperCase().trim();
     if (inputVal && game.multiplayer) {
+      const btnVoiceOff = document.getElementById("btn-coop-voice-off");
+      game.multiplayer.enableVoice = btnVoiceOff ? !btnVoiceOff.classList.contains("active") : true;
+      if (!game.multiplayer.enableVoice) {
+        if (game.multiplayer.localAudioStream) {
+          game.multiplayer.localAudioStream.getTracks().forEach(track => track.stop());
+          game.multiplayer.localAudioStream = null;
+        }
+        game.multiplayer.isMicMuted = true;
+      }
+      game.multiplayer.updateMicUI();
       game.multiplayer.joinRoom(inputVal);
     }
   });

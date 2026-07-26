@@ -6,10 +6,11 @@ export class MultiplayerManager {
     this.isHost = false;
     this.isConnected = false;
     this.roomCode = null;
-    this.enableVoice = true;
+    const btnVoiceOff = typeof document !== "undefined" ? document.getElementById("btn-coop-voice-off") : null;
+    this.enableVoice = btnVoiceOff ? !btnVoiceOff.classList.contains("active") : true;
     this.localAudioStream = null;
     this.activeCall = null;
-    this.isMicMuted = false;
+    this.isMicMuted = true;
     
     // Callbacks
     this.onStatusChange = null;
@@ -356,6 +357,12 @@ export class MultiplayerManager {
       this.game.initializeCoopGuestGame(data.seed, data.level, data.difficulty, data.variation);
       if (this.enableVoice) {
         this.initVoiceChat();
+      } else {
+        if (this.localAudioStream) {
+          this.localAudioStream.getTracks().forEach(track => track.stop());
+          this.localAudioStream = null;
+        }
+        this.isMicMuted = true;
       }
       this.updateMicUI();
       return;
@@ -669,8 +676,10 @@ export class MultiplayerManager {
     if (!btn) return;
     if (!this.enableVoice || !this.isConnected) {
       btn.classList.add("hidden");
+      btn.style.display = "none";
       return;
     }
+    btn.style.display = "flex";
     btn.classList.remove("hidden");
     if (this.isMicMuted) {
       btn.innerHTML = "🔇";

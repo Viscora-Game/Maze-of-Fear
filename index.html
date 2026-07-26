@@ -11,7 +11,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js?v=153').catch(err => {
+        navigator.serviceWorker.register('sw.js?v=154').catch(err => {
           console.warn('Service Worker registration failed:', err);
         });
       });
@@ -83,8 +83,9 @@
       const reason = event.reason;
       const msg = reason ? (reason.message || reason) : 'Unknown promise rejection';
       const stack = (reason && reason.stack) ? reason.stack : null;
-      if (msg && (msg.toString().includes("Pointer lock") || msg.toString().includes("pointer lock"))) {
-        return; // Ignore harmless browser pointer lock timing rejection
+      const str = (msg ? msg.toString() : '') + (stack ? stack.toString() : '');
+      if (str.includes("Pointer lock") || str.includes("pointer lock") || str.includes("peer-unavailable") || str.includes("Could not connect to peer") || str.includes("PeerJS")) {
+        return; // Ignore harmless browser timing & network rejections
       }
       showVisualError('PROMISE REJECTION', msg, stack);
     });
@@ -93,7 +94,15 @@
     console.error = function() {
       _origConsoleError.apply(console, arguments);
       const args = Array.from(arguments).map(arg => typeof arg === 'object' ? JSON.stringify(arg) : arg).join(' ');
-      // Truncate to ignore massive object dumps in general errors
+      
+      // Filter out expected PeerJS network & connection notices (invalid room code, offline host)
+      if (args.includes('peer-unavailable') || args.includes('Could not connect to peer') || args.includes('PeerJS') || args.includes('Peer error')) {
+        return;
+      }
+      if (args.includes('Pointer lock') || args.includes('pointer lock')) {
+        return;
+      }
+
       showVisualError('CONSOLE ERROR', args);
     };
 
@@ -758,6 +767,6 @@
     <img src="assets/jumpscare.png" style="width: 100%; height: 100%; object-fit: contain; filter: brightness(1.2) contrast(1.3); transform: scale(1.1);" />
   </div>
 
-  <script type="module" src="js/ui.js?v=153"></script>
+  <script type="module" src="js/ui.js?v=154"></script>
 </body>
 </html>

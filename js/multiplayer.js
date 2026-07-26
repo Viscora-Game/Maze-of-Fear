@@ -149,8 +149,13 @@ export class MultiplayerManager {
       });
 
       this.peer.on("error", (err) => {
-        console.error("Peer error:", err);
-        this.updateStatus("Bağlanılamadı. Kodu kontrol edin.");
+        console.warn("Peer connection notice:", err ? (err.type || err.message || err) : err);
+        const errType = err ? err.type : "";
+        if (errType === "peer-unavailable") {
+          this.updateStatus("Oda bulunamadı. Oda kodunu kontrol edin veya yeni oda oluşturun.");
+        } else {
+          this.updateStatus("Bağlanılamadı. Kodu kontrol edin.");
+        }
       });
     } catch (e) {
       console.error("Failed to construct Peer:", e);

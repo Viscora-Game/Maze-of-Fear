@@ -4541,24 +4541,24 @@ export class CanvasRenderer {
         if (hasRealFl) {
           const flModel = this.flashlightModel.clone();
           flModel.scale.set(0.40, 0.40, 0.40);
-          flModel.rotation.set(0, Math.PI / 2, 0); // Flashlight lens bezel faces forward along local +X
-          flModel.position.set(0.02, 0, 0);
+          flModel.rotation.set(0, -Math.PI / 2, 0); // Flashlight lens barrel faces forward along local -X
+          flModel.position.set(-0.04, 0, 0);
           handGroup.add(flModel);
         }
         
         const lensMat = new THREE.MeshBasicMaterial({ color: "#fef08a", transparent: true, opacity: 0.0 });
         const lensMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.004, 12), lensMat);
         lensMesh.rotation.z = Math.PI / 2;
-        lensMesh.position.set(0.18, 0, 0); // Positioned at the tip of the flashlight barrel (+X = 0.18)
+        lensMesh.position.set(-0.18, 0, 0); // Positioned at tip of flashlight barrel (-X = -0.18)
         handGroup.add(lensMesh);
 
         const coneGeom = new THREE.ConeGeometry(0.55, 3.5, 16, 1, true);
-        coneGeom.rotateZ(Math.PI / 2); // Cone apex (narrow tip) at origin, wide base extending forward along +X
-        coneGeom.translate(1.75, 0, 0); // Spreads forward along +X from tip of flashlight
+        coneGeom.rotateZ(-Math.PI / 2); // Cone apex (narrow tip) at origin, wide base extending forward along -X
+        coneGeom.translate(-1.75, 0, 0); // Spreads forward along -X from tip of flashlight
 
         const beamMat = new THREE.MeshBasicMaterial({ color: "#fef08a", transparent: true, opacity: 0.0, side: THREE.DoubleSide, depthWrite: false });
         const beamMesh = new THREE.Mesh(coneGeom, beamMat);
-        beamMesh.position.set(0.18, 0, 0);
+        beamMesh.position.set(-0.18, 0, 0);
         handGroup.add(beamMesh);
 
         if (rightHandBone) {
@@ -4569,12 +4569,13 @@ export class CanvasRenderer {
           playerBodyGroup.worldToLocal(handWorldPos);
           if (handWorldPos.length() > 0.01) {
             handGroup.position.copy(handWorldPos);
+            handGroup.position.x -= 0.06; // Shift forward along -X so flashlight sits cleanly in hand
             handGroup.position.z += 0.04;
           } else {
-            handGroup.position.set(0.18, 0.48, -0.14);
+            handGroup.position.set(-0.24, 0.48, -0.14);
           }
         } else {
-          handGroup.position.set(0.18, 0.48, -0.14);
+          handGroup.position.set(-0.24, 0.48, -0.14);
         }
         playerBodyGroup.add(handGroup);
         playerBodyGroup.userData = { lensMat, beamMat };

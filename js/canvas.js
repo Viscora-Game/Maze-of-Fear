@@ -122,7 +122,7 @@ export class CanvasRenderer {
     });
     
     // Cap pixel ratio on mobile/WebView devices to 0.85 - 1.0 (prevents 2K/4K mobile screen GPU thermal throttling)
-    const maxDPR = isWebView ? 0.85 : (isMobileDevice ? 1.0 : 1.5);
+    const maxDPR = isWebView ? 0.75 : (isMobileDevice ? 0.85 : 1.0);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1.0, maxDPR));
     this.renderer.setSize(canvas.width, canvas.height);
     
@@ -813,8 +813,8 @@ export class CanvasRenderer {
     loadChar('killer', 0.75, 'zombieModel');
     loadChar('police', 0.75, 'skeletonModel');
     loadChar('firefighter', 0.75, 'ghoulModel');
-    loadChar('child', 0.65, 'childModel');
-    loadChar('merchant', 0.75, 'merchantModel');
+    loadChar('child', 0.45, 'childModel');
+    loadChar('traveler', 0.80, 'merchantModel');
   }
 
   getCharacterModel(skinId) {
@@ -3265,6 +3265,14 @@ export class CanvasRenderer {
                  clone.position.set(0, 0, 0);
                  npcSubGroup.add(clone);
                }
+             } else if (cell.npc.id === "lost_child" || cell.npc.id === "child") {
+               const childFBX = this.childModel || this.travelerModel;
+               if (childFBX) {
+                 const clone = childFBX.clone();
+                 clone.scale.set(0.55, 0.55, 0.55); // Scaled appropriately to child height
+                 clone.position.set(0, 0, 0);
+                 npcSubGroup.add(clone);
+               }
              } else if (cell.npc.id === "merchant") {
                const merchantFBX = this.merchantModel || this.travelerModel;
                if (merchantFBX) {
@@ -4241,22 +4249,9 @@ export class CanvasRenderer {
           if (state.staircaseCell) {
             targetX = state.staircaseCell.x;
             targetY = state.staircaseCell.y;
-          } else {
-            let foundStair = null;
-            for (let y = 0; y < height; y++) {
-              if (!grid[y]) continue;
-              for (let x = 0; x < width; x++) {
-                if (grid[y][x] && grid[y][x].staircase) {
-                  foundStair = grid[y][x];
-                  break;
-                }
-              }
-              if (foundStair) break;
-            }
-            if (foundStair) {
-              targetX = foundStair.x;
-              targetY = foundStair.y;
-            }
+          } else if (this.cachedStairX !== undefined) {
+            targetX = this.cachedStairX;
+            targetY = this.cachedStairY;
           }
         }
 

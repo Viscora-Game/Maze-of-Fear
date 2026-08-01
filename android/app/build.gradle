@@ -20,9 +20,9 @@ android {
     signingConfigs {
         release {
             storeFile file('mazeoffear-release-key.jks')
-            storePassword 'mazeoffearkey123'
-            keyAlias 'mazeoffear'
-            keyPassword 'mazeoffearkey123'
+            storePassword 'WMC7zYWdoL4w'
+            keyAlias 'my-key-alias'
+            keyPassword 'WMC7zYWdoL4w'
         }
     }
 

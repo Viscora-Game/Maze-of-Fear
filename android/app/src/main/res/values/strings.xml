@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">Maze of Fear</string>
+    
+    <!-- 
+        ========================================================================
+        GOOGLE ADMOB CONFIGURATION
+        Official Google Sample Test IDs are pre-filled below for testing.
+        When your app goes live into Production, replace these values with your 
+        actual Google AdMob App ID and Ad Unit IDs!
+        ========================================================================
+    -->
+    
+    <!-- Google AdMob App ID (Sample Test ID: ca-app-pub-3940256099942544~3347511713) -->
+    <string name="admob_app_id">ca-app-pub-3940256099942544~3347511713</string>
+    
+    <!-- AdMob Banner Ad Unit ID (Sample Test ID: ca-app-pub-3940256099942544/6300978111) -->
+    <string name="admob_banner_ad_unit_id">ca-app-pub-3940256099942544/6300978111</string>
+    
+    <!-- AdMob Interstitial Ad Unit ID (Sample Test ID: ca-app-pub-3940256099942544/1033173712) -->
+    <string name="admob_interstitial_ad_unit_id">ca-app-pub-3940256099942544/1033173712</string>
+    
+    <!-- AdMob Rewarded Video Ad Unit ID (Sample Test ID: ca-app-pub-3940256099942544/5224354917) -->
+    <string name="admob_rewarded_ad_unit_id">ca-app-pub-3940256099942544/5224354917</string>
+</resources>

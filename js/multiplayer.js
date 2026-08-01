@@ -592,7 +592,19 @@ export class MultiplayerManager {
 
   playRemoteAudio(stream) {
     const audioElem = document.getElementById("coop-remote-audio");
+    if (!this.enableVoice) {
+      if (audioElem) {
+        audioElem.muted = true;
+        audioElem.srcObject = null;
+        try { audioElem.pause(); } catch (e) {}
+      }
+      if (this.voiceGainNode) {
+        this.voiceGainNode.gain.value = 0;
+      }
+      return;
+    }
     if (!audioElem) return;
+    audioElem.muted = false;
     audioElem.srcObject = stream;
     audioElem.play().catch(e => console.warn("Remote audio autoplay blocked:", e));
 
@@ -619,6 +631,18 @@ export class MultiplayerManager {
   }
 
   updateSpatialVoice() {
+    if (!this.enableVoice) {
+      if (this.voiceGainNode) {
+        this.voiceGainNode.gain.value = 0;
+      }
+      const audioElem = document.getElementById("coop-remote-audio");
+      if (audioElem && !audioElem.muted) {
+        audioElem.muted = true;
+        audioElem.srcObject = null;
+        try { audioElem.pause(); } catch(e){}
+      }
+      return;
+    }
     if (!this.voiceGainNode || !this.voiceFilterNode || !this.game.state) return;
     const s = this.game.state;
     const p1 = s.player;

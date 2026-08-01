@@ -2969,16 +2969,39 @@ export class CanvasRenderer {
             portalLight.position.set(0, 0.58, -0.15); // Behind the door
             portalGroup.add(portalLight);
 
-            // Set portal orientation based on the entry path (always faces the player, blocks hallway width)
-            const isFloor = (tx, ty) => {
-              if (tx < 0 || tx >= width || ty < 0 || ty >= height) return false;
-              return grid[ty][tx].type === "floor";
+            // Set portal orientation and position based on adjacent wall faces (spans snugly between 2 walls)
+            const isWallCell = (tx, ty) => {
+              if (tx < 0 || tx >= width || ty < 0 || ty >= height) return true;
+              return grid[ty][tx].type === "wall";
             };
-            if (isFloor(x, y - 1) || isFloor(x, y + 1)) {
-              portalGroup.rotation.y = 0; // Spans East-West (blocks North-South corridor entry)
-            } else if (isFloor(x - 1, y) || isFloor(x + 1, y)) {
-              portalGroup.rotation.y = Math.PI / 2; // Spans North-South (blocks East-West corridor entry)
+
+            const wallN = isWallCell(x, y - 1);
+            const wallS = isWallCell(x, y + 1);
+            const wallE = isWallCell(x + 1, y);
+            const wallW = isWallCell(x - 1, y);
+
+            if (wallW && wallE) {
+              // Corridor runs North-South, bracketing walls are West & East. Archway spans East-West touching both walls!
+              portalGroup.position.set(0, 0, 0);
+              portalGroup.rotation.y = 0;
+            } else if (wallN && wallS) {
+              // Corridor runs East-West, bracketing walls are North & South. Archway spans North-South touching both walls!
+              portalGroup.position.set(0, 0, 0);
+              portalGroup.rotation.y = Math.PI / 2;
+            } else if (wallW) {
+              portalGroup.position.set(-0.43, 0, 0);
+              portalGroup.rotation.y = 0;
+            } else if (wallE) {
+              portalGroup.position.set(0.43, 0, 0);
+              portalGroup.rotation.y = 0;
+            } else if (wallN) {
+              portalGroup.position.set(0, 0, -0.43);
+              portalGroup.rotation.y = Math.PI / 2;
+            } else if (wallS) {
+              portalGroup.position.set(0, 0, 0.43);
+              portalGroup.rotation.y = Math.PI / 2;
             } else {
+              portalGroup.position.set(0, 0, 0);
               portalGroup.rotation.y = 0;
             }
 

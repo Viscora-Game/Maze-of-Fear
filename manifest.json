@@ -2,7 +2,7 @@
   "name": "Maze of Fear",
   "short_name": "Maze of Fear",
   "description": "Procedural maze exploration game with choices, risk and mock ads.",
-  "version": "1.0.0.5",
+  "version": "1.0.0.6",
   "start_url": "./",
   "display": "standalone",
   "orientation": "landscape",

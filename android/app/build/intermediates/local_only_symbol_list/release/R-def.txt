@@ -1,5 +1,9 @@
 R_DEF: Internal format may change without notice
 local
+drawable ic_launcher
+drawable ic_launcher_round
+mipmap ic_launcher
+mipmap ic_launcher_round
 string admob_app_id
 string admob_banner_ad_unit_id
 string admob_interstitial_ad_unit_id

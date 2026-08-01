@@ -1,9 +1,9 @@
 -- Merging decision tree log ---
 manifest
-ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:2:1-34:12
-INJECTED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:2:1-34:12
-INJECTED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:2:1-34:12
-INJECTED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:2:1-34:12
+ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:2:1-36:12
+INJECTED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:2:1-36:12
+INJECTED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:2:1-36:12
+INJECTED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:2:1-36:12
 MERGED from [com.google.android.material:material:1.11.0] C:\Users\Acer\.gradle\caches\transforms-3\3a347358b13a1901f4709358b2ed9945\transformed\material-1.11.0\AndroidManifest.xml:17:1-24:12
 MERGED from [androidx.constraintlayout:constraintlayout:2.1.4] C:\Users\Acer\.gradle\caches\transforms-3\899eb6999f1668ce0807a12ae7b79a42\transformed\constraintlayout-2.1.4\AndroidManifest.xml:2:1-11:12
 MERGED from [androidx.appcompat:appcompat-resources:1.6.1] C:\Users\Acer\.gradle\caches\transforms-3\eff7e710aa29c6a43a1e81c06f61df29\transformed\jetified-appcompat-resources-1.6.1\AndroidManifest.xml:17:1-22:12
@@ -103,8 +103,8 @@ ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\A
 	android:name
 		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:8:22-63
 application
-ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:10:5-32:19
-INJECTED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:10:5-32:19
+ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:10:5-34:19
+INJECTED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:10:5-34:19
 MERGED from [com.google.android.material:material:1.11.0] C:\Users\Acer\.gradle\caches\transforms-3\3a347358b13a1901f4709358b2ed9945\transformed\material-1.11.0\AndroidManifest.xml:22:5-20
 MERGED from [com.google.android.material:material:1.11.0] C:\Users\Acer\.gradle\caches\transforms-3\3a347358b13a1901f4709358b2ed9945\transformed\material-1.11.0\AndroidManifest.xml:22:5-20
 MERGED from [androidx.constraintlayout:constraintlayout:2.1.4] C:\Users\Acer\.gradle\caches\transforms-3\899eb6999f1668ce0807a12ae7b79a42\transformed\constraintlayout-2.1.4\AndroidManifest.xml:9:5-20
@@ -148,41 +148,45 @@ MERGED from [androidx.room:room-runtime:2.2.5] C:\Users\Acer\.gradle\caches\tran
 	android:appComponentFactory
 		ADDED from [androidx.core:core:1.12.0] C:\Users\Acer\.gradle\caches\transforms-3\db3f6b8020888a7f113f2982cc217484\transformed\core-1.12.0\AndroidManifest.xml:28:18-86
 	android:supportsRtl
-		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:13:9-35
+		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:15:9-35
 	android:label
-		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:12:9-41
+		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:14:9-41
 	android:hardwareAccelerated
-		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:14:9-43
+		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:16:9-43
+	android:roundIcon
+		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:13:9-54
+	android:icon
+		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:12:9-43
 	android:allowBackup
 		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:11:9-35
 	android:theme
-		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:15:9-59
+		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:17:9-59
 meta-data#com.google.android.gms.ads.APPLICATION_ID
-ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:18:9-20:51
+ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:20:9-22:51
 	android:value
-		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:20:13-49
+		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:22:13-49
 	android:name
-		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:19:13-69
+		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:21:13-69
 activity#com.mazeoffear.game.MainActivity
-ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:22:9-31:20
+ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:24:9-33:20
 	android:screenOrientation
-		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:26:13-56
+		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:28:13-56
 	android:exported
-		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:24:13-36
+		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:26:13-36
 	android:configChanges
-		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:25:13-106
+		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:27:13-106
 	android:name
-		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:23:13-41
+		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:25:13-41
 intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
-ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:27:13-30:29
+ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:29:13-32:29
 action#android.intent.action.MAIN
-ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:28:17-69
+ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:30:17-69
 	android:name
-		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:28:25-66
+		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:30:25-66
 category#android.intent.category.LAUNCHER
-ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:29:17-77
+ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:31:17-77
 	android:name
-		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:29:27-74
+		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:31:27-74
 uses-sdk
 INJECTED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml

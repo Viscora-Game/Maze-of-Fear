@@ -140,6 +140,25 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onPause() {
+        super.onPause()
+        if (::webView.isInitialized) {
+            webView.onPause()
+            webView.pauseTimers()
+            webView.evaluateJavascript("if(window.game && window.game.audio && typeof window.game.audio.suspendAudio === 'function') window.game.audio.suspendAudio();", null)
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::webView.isInitialized) {
+            webView.onResume()
+            webView.resumeTimers()
+            webView.evaluateJavascript("if(window.game && window.game.audio && typeof window.game.audio.resumeAudio === 'function') window.game.audio.resumeAudio();", null)
+        }
+        hideSystemUI()
+    }
+
     fun loadInterstitialAd() {
         val adUnitId = getString(R.string.admob_interstitial_ad_unit_id)
         val adRequest = AdRequest.Builder().build()

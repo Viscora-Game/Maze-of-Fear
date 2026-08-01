@@ -1442,4 +1442,22 @@ export class AudioEngine {
       console.warn("Error playing playWaterFill:", e);
     }
   }
+
+  // Suspend all audio processing (called when app is minimized / sent to background)
+  suspendAudio() {
+    if (this.ctx && typeof this.ctx.suspend === "function") {
+      try { this.ctx.suspend(); } catch(e){}
+    }
+    const remoteAudio = typeof document !== "undefined" ? document.getElementById("coop-remote-audio") : null;
+    if (remoteAudio) {
+      try { remoteAudio.pause(); } catch(e){}
+    }
+  }
+
+  // Resume audio processing (called when app returns to foreground)
+  resumeAudio() {
+    if (this.ctx && typeof this.ctx.resume === "function") {
+      try { this.ctx.resume(); } catch(e){}
+    }
+  }
 }

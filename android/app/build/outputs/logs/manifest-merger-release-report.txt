@@ -163,7 +163,7 @@ ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\A
 		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:20:13-49
 	android:name
 		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:19:13-69
-activity#com.viscora.mazeoffear.MainActivity
+activity#com.mazeoffear.game.MainActivity
 ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:22:9-31:20
 	android:screenOrientation
 		ADDED from C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:26:13-56
@@ -686,7 +686,7 @@ ADDED from [androidx.core:core:1.12.0] C:\Users\Acer\.gradle\caches\transforms-3
 		ADDED from [androidx.core:core:1.12.0] C:\Users\Acer\.gradle\caches\transforms-3\db3f6b8020888a7f113f2982cc217484\transformed\core-1.12.0\AndroidManifest.xml:24:9-44
 	android:name
 		ADDED from [androidx.core:core:1.12.0] C:\Users\Acer\.gradle\caches\transforms-3\db3f6b8020888a7f113f2982cc217484\transformed\core-1.12.0\AndroidManifest.xml:23:9-81
-permission#com.viscora.mazeoffear.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+permission#com.mazeoffear.game.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
 ADDED from [androidx.core:core:1.12.0] C:\Users\Acer\.gradle\caches\transforms-3\db3f6b8020888a7f113f2982cc217484\transformed\core-1.12.0\AndroidManifest.xml:22:5-24:47
 	android:protectionLevel
 		ADDED from [androidx.core:core:1.12.0] C:\Users\Acer\.gradle\caches\transforms-3\db3f6b8020888a7f113f2982cc217484\transformed\core-1.12.0\AndroidManifest.xml:24:9-44
@@ -696,7 +696,7 @@ uses-permission#${applicationId}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
 ADDED from [androidx.core:core:1.12.0] C:\Users\Acer\.gradle\caches\transforms-3\db3f6b8020888a7f113f2982cc217484\transformed\core-1.12.0\AndroidManifest.xml:26:5-97
 	android:name
 		ADDED from [androidx.core:core:1.12.0] C:\Users\Acer\.gradle\caches\transforms-3\db3f6b8020888a7f113f2982cc217484\transformed\core-1.12.0\AndroidManifest.xml:26:22-94
-uses-permission#com.viscora.mazeoffear.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+uses-permission#com.mazeoffear.game.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
 ADDED from [androidx.core:core:1.12.0] C:\Users\Acer\.gradle\caches\transforms-3\db3f6b8020888a7f113f2982cc217484\transformed\core-1.12.0\AndroidManifest.xml:26:5-97
 	android:name
 		ADDED from [androidx.core:core:1.12.0] C:\Users\Acer\.gradle\caches\transforms-3\db3f6b8020888a7f113f2982cc217484\transformed\core-1.12.0\AndroidManifest.xml:26:22-94

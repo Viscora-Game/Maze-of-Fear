@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.viscora.mazeoffear"
-    android:versionCode="4"
-    android:versionName="1.0.0.4" >
+    package="com.mazeoffear.game"
+    android:versionCode="5"
+    android:versionName="1.0.0.5" >
 
     <uses-sdk
         android:minSdkVersion="24"
@@ -39,10 +39,10 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <permission
-        android:name="com.viscora.mazeoffear.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+        android:name="com.mazeoffear.game.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
         android:protectionLevel="signature" />
 
-    <uses-permission android:name="com.viscora.mazeoffear.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+    <uses-permission android:name="com.mazeoffear.game.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
 
     <application
         android:allowBackup="true"
@@ -59,7 +59,7 @@
             android:value="@string/admob_app_id" />
 
         <activity
-            android:name="com.viscora.mazeoffear.MainActivity"
+            android:name="com.mazeoffear.game.MainActivity"
             android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize"
             android:exported="true"
             android:screenOrientation="sensorLandscape" >
@@ -72,7 +72,7 @@
 
         <provider
             android:name="androidx.startup.InitializationProvider"
-            android:authorities="com.viscora.mazeoffear.androidx-startup"
+            android:authorities="com.mazeoffear.game.androidx-startup"
             android:exported="false" >
             <meta-data
                 android:name="androidx.emoji2.text.EmojiCompatInitializer"
@@ -95,7 +95,7 @@
 
         <provider
             android:name="com.google.android.gms.ads.MobileAdsInitProvider"
-            android:authorities="com.viscora.mazeoffear.mobileadsinitprovider"
+            android:authorities="com.mazeoffear.game.mobileadsinitprovider"
             android:exported="false"
             android:initOrder="100" />
 

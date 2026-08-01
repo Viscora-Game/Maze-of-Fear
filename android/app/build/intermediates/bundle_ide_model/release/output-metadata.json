@@ -4,7 +4,7 @@
     "type": "BUNDLE",
     "kind": "RegularFile"
   },
-  "applicationId": "com.viscora.mazeoffear",
+  "applicationId": "com.mazeoffear.game",
   "variantName": "release",
   "elements": [
     {

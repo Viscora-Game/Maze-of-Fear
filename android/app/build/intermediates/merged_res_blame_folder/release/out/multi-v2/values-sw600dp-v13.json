@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.viscora.mazeoffear.app-mergeReleaseResources-38:/values-sw600dp-v13/values-sw600dp-v13.xml",
+            "outputFile": "com.mazeoffear.game.app-mergeReleaseResources-38:/values-sw600dp-v13/values-sw600dp-v13.xml",
             "map": [
                 {
                     "source": "C:\\Users\\Acer\\.gradle\\caches\\transforms-3\\3a347358b13a1901f4709358b2ed9945\\transformed\\material-1.11.0\\res\\values-sw600dp-v13\\values-sw600dp-v13.xml",

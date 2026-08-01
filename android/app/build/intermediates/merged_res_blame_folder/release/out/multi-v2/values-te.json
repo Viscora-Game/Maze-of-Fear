@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.viscora.mazeoffear.app-mergeReleaseResources-38:/values-te/values-te.xml",
+            "outputFile": "com.mazeoffear.game.app-mergeReleaseResources-38:/values-te/values-te.xml",
             "map": [
                 {
                     "source": "C:\\Users\\Acer\\.gradle\\caches\\transforms-3\\46eb795ca1e310235c4f8a13dd92b7ef\\transformed\\jetified-play-services-base-18.0.0\\res\\values-te\\values.xml",

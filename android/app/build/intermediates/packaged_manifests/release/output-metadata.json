@@ -4,15 +4,15 @@
     "type": "PACKAGED_MANIFESTS",
     "kind": "Directory"
   },
-  "applicationId": "com.viscora.mazeoffear",
+  "applicationId": "com.mazeoffear.game",
   "variantName": "release",
   "elements": [
     {
       "type": "SINGLE",
       "filters": [],
       "attributes": [],
-      "versionCode": 4,
-      "versionName": "1.0.0.4",
+      "versionCode": 5,
+      "versionName": "1.0.0.5",
       "outputFile": "AndroidManifest.xml"
     }
   ],

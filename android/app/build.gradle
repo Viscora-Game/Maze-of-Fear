@@ -4,15 +4,15 @@ plugins {
 }
 
 android {
-    namespace 'com.viscora.mazeoffear'
+    namespace 'com.mazeoffear.game'
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.viscora.mazeoffear"
+        applicationId "com.mazeoffear.game"
         minSdk 24
         targetSdk 34
-        versionCode 4
-        versionName "1.0.0.4"
+        versionCode 5
+        versionName "1.0.0.5"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

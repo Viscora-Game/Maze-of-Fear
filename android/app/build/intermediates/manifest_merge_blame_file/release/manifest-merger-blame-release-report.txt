@@ -1,8 +1,8 @@
 1<?xml version="1.0" encoding="utf-8"?>
 2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-3    package="com.viscora.mazeoffear"
-4    android:versionCode="4"
-5    android:versionName="1.0.0.4" >
+3    package="com.mazeoffear.game"
+4    android:versionCode="5"
+5    android:versionName="1.0.0.5" >
 6
 7    <uses-sdk
 8        android:minSdkVersion="24"
@@ -73,12 +73,12 @@
 40
 41    <permission
 41-->[androidx.core:core:1.12.0] C:\Users\Acer\.gradle\caches\transforms-3\db3f6b8020888a7f113f2982cc217484\transformed\core-1.12.0\AndroidManifest.xml:22:5-24:47
-42        android:name="com.viscora.mazeoffear.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+42        android:name="com.mazeoffear.game.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
 42-->[androidx.core:core:1.12.0] C:\Users\Acer\.gradle\caches\transforms-3\db3f6b8020888a7f113f2982cc217484\transformed\core-1.12.0\AndroidManifest.xml:23:9-81
 43        android:protectionLevel="signature" />
 43-->[androidx.core:core:1.12.0] C:\Users\Acer\.gradle\caches\transforms-3\db3f6b8020888a7f113f2982cc217484\transformed\core-1.12.0\AndroidManifest.xml:24:9-44
 44
-45    <uses-permission android:name="com.viscora.mazeoffear.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+45    <uses-permission android:name="com.mazeoffear.game.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
 45-->[androidx.core:core:1.12.0] C:\Users\Acer\.gradle\caches\transforms-3\db3f6b8020888a7f113f2982cc217484\transformed\core-1.12.0\AndroidManifest.xml:26:5-97
 45-->[androidx.core:core:1.12.0] C:\Users\Acer\.gradle\caches\transforms-3\db3f6b8020888a7f113f2982cc217484\transformed\core-1.12.0\AndroidManifest.xml:26:22-94
 46
@@ -108,7 +108,7 @@
 60
 61        <activity
 61-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:22:9-31:20
-62            android:name="com.viscora.mazeoffear.MainActivity"
+62            android:name="com.mazeoffear.game.MainActivity"
 62-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:23:13-41
 63            android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize"
 63-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:25:13-106
@@ -132,7 +132,7 @@
 73-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Acer\.gradle\caches\transforms-3\c4dab8d1a445d82bbdf5c45e5c471e0a\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:24:9-32:20
 74            android:name="androidx.startup.InitializationProvider"
 74-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Acer\.gradle\caches\transforms-3\c4dab8d1a445d82bbdf5c45e5c471e0a\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:25:13-67
-75            android:authorities="com.viscora.mazeoffear.androidx-startup"
+75            android:authorities="com.mazeoffear.game.androidx-startup"
 75-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Acer\.gradle\caches\transforms-3\c4dab8d1a445d82bbdf5c45e5c471e0a\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:26:13-68
 76            android:exported="false" >
 76-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Acer\.gradle\caches\transforms-3\c4dab8d1a445d82bbdf5c45e5c471e0a\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:27:13-37
@@ -176,7 +176,7 @@
 96-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:63:9-68:43
 97            android:name="com.google.android.gms.ads.MobileAdsInitProvider"
 97-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:64:13-76
-98            android:authorities="com.viscora.mazeoffear.mobileadsinitprovider"
+98            android:authorities="com.mazeoffear.game.mobileadsinitprovider"
 98-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:65:13-73
 99            android:exported="false"
 99-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:66:13-37

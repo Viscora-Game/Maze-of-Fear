@@ -1,4 +1,4 @@
-package com.viscora.mazeoffear
+package com.mazeoffear.game
 
 import android.content.pm.ActivityInfo
 import android.os.Build

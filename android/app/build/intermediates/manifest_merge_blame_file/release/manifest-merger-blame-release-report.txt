@@ -110,12 +110,12 @@
 61-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:22:9-31:20
 62            android:name="com.viscora.mazeoffear.MainActivity"
 62-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:23:13-41
-63            android:configChanges="orientation|screenSize|keyboardHidden"
-63-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:25:13-74
+63            android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize"
+63-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:25:13-106
 64            android:exported="true"
 64-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:24:13-36
-65            android:screenOrientation="landscape" >
-65-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:26:13-50
+65            android:screenOrientation="sensorLandscape" >
+65-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:26:13-56
 66            <intent-filter>
 66-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:27:13-30:29
 67                <action android:name="android.intent.action.MAIN" />

@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.mazeoffear.game",
+        "sha256_cert_fingerprints": ["28:BA:72:51:29:D2:E5:F3:75:6B:35:51:D7:85:B5:34:8D:70:9B:71:7E:77:9A:8C:15:94:25:58:3E:11:B2:98"]
+      }
+    }]

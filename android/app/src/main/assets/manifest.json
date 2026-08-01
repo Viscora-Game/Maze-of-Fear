@@ -1,0 +1,28 @@
+{
+  "name": "Maze of Fear",
+  "short_name": "Maze of Fear",
+  "description": "Procedural maze exploration game with choices, risk and mock ads.",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#08060a",
+  "theme_color": "#0f0d14",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

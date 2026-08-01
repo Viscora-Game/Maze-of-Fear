@@ -1,0 +1,476 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.viscora.mazeoffear"
+4    android:versionCode="181"
+5    android:versionName="1.8.1" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="24"
+9        android:targetSdkVersion="34" />
+10
+11    <uses-permission android:name="android.permission.INTERNET" />
+11-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:4:5-67
+11-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:4:22-64
+12    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+12-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:5:5-79
+12-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:5:22-76
+13    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+13-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:6:5-80
+13-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:6:22-77
+14    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+14-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:7:5-71
+14-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:7:22-68
+15    <uses-permission android:name="android.permission.VIBRATE" />
+15-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:8:5-66
+15-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:8:22-63
+16    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
+16-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:26:5-79
+16-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:26:22-76
+17    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_AD_ID" />
+17-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:27:5-82
+17-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:27:22-79
+18    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_ATTRIBUTION" />
+18-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:28:5-88
+18-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:28:22-85
+19    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_TOPICS" /> <!-- Android package visibility setting -->
+19-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:29:5-83
+19-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:29:22-80
+20    <queries>
+20-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:35:5-51:15
+21
+22        <!-- For browser content -->
+23        <intent>
+23-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:38:9-44:18
+24            <action android:name="android.intent.action.VIEW" />
+24-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:39:13-65
+24-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:39:21-62
+25
+26            <category android:name="android.intent.category.BROWSABLE" />
+26-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:41:13-74
+26-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:41:23-71
+27
+28            <data android:scheme="https" />
+28-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:43:13-44
+28-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:43:19-41
+29        </intent>
+30        <!-- End of browser content -->
+31        <!-- For CustomTabsService -->
+32        <intent>
+32-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:47:9-49:18
+33            <action android:name="android.support.customtabs.action.CustomTabsService" />
+33-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:48:13-90
+33-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:48:21-87
+34        </intent>
+35        <!-- End of CustomTabsService -->
+36    </queries>
+37
+38    <uses-permission android:name="android.permission.WAKE_LOCK" />
+38-->[com.google.android.gms:play-services-measurement-sdk-api:20.1.2] C:\Users\Acer\.gradle\caches\transforms-3\ab3384260e938790680bf6ad841d2f34\transformed\jetified-play-services-measurement-sdk-api-20.1.2\AndroidManifest.xml:25:5-68
+38-->[com.google.android.gms:play-services-measurement-sdk-api:20.1.2] C:\Users\Acer\.gradle\caches\transforms-3\ab3384260e938790680bf6ad841d2f34\transformed\jetified-play-services-measurement-sdk-api-20.1.2\AndroidManifest.xml:25:22-65
+39    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+39-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:28:5-77
+39-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:28:22-74
+40
+41    <permission
+41-->[androidx.core:core:1.12.0] C:\Users\Acer\.gradle\caches\transforms-3\db3f6b8020888a7f113f2982cc217484\transformed\core-1.12.0\AndroidManifest.xml:22:5-24:47
+42        android:name="com.viscora.mazeoffear.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+42-->[androidx.core:core:1.12.0] C:\Users\Acer\.gradle\caches\transforms-3\db3f6b8020888a7f113f2982cc217484\transformed\core-1.12.0\AndroidManifest.xml:23:9-81
+43        android:protectionLevel="signature" />
+43-->[androidx.core:core:1.12.0] C:\Users\Acer\.gradle\caches\transforms-3\db3f6b8020888a7f113f2982cc217484\transformed\core-1.12.0\AndroidManifest.xml:24:9-44
+44
+45    <uses-permission android:name="com.viscora.mazeoffear.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+45-->[androidx.core:core:1.12.0] C:\Users\Acer\.gradle\caches\transforms-3\db3f6b8020888a7f113f2982cc217484\transformed\core-1.12.0\AndroidManifest.xml:26:5-97
+45-->[androidx.core:core:1.12.0] C:\Users\Acer\.gradle\caches\transforms-3\db3f6b8020888a7f113f2982cc217484\transformed\core-1.12.0\AndroidManifest.xml:26:22-94
+46
+47    <application
+47-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:10:5-32:19
+48        android:allowBackup="true"
+48-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:11:9-35
+49        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+49-->[androidx.core:core:1.12.0] C:\Users\Acer\.gradle\caches\transforms-3\db3f6b8020888a7f113f2982cc217484\transformed\core-1.12.0\AndroidManifest.xml:28:18-86
+50        android:extractNativeLibs="false"
+51        android:hardwareAccelerated="true"
+51-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:14:9-43
+52        android:label="@string/app_name"
+52-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:12:9-41
+53        android:supportsRtl="true"
+53-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:13:9-35
+54        android:theme="@style/Theme.AppCompat.NoActionBar" >
+54-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:15:9-59
+55
+56        <!-- Google AdMob Application ID -->
+57        <meta-data
+57-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:18:9-20:51
+58            android:name="com.google.android.gms.ads.APPLICATION_ID"
+58-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:19:13-69
+59            android:value="@string/admob_app_id" />
+59-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:20:13-49
+60
+61        <activity
+61-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:22:9-31:20
+62            android:name="com.viscora.mazeoffear.MainActivity"
+62-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:23:13-41
+63            android:configChanges="orientation|screenSize|keyboardHidden"
+63-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:25:13-74
+64            android:exported="true"
+64-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:24:13-36
+65            android:screenOrientation="landscape" >
+65-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:26:13-50
+66            <intent-filter>
+66-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:27:13-30:29
+67                <action android:name="android.intent.action.MAIN" />
+67-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:28:17-69
+67-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:28:25-66
+68
+69                <category android:name="android.intent.category.LAUNCHER" />
+69-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:29:17-77
+69-->C:\Users\Acer\OneDrive\Masaüstü\Maze of Fear\android\app\src\main\AndroidManifest.xml:29:27-74
+70            </intent-filter>
+71        </activity>
+72
+73        <provider
+73-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Acer\.gradle\caches\transforms-3\c4dab8d1a445d82bbdf5c45e5c471e0a\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:24:9-32:20
+74            android:name="androidx.startup.InitializationProvider"
+74-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Acer\.gradle\caches\transforms-3\c4dab8d1a445d82bbdf5c45e5c471e0a\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:25:13-67
+75            android:authorities="com.viscora.mazeoffear.androidx-startup"
+75-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Acer\.gradle\caches\transforms-3\c4dab8d1a445d82bbdf5c45e5c471e0a\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:26:13-68
+76            android:exported="false" >
+76-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Acer\.gradle\caches\transforms-3\c4dab8d1a445d82bbdf5c45e5c471e0a\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:27:13-37
+77            <meta-data
+77-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Acer\.gradle\caches\transforms-3\c4dab8d1a445d82bbdf5c45e5c471e0a\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:29:13-31:52
+78                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+78-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Acer\.gradle\caches\transforms-3\c4dab8d1a445d82bbdf5c45e5c471e0a\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:30:17-75
+79                android:value="androidx.startup" />
+79-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Acer\.gradle\caches\transforms-3\c4dab8d1a445d82bbdf5c45e5c471e0a\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:31:17-49
+80            <meta-data
+80-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:36:13-38:52
+81                android:name="androidx.work.WorkManagerInitializer"
+81-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:37:17-68
+82                android:value="androidx.startup" />
+82-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:38:17-49
+83            <meta-data
+83-->[androidx.lifecycle:lifecycle-process:2.6.1] C:\Users\Acer\.gradle\caches\transforms-3\ea8e01bdab487f57e89cfd2a57773ff1\transformed\jetified-lifecycle-process-2.6.1\AndroidManifest.xml:29:13-31:52
+84                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+84-->[androidx.lifecycle:lifecycle-process:2.6.1] C:\Users\Acer\.gradle\caches\transforms-3\ea8e01bdab487f57e89cfd2a57773ff1\transformed\jetified-lifecycle-process-2.6.1\AndroidManifest.xml:30:17-78
+85                android:value="androidx.startup" />
+85-->[androidx.lifecycle:lifecycle-process:2.6.1] C:\Users\Acer\.gradle\caches\transforms-3\ea8e01bdab487f57e89cfd2a57773ff1\transformed\jetified-lifecycle-process-2.6.1\AndroidManifest.xml:31:17-49
+86            <meta-data
+86-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Acer\.gradle\caches\transforms-3\4fe9f85f1db47f470d7a1d0e318b4ef2\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:29:13-31:52
+87                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+87-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Acer\.gradle\caches\transforms-3\4fe9f85f1db47f470d7a1d0e318b4ef2\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:30:17-85
+88                android:value="androidx.startup" />
+88-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Acer\.gradle\caches\transforms-3\4fe9f85f1db47f470d7a1d0e318b4ef2\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:31:17-49
+89        </provider> <!-- Include the AdActivity and InAppPurchaseActivity configChanges and themes. -->
+90        <activity
+90-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:56:9-61:43
+91            android:name="com.google.android.gms.ads.AdActivity"
+91-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:57:13-65
+92            android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize"
+92-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:58:13-122
+93            android:exported="false"
+93-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:59:13-37
+94            android:theme="@android:style/Theme.Translucent" />
+94-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:60:13-61
+95
+96        <provider
+96-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:63:9-68:43
+97            android:name="com.google.android.gms.ads.MobileAdsInitProvider"
+97-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:64:13-76
+98            android:authorities="com.viscora.mazeoffear.mobileadsinitprovider"
+98-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:65:13-73
+99            android:exported="false"
+99-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:66:13-37
+100            android:initOrder="100" />
+100-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:67:13-36
+101
+102        <service
+102-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:70:9-74:43
+103            android:name="com.google.android.gms.ads.AdService"
+103-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:71:13-64
+104            android:enabled="true"
+104-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:72:13-35
+105            android:exported="false" />
+105-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:73:13-37
+106
+107        <activity
+107-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:76:9-80:43
+108            android:name="com.google.android.gms.ads.OutOfContextTestingActivity"
+108-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:77:13-82
+109            android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize"
+109-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:78:13-122
+110            android:exported="false" />
+110-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:79:13-37
+111        <activity
+111-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:81:9-88:43
+112            android:name="com.google.android.gms.ads.NotificationHandlerActivity"
+112-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:82:13-82
+113            android:excludeFromRecents="true"
+113-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:83:13-46
+114            android:exported="false"
+114-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:84:13-37
+115            android:launchMode="singleTask"
+115-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:85:13-44
+116            android:taskAffinity=""
+116-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:86:13-36
+117            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+117-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:87:13-72
+118
+119        <property
+119-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:90:9-92:62
+120            android:name="android.adservices.AD_SERVICES_CONFIG"
+120-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:91:13-65
+121            android:resource="@xml/gma_ad_services_config" />
+121-->[com.google.android.gms:play-services-ads-lite:23.0.0] C:\Users\Acer\.gradle\caches\transforms-3\4d00e81192a14c3db3d1d06637b156b9\transformed\jetified-play-services-ads-lite-23.0.0\AndroidManifest.xml:92:13-59
+122
+123        <activity
+123-->[com.google.android.gms:play-services-base:18.0.0] C:\Users\Acer\.gradle\caches\transforms-3\46eb795ca1e310235c4f8a13dd92b7ef\transformed\jetified-play-services-base-18.0.0\AndroidManifest.xml:20:9-22:45
+124            android:name="com.google.android.gms.common.api.GoogleApiActivity"
+124-->[com.google.android.gms:play-services-base:18.0.0] C:\Users\Acer\.gradle\caches\transforms-3\46eb795ca1e310235c4f8a13dd92b7ef\transformed\jetified-play-services-base-18.0.0\AndroidManifest.xml:20:19-85
+125            android:exported="false"
+125-->[com.google.android.gms:play-services-base:18.0.0] C:\Users\Acer\.gradle\caches\transforms-3\46eb795ca1e310235c4f8a13dd92b7ef\transformed\jetified-play-services-base-18.0.0\AndroidManifest.xml:22:19-43
+126            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+126-->[com.google.android.gms:play-services-base:18.0.0] C:\Users\Acer\.gradle\caches\transforms-3\46eb795ca1e310235c4f8a13dd92b7ef\transformed\jetified-play-services-base-18.0.0\AndroidManifest.xml:21:19-78
+127
+128        <meta-data
+128-->[com.google.android.gms:play-services-basement:18.2.0] C:\Users\Acer\.gradle\caches\transforms-3\385556bf1f28fe179d578f2d622da5bf\transformed\jetified-play-services-basement-18.2.0\AndroidManifest.xml:21:9-23:69
+129            android:name="com.google.android.gms.version"
+129-->[com.google.android.gms:play-services-basement:18.2.0] C:\Users\Acer\.gradle\caches\transforms-3\385556bf1f28fe179d578f2d622da5bf\transformed\jetified-play-services-basement-18.2.0\AndroidManifest.xml:22:13-58
+130            android:value="@integer/google_play_services_version" />
+130-->[com.google.android.gms:play-services-basement:18.2.0] C:\Users\Acer\.gradle\caches\transforms-3\385556bf1f28fe179d578f2d622da5bf\transformed\jetified-play-services-basement-18.2.0\AndroidManifest.xml:23:13-66
+131
+132        <service
+132-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:41:9-46:35
+133            android:name="androidx.work.impl.background.systemalarm.SystemAlarmService"
+133-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:42:13-88
+134            android:directBootAware="false"
+134-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:43:13-44
+135            android:enabled="@bool/enable_system_alarm_service_default"
+135-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:44:13-72
+136            android:exported="false" />
+136-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:45:13-37
+137        <service
+137-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:47:9-53:35
+138            android:name="androidx.work.impl.background.systemjob.SystemJobService"
+138-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:48:13-84
+139            android:directBootAware="false"
+139-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:49:13-44
+140            android:enabled="@bool/enable_system_job_service_default"
+140-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:50:13-70
+141            android:exported="true"
+141-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:51:13-36
+142            android:permission="android.permission.BIND_JOB_SERVICE" />
+142-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:52:13-69
+143        <service
+143-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:54:9-59:35
+144            android:name="androidx.work.impl.foreground.SystemForegroundService"
+144-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:55:13-81
+145            android:directBootAware="false"
+145-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:56:13-44
+146            android:enabled="@bool/enable_system_foreground_service_default"
+146-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:57:13-77
+147            android:exported="false" />
+147-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:58:13-37
+148
+149        <receiver
+149-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:61:9-66:35
+150            android:name="androidx.work.impl.utils.ForceStopRunnable$BroadcastReceiver"
+150-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:62:13-88
+151            android:directBootAware="false"
+151-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:63:13-44
+152            android:enabled="true"
+152-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:64:13-35
+153            android:exported="false" />
+153-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:65:13-37
+154        <receiver
+154-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:67:9-77:20
+155            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryChargingProxy"
+155-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:68:13-106
+156            android:directBootAware="false"
+156-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:69:13-44
+157            android:enabled="false"
+157-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:70:13-36
+158            android:exported="false" >
+158-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:71:13-37
+159            <intent-filter>
+159-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:73:13-76:29
+160                <action android:name="android.intent.action.ACTION_POWER_CONNECTED" />
+160-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:74:17-87
+160-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:74:25-84
+161                <action android:name="android.intent.action.ACTION_POWER_DISCONNECTED" />
+161-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:75:17-90
+161-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:75:25-87
+162            </intent-filter>
+163        </receiver>
+164        <receiver
+164-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:78:9-88:20
+165            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryNotLowProxy"
+165-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:79:13-104
+166            android:directBootAware="false"
+166-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:80:13-44
+167            android:enabled="false"
+167-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:81:13-36
+168            android:exported="false" >
+168-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:82:13-37
+169            <intent-filter>
+169-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:84:13-87:29
+170                <action android:name="android.intent.action.BATTERY_OKAY" />
+170-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:85:17-77
+170-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:85:25-74
+171                <action android:name="android.intent.action.BATTERY_LOW" />
+171-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:86:17-76
+171-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:86:25-73
+172            </intent-filter>
+173        </receiver>
+174        <receiver
+174-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:89:9-99:20
+175            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$StorageNotLowProxy"
+175-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:90:13-104
+176            android:directBootAware="false"
+176-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:91:13-44
+177            android:enabled="false"
+177-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:92:13-36
+178            android:exported="false" >
+178-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:93:13-37
+179            <intent-filter>
+179-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:95:13-98:29
+180                <action android:name="android.intent.action.DEVICE_STORAGE_LOW" />
+180-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:96:17-83
+180-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:96:25-80
+181                <action android:name="android.intent.action.DEVICE_STORAGE_OK" />
+181-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:97:17-82
+181-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:97:25-79
+182            </intent-filter>
+183        </receiver>
+184        <receiver
+184-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:100:9-109:20
+185            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$NetworkStateProxy"
+185-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:101:13-103
+186            android:directBootAware="false"
+186-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:102:13-44
+187            android:enabled="false"
+187-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:103:13-36
+188            android:exported="false" >
+188-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:104:13-37
+189            <intent-filter>
+189-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:106:13-108:29
+190                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+190-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:107:17-79
+190-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:107:25-76
+191            </intent-filter>
+192        </receiver>
+193        <receiver
+193-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:110:9-121:20
+194            android:name="androidx.work.impl.background.systemalarm.RescheduleReceiver"
+194-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:111:13-88
+195            android:directBootAware="false"
+195-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:112:13-44
+196            android:enabled="false"
+196-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:113:13-36
+197            android:exported="false" >
+197-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:114:13-37
+198            <intent-filter>
+198-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:116:13-120:29
+199                <action android:name="android.intent.action.BOOT_COMPLETED" />
+199-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:117:17-79
+199-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:117:25-76
+200                <action android:name="android.intent.action.TIME_SET" />
+200-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:118:17-73
+200-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:118:25-70
+201                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+201-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:119:17-81
+201-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:119:25-78
+202            </intent-filter>
+203        </receiver>
+204        <receiver
+204-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:122:9-131:20
+205            android:name="androidx.work.impl.background.systemalarm.ConstraintProxyUpdateReceiver"
+205-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:123:13-99
+206            android:directBootAware="false"
+206-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:124:13-44
+207            android:enabled="@bool/enable_system_alarm_service_default"
+207-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:125:13-72
+208            android:exported="false" >
+208-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:126:13-37
+209            <intent-filter>
+209-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:128:13-130:29
+210                <action android:name="androidx.work.impl.background.systemalarm.UpdateProxies" />
+210-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:129:17-98
+210-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:129:25-95
+211            </intent-filter>
+212        </receiver>
+213        <receiver
+213-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:132:9-142:20
+214            android:name="androidx.work.impl.diagnostics.DiagnosticsReceiver"
+214-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:133:13-78
+215            android:directBootAware="false"
+215-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:134:13-44
+216            android:enabled="true"
+216-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:135:13-35
+217            android:exported="true"
+217-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:136:13-36
+218            android:permission="android.permission.DUMP" >
+218-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:137:13-57
+219            <intent-filter>
+219-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:139:13-141:29
+220                <action android:name="androidx.work.diagnostics.REQUEST_DIAGNOSTICS" />
+220-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:140:17-88
+220-->[androidx.work:work-runtime:2.7.0] C:\Users\Acer\.gradle\caches\transforms-3\6db33a38c3bc70adf210eefa7ca26307\transformed\work-runtime-2.7.0\AndroidManifest.xml:140:25-85
+221            </intent-filter>
+222        </receiver>
+223
+224        <uses-library
+224-->[androidx.privacysandbox.ads:ads-adservices:1.0.0-beta05] C:\Users\Acer\.gradle\caches\transforms-3\857a54cd3b17be0b45f558a0b582f650\transformed\jetified-ads-adservices-1.0.0-beta05\AndroidManifest.xml:23:9-25:40
+225            android:name="android.ext.adservices"
+225-->[androidx.privacysandbox.ads:ads-adservices:1.0.0-beta05] C:\Users\Acer\.gradle\caches\transforms-3\857a54cd3b17be0b45f558a0b582f650\transformed\jetified-ads-adservices-1.0.0-beta05\AndroidManifest.xml:24:13-50
+226            android:required="false" />
+226-->[androidx.privacysandbox.ads:ads-adservices:1.0.0-beta05] C:\Users\Acer\.gradle\caches\transforms-3\857a54cd3b17be0b45f558a0b582f650\transformed\jetified-ads-adservices-1.0.0-beta05\AndroidManifest.xml:25:13-37
+227
+228        <receiver
+228-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Acer\.gradle\caches\transforms-3\4fe9f85f1db47f470d7a1d0e318b4ef2\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:34:9-52:20
+229            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+229-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Acer\.gradle\caches\transforms-3\4fe9f85f1db47f470d7a1d0e318b4ef2\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:35:13-76
+230            android:directBootAware="false"
+230-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Acer\.gradle\caches\transforms-3\4fe9f85f1db47f470d7a1d0e318b4ef2\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:36:13-44
+231            android:enabled="true"
+231-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Acer\.gradle\caches\transforms-3\4fe9f85f1db47f470d7a1d0e318b4ef2\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:37:13-35
+232            android:exported="true"
+232-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Acer\.gradle\caches\transforms-3\4fe9f85f1db47f470d7a1d0e318b4ef2\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:38:13-36
+233            android:permission="android.permission.DUMP" >
+233-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Acer\.gradle\caches\transforms-3\4fe9f85f1db47f470d7a1d0e318b4ef2\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:39:13-57
+234            <intent-filter>
+234-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Acer\.gradle\caches\transforms-3\4fe9f85f1db47f470d7a1d0e318b4ef2\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:40:13-42:29
+235                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+235-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Acer\.gradle\caches\transforms-3\4fe9f85f1db47f470d7a1d0e318b4ef2\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:41:17-91
+235-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Acer\.gradle\caches\transforms-3\4fe9f85f1db47f470d7a1d0e318b4ef2\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:41:25-88
+236            </intent-filter>
+237            <intent-filter>
+237-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Acer\.gradle\caches\transforms-3\4fe9f85f1db47f470d7a1d0e318b4ef2\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:43:13-45:29
+238                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+238-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Acer\.gradle\caches\transforms-3\4fe9f85f1db47f470d7a1d0e318b4ef2\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:44:17-85
+238-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Acer\.gradle\caches\transforms-3\4fe9f85f1db47f470d7a1d0e318b4ef2\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:44:25-82
+239            </intent-filter>
+240            <intent-filter>
+240-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Acer\.gradle\caches\transforms-3\4fe9f85f1db47f470d7a1d0e318b4ef2\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:46:13-48:29
+241                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+241-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Acer\.gradle\caches\transforms-3\4fe9f85f1db47f470d7a1d0e318b4ef2\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:47:17-88
+241-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Acer\.gradle\caches\transforms-3\4fe9f85f1db47f470d7a1d0e318b4ef2\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:47:25-85
+242            </intent-filter>
+243            <intent-filter>
+243-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Acer\.gradle\caches\transforms-3\4fe9f85f1db47f470d7a1d0e318b4ef2\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:49:13-51:29
+244                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+244-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Acer\.gradle\caches\transforms-3\4fe9f85f1db47f470d7a1d0e318b4ef2\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:50:17-95
+244-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Acer\.gradle\caches\transforms-3\4fe9f85f1db47f470d7a1d0e318b4ef2\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:50:25-92
+245            </intent-filter>
+246        </receiver>
+247
+248        <service
+248-->[androidx.room:room-runtime:2.2.5] C:\Users\Acer\.gradle\caches\transforms-3\1009d4a68dabadb58dc41031795929f9\transformed\room-runtime-2.2.5\AndroidManifest.xml:25:9-28:40
+249            android:name="androidx.room.MultiInstanceInvalidationService"
+249-->[androidx.room:room-runtime:2.2.5] C:\Users\Acer\.gradle\caches\transforms-3\1009d4a68dabadb58dc41031795929f9\transformed\room-runtime-2.2.5\AndroidManifest.xml:26:13-74
+250            android:directBootAware="true"
+250-->[androidx.room:room-runtime:2.2.5] C:\Users\Acer\.gradle\caches\transforms-3\1009d4a68dabadb58dc41031795929f9\transformed\room-runtime-2.2.5\AndroidManifest.xml:27:13-43
+251            android:exported="false" />
+251-->[androidx.room:room-runtime:2.2.5] C:\Users\Acer\.gradle\caches\transforms-3\1009d4a68dabadb58dc41031795929f9\transformed\room-runtime-2.2.5\AndroidManifest.xml:28:13-37
+252    </application>
+253
+254</manifest>

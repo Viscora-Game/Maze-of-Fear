@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="description" content="Maze of Fear - A Procedural Maze Exploration Game of Risk and Decisions">
+  <title>Maze of Fear</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f0d14">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js?v=182').catch(err => {
+          console.warn('Service Worker registration failed:', err);
+        });
+      });
+    }
+  </script>
+  <link rel="stylesheet" href="styles.css?v=1.2.8">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.0/umd/index.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script>
+    function showVisualError(type, msg, stack) {
+      const fullStr = (msg ? String(msg) : '') + (stack ? String(stack) : '');
+      if (fullStr.includes("peer-unavailable") || 
+          fullStr.includes("Could not connect to peer") || 
+          fullStr.includes("PeerJS") || 
+          fullStr.includes("Peer error") || 
+          fullStr.includes("mof-") || 
+          fullStr.includes("Pointer lock") || 
+          fullStr.includes("pointer lock")) {
+        return; // Completely suppress network notices and harmless timing errors from showing red banner
+      }
+
+      // Truncate extremely long messages (like object serialization) to prevent covering the screen
+      if (typeof msg === 'string' && msg.length > 300) {
+        msg = msg.substring(0, 300) + '... [Yazı çok uzun olduğu için kısaltıldı]';
+      }
+      
+      let errContainer = document.getElementById('debug-error-container');
+      if (!errContainer) {
+        errContainer = document.createElement('div');
+        errContainer.id = 'debug-error-container';
+        errContainer.style.position = 'fixed';
+        errContainer.style.top = '10px';
+        errContainer.style.left = '10px';
+        errContainer.style.right = '10px';
+        errContainer.style.maxHeight = '80vh';
+        errContainer.style.overflowY = 'auto';
+        errContainer.style.background = 'rgba(220, 38, 38, 0.95)';
+        errContainer.style.color = 'white';
+        errContainer.style.padding = '14px';
+        errContainer.style.zIndex = '99999';
+        errContainer.style.fontFamily = 'monospace';
+        errContainer.style.fontSize = '12px';
+        errContainer.style.borderRadius = '8px';
+        errContainer.style.wordBreak = 'break-all';
+        errContainer.style.boxShadow = '0 10px 25px rgba(0,0,0,0.5)';
+        errContainer.style.border = '2px solid #ef4444';
+        
+        const header = document.createElement('div');
+        header.style.fontWeight = 'bold';
+        header.style.borderBottom = '1px solid rgba(255,255,255,0.3)';
+        header.style.paddingBottom = '6px';
+        header.style.marginBottom = '8px';
+        header.style.display = 'flex';
+        header.style.justifyContent = 'space-between';
+        const isEnConsole = (localStorage.getItem('selected_language') || 'tr') === 'en';
+        header.innerHTML = '<span>⚠️ GAME DEBUG CONSOLE</span><button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:white;font-weight:bold;cursor:pointer;">' + (isEnConsole ? '[Close]' : '[Kapat]') + '</button>';
+        errContainer.appendChild(header);
+        
+        document.body.appendChild(errContainer);
+      }
+      
+      const logLine = document.createElement('div');
+      logLine.style.marginBottom = '6px';
+      logLine.style.padding = '4px 0';
+      logLine.style.borderBottom = '1px dashed rgba(255,255,255,0.15)';
+      logLine.innerHTML = '<strong>[' + type + ']</strong> ' + msg + (stack ? '<br><span style="opacity:0.8;font-size:10px;">' + stack + '</span>' : '');
+      errContainer.appendChild(logLine);
+    }
+
+    window.onerror = function(msg, url, line, col, error) {
+      showVisualError('RUNTIME ERROR', msg + ' (' + url + ':' + line + ':' + col + ')', error ? error.stack : null);
+      return false;
+    };
+
+    window.addEventListener('unhandledrejection', function(event) {
+      const reason = event.reason;
+      const msg = reason ? (reason.message || reason) : 'Unknown promise rejection';
+      const stack = (reason && reason.stack) ? reason.stack : null;
+      const str = (msg ? msg.toString() : '') + (stack ? stack.toString() : '');
+      if (str.includes("Pointer lock") || str.includes("pointer lock") || str.includes("peer-unavailable") || str.includes("Could not connect to peer") || str.includes("PeerJS")) {
+        return; // Ignore harmless browser timing & network rejections
+      }
+      showVisualError('PROMISE REJECTION', msg, stack);
+    });
+
+    const _origConsoleError = console.error;
+    console.error = function() {
+      _origConsoleError.apply(console, arguments);
+      const args = Array.from(arguments).map(arg => typeof arg === 'object' ? JSON.stringify(arg) : arg).join(' ');
+      
+      // Filter out expected PeerJS network & connection notices (invalid room code, offline host)
+      if (args.includes('peer-unavailable') || args.includes('Could not connect to peer') || args.includes('PeerJS') || args.includes('Peer error')) {
+        return;
+      }
+      if (args.includes('Pointer lock') || args.includes('pointer lock')) {
+        return;
+      }
+
+      showVisualError('CONSOLE ERROR', args);
+    };
+
+    const _origConsoleWarn = console.warn;
+    console.warn = function() {
+      _origConsoleWarn.apply(console, arguments);
+      const args = Array.from(arguments).map(arg => typeof arg === 'object' ? JSON.stringify(arg) : arg).join(' ');
+      
+      // Strict filters to ignore harmless loader, skinning, weights, and object shadow warnings
+      if (args.includes('SkinnedMesh') || args.includes('skinning') || args.includes('FBXLoader') || args.includes('weights') || args.includes('WebGLShadowMap')) {
+        return;
+      }
+      
+      if (args.includes('WebGL') || args.includes('compile error') || args.includes('shader') || args.includes('compiler')) {
+        showVisualError('CONSOLE WARN', args);
+      }
+    };
+  </script>
+</head>
+<body>
+
+  <!-- Spooky Loading Screen Overlay -->
+  <div id="loading-screen" class="hidden">
+    <div class="loading-logo mb-4">MAZE OF FEAR</div>
+    <div class="loading-bar-bg">
+      <div id="loading-bar" class="loading-bar-fill"></div>
+    </div>
+    <div id="loading-text" class="loading-text">Karanlık yükleniyor... %0</div>
+  </div>
+
+  <div id="app">
+
+    <!-- 1. MAIN MENU SCREEN -->
+    <div id="screen-menu" class="screen">
+      <!-- Atmospheric Labyrinth Background with vignette & dynamic flashlight -->
+      <div class="menu-bg-container">
+        <div class="menu-bg-image"></div>
+        <div class="menu-bg-overlay"></div>
+        <div class="menu-bg-flashlight" id="menu-flashlight"></div>
+        <div class="menu-bg-dust" id="menu-dust"></div>
+      </div>
+
+      <!-- Top Right Question Mark Help Button -->
+      <button id="btn-help-top" title="Nasıl Oynanır" data-tr-title="Nasıl Oynanır" data-en-title="How to Play" style="position: absolute; top: 20px; right: 20px; z-index: 100; width: 44px; height: 44px; border-radius: 50%; background: rgba(15, 23, 42, 0.85); border: 1.5px solid rgba(245, 158, 11, 0.6); color: #fbbf24; font-size: 1.3rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(0,0,0,0.8), 0 0 8px rgba(245,158,11,0.3); transition: all 0.2s ease;">
+        ❓
+      </button>
+
+      <div class="logo-container">
+        <h1 class="game-logo" data-t="title">Maze of Fear</h1>
+        <p class="game-subtitle" data-t="subtitle">A Procedural Adventure of Risk & Decisions</p>
+      </div>
+
+      <div class="menu-buttons" style="width: 100%; max-width: 300px; display: flex; flex-direction: column; gap: 14px; margin: 0 auto;">
+        <button class="btn btn-primary glow-box" id="btn-play" style="font-size: 1.2rem; padding: 14px 20px;" data-t="play">🎮 OYNA</button>
+        <button id="btn-character-select" class="btn" style="background: linear-gradient(135deg, #6d28d9, #4c1d95); border: 1px solid rgba(167,139,250,0.5);" data-tr="🎭 Karakter Seçimi (Skin)" data-en="🎭 Character Selection (Skin)" data-t="characterSelect">🎭 Karakter Seçimi (Skin)</button>
+        <button class="btn" id="btn-achievements" data-t="achievements">🏆 Başarımlar</button>
+        <button class="btn" id="btn-settings" data-t="settings">⚙️ Ayarlar</button>
+      </div>
+    </div>
+
+    <!-- 1B. CO-OP LOBBY SCREEN -->
+    <div id="screen-coop" class="screen hidden" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box;">
+      <h2 class="glow-text text-violet text-3xl mb-8" data-t="coopTitle" style="margin-top: 0; text-shadow: 0 0 10px var(--violet);">Co-op Lobby</h2>
+      
+      <div class="settings-grid" style="width: 100%; max-width: 600px; display: flex; flex-direction: column; gap: 20px;">
+        
+        <!-- CARD 1: Host Room -->
+        <div class="settings-card" id="coop-host-panel" style="width: 100%;">
+          <div class="settings-card-title">🔑 <span data-t="hostRoom">Oda Oluştur</span></div>
+          
+          <!-- Difficulty Selection -->
+          <div class="settings-group" style="margin-bottom: 15px;">
+            <div class="settings-label" data-t="difficulty" style="margin-bottom: 8px;">Zorluk Derecesi</div>
+            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px;">
+              <button class="btn btn-toggle" id="btn-coop-diff-peaceful" data-t="diffPeaceful" style="padding: 6px 2px; font-size: 0.72rem;">☮️ Barışçıl</button>
+              <button class="btn btn-toggle active" id="btn-coop-diff-easy" data-t="diffEasy" style="padding: 6px 2px; font-size: 0.72rem;">🟢 Kolay</button>
+              <button class="btn btn-toggle" id="btn-coop-diff-medium" data-t="diffMedium" style="padding: 6px 2px; font-size: 0.72rem;">🟡 Orta</button>
+              <button class="btn btn-toggle" id="btn-coop-diff-hard" data-t="diffHard" style="padding: 6px 2px; font-size: 0.72rem;">🔴 Zor</button>
+              <button class="btn btn-toggle" id="btn-coop-diff-nightmare" data-t="diffNightmare" style="padding: 6px 2px; font-size: 0.72rem; --nightmare-glow: 0;">💀 Kabus</button>
+            </div>
+          </div>
+
+          <!-- Map Size Selection -->
+          <div class="settings-group" style="margin-bottom: 15px;">
+            <div class="settings-label" data-t="coopMapSize" style="margin-bottom: 8px;">Harita Boyutu</div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+              <button class="btn btn-toggle active" id="btn-coop-map-small" data-t="mapSmall" style="padding: 8px 4px; font-size: 0.8rem;">🏚️ Küçük</button>
+              <button class="btn btn-toggle" id="btn-coop-map-medium" data-t="mapMedium" style="padding: 8px 4px; font-size: 0.8rem;">🏰 Orta</button>
+              <button class="btn btn-toggle" id="btn-coop-map-large" data-t="mapLarge" style="padding: 8px 4px; font-size: 0.8rem;">🏯 Büyük</button>
+            </div>
+            <div style="margin-top: 6px; font-size: 0.7rem; color: var(--gray); text-align: center;" id="coop-map-desc" data-t="mapSmallDesc">1 Katlı Labirent</div>
+          </div>
+
+          <!-- Voice Chat Selection -->
+          <div class="settings-group" style="margin-bottom: 15px;">
+            <div class="settings-label" data-t="voiceChatLabel" style="margin-bottom: 8px;">Sesli Sohbet</div>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;">
+              <button class="btn btn-toggle active" id="btn-coop-voice-on" data-t="voiceOn" style="padding: 8px 4px; font-size: 0.8rem;">🎤 Açık</button>
+              <button class="btn btn-toggle" id="btn-coop-voice-off" data-t="voiceOff" style="padding: 8px 4px; font-size: 0.8rem;">🔕 Kapalı</button>
+            </div>
+          </div>
+
+          <!-- Host Button & Room Code -->
+          <div class="settings-group" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 0;">
+            <button class="btn btn-primary w-full glow-box" id="btn-coop-host" data-t="btnHost">Yeni Oda Kur</button>
+            <div id="coop-host-details" class="hidden" style="margin-top: 10px; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; border: 1px solid var(--border-light); text-align: center;">
+              <p style="margin: 0 0 6px 0; font-size: 0.8rem; color: var(--gray);" data-t="roomCodeLabel">Oda Kodunuz:</p>
+              <div id="coop-room-code" class="glow-text text-cyan" style="font-size: 1.8rem; font-weight: bold; letter-spacing: 4px; margin-bottom: 10px; font-family: monospace;">------</div>
+              <button class="btn btn-toggle w-full" id="btn-coop-copy-link" data-t="btnCopyLink">Davet Linkini Kopyala</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 2: Join Room -->
+        <div class="settings-card" id="coop-join-panel" style="width: 100%;">
+          <div class="settings-card-title">🔌 <span data-t="joinRoom">Odaya Katıl</span></div>
+          <div class="settings-group" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 0;">
+            <div style="display: flex; gap: 8px; width: 100%;">
+              <input type="text" id="coop-join-input" placeholder="Enter Room Code" data-t-placeholder="roomCodePlaceholder" data-tr-placeholder="Oda Kodu" data-en-placeholder="Enter Room Code" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-light); color: white; font-weight: bold; text-align: center; text-transform: uppercase; letter-spacing: 2px; outline: none; border-color: var(--border-violet);">
+              <button class="btn btn-success" id="btn-coop-join" style="padding: 10px 20px; font-weight: bold;" data-t="btnJoin">Katıl</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Connection Status Indicator -->
+        <div id="coop-status" style="text-align: center; font-size: 0.9rem; color: #fbbf24; min-height: 20px; font-weight: bold; text-shadow: 0 1px 2px rgba(0,0,0,0.85);"></div>
+        
+      </div>
+
+      <button class="btn btn-danger btn-back" id="btn-coop-back" data-t="back" style="width: 100%; max-width: 200px; padding: 12px; margin-top: 20px;">Back</button>
+    </div>
+
+    <!-- 2. SETTINGS SCREEN -->
+    <div id="screen-settings" class="screen hidden" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box;">
+      <h2 class="glow-text text-violet text-3xl mb-8" data-t="settings" style="margin-top: 0;">Settings</h2>
+
+      <!-- Settings Cards Grid -->
+      <div class="settings-grid">
+        
+        <!-- CARD 1: Game & Language Settings -->
+        <div class="settings-card">
+          <div class="settings-card-title">🌐 <span data-t="language">Language</span></div>
+          <div class="settings-group">
+            <div class="settings-label" data-t="language">Dil Seçeneği</div>
+            <div class="btn-group">
+              <button class="btn btn-toggle active" id="btn-lang-tr">Türkçe</button>
+              <button class="btn btn-toggle" id="btn-lang-en">English</button>
+            </div>
+          </div>
+          <div class="settings-group" style="margin-bottom: 0;">
+            <div class="settings-label" data-t="difficulty">Difficulty</div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <button class="btn btn-toggle w-full" id="btn-diff-peaceful" data-t="diffPeaceful">☮️ Barışçıl</button>
+              <button class="btn btn-toggle w-full active" id="btn-diff-easy" data-t="diffEasy">🟢 Kolay</button>
+              <button class="btn btn-toggle w-full" id="btn-diff-medium" data-t="diffMedium">🟡 Orta</button>
+              <button class="btn btn-toggle w-full" id="btn-diff-hard" data-t="diffHard">🔴 Zor</button>
+              <button class="btn btn-toggle w-full" id="btn-diff-nightmare" data-t="diffNightmare">💀 Kabus</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 2: Sound Settings (Creepy volume control slider) -->
+        <div class="settings-card">
+          <div class="settings-card-title">🔊 <span data-t="soundTitle">Ses Ayarları</span></div>
+          <div class="settings-group">
+            <div class="settings-label" data-t="sound">Ses Efektleri</div>
+            <button class="btn w-full" id="btn-sound">AÇIK / ON</button>
+          </div>
+          <div class="settings-group">
+            <div class="settings-label" data-t="soundVolume">Ses Seviyesi</div>
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+              <input type="range" id="settings-volume-slider" min="0" max="100" value="100" style="flex: 1; accent-color: var(--violet); cursor: pointer; height: 6px; border-radius: 3px;">
+              <span id="settings-volume-val" style="font-size: 0.85rem; color: var(--cyan); font-weight: bold; width: 40px; text-align: right;">100%</span>
+            </div>
+          </div>
+          <div class="settings-group">
+            <div class="settings-label" data-t="vibration">Titreşim Desteği</div>
+            <button class="btn w-full btn-toggle active" id="btn-settings-vibration">Titreşim: AÇIK / ON</button>
+          </div>
+          <div class="settings-group" style="margin-bottom: 0;">
+            <div class="settings-label" data-t="shadows">Performans (Gölgeler)</div>
+            <button class="btn w-full btn-toggle active" id="btn-settings-shadows">Gölgeler: AÇIK / ON</button>
+          </div>
+          <div id="creepy-sound-warning" class="creepy-warning hidden" data-t="creepyWarning">
+            Sesi Kapatarak Kaçabileceğini mi sandın?
+          </div>
+        </div>
+
+        <!-- CARD 3: Interface & Control Settings -->
+        <div class="settings-card">
+          <div class="settings-card-title">🎮 <span data-t="controlsTitle">Kontroller</span></div>
+          <div class="settings-group">
+            <div class="settings-label" data-t="analogMode">Analog Tarzı</div>
+            <div class="btn-group">
+              <button class="btn btn-toggle active" id="btn-analog-floating" data-t="analogFloating">Gizli/Yüzen</button>
+              <button class="btn btn-toggle" id="btn-analog-fixed" data-t="analogFixed">Sabit</button>
+            </div>
+          </div>
+          <div class="settings-group" style="margin-bottom: 0;">
+            <div class="settings-label" data-t="hudCustom">Arayüz & Rehber</div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <button class="btn w-full btn-success glow-box" id="btn-edit-hud" data-t="btnEditHud" style="background: linear-gradient(135deg, #10b981, #047857); border: none; font-weight: bold; letter-spacing: 0.5px;">Buton Düzenini Özelleştir</button>
+              <button class="btn w-full btn-primary" id="btn-replay-tutorial" data-t="replayTutorial" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9); border: none; font-weight: bold;">📖 Başlangıç Rehberini İzle</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 4: Sound Test Panel (Live Audio Preview) -->
+        <div class="settings-card" style="grid-column: 1 / -1;">
+          <div class="settings-card-title">🔊 <span data-t="soundTestTitle">Ses Test Paneli (Efektleri Test Et)</span></div>
+          <div class="sound-test-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 8px; margin-top: 8px;">
+            <button class="btn btn-secondary btn-test-sfx" data-sound="wood_chop" data-t="sfxWoodChop" style="font-size: 0.75rem; padding: 8px 6px;">🪓 Balta Kırma</button>
+            <button class="btn btn-secondary btn-test-sfx" data-sound="shears_cut" data-t="sfxShearsCut" style="font-size: 0.75rem; padding: 8px 6px;">✂️ Bahçe Makası</button>
+            <button class="btn btn-secondary btn-test-sfx" data-sound="water_fill" data-t="sfxWaterFill" style="font-size: 0.75rem; padding: 8px 6px;">🪣 Su Doldurma</button>
+            <button class="btn btn-secondary btn-test-sfx" data-sound="shadow_spawn" data-t="sfxShadowSpawn" style="font-size: 0.75rem; padding: 8px 6px;">👻 Canavar Belirme</button>
+            <button class="btn btn-secondary btn-test-sfx" data-sound="shadow_groan" data-t="sfxShadowGroan" style="font-size: 0.75rem; padding: 8px 6px;">👹 Canavar Hırlaması</button>
+            <button class="btn btn-secondary btn-test-sfx" data-sound="shadow_burn" data-t="sfxShadowBurn" style="font-size: 0.75rem; padding: 8px 6px;">🔥 Canavar Yanma</button>
+            <button class="btn btn-secondary btn-test-sfx" data-sound="scream" data-t="sfxScream" style="font-size: 0.75rem; padding: 8px 6px;">😱 Çığlık / Jumpscare</button>
+            <button class="btn btn-secondary btn-test-sfx" data-sound="door" data-t="sfxDoor" style="font-size: 0.75rem; padding: 8px 6px;">🚪 Metal Kapı Açma</button>
+            <button class="btn btn-secondary btn-test-sfx" data-sound="unlock" data-t="sfxUnlock" style="font-size: 0.75rem; padding: 8px 6px;">🗝️ Kilit Açma</button>
+            <button class="btn btn-secondary btn-test-sfx" data-sound="flashlight" data-t="sfxFlashlight" style="font-size: 0.75rem; padding: 8px 6px;">⚡ Fener Aç/Kapat</button>
+          </div>
+        </div>
+
+      </div>
+
+      <button class="btn btn-danger btn-back" data-t="back" style="width: 100%; max-width: 200px; padding: 12px; margin-top: 10px;">Back</button>
+    </div>
+
+    <!-- 3. HOW TO PLAY SCREEN -->
+    <div id="screen-howtoplay" class="screen hidden" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box;">
+      <h2 class="glow-text text-cyan text-3xl mb-8" data-t="howToPlay" style="margin-top: 0;">How to Play</h2>
+      
+      <!-- Scrollable Cards Container -->
+      <div class="settings-grid" style="overflow-y: auto; max-height: 70vh; padding: 5px; width: 100%;">
+        
+        <!-- CARD 1: Controls & Gameplay -->
+        <div class="settings-card">
+          <div class="settings-card-title">🎮 <span data-t="howToPlayTitle1">Kontroller & Oynanış</span></div>
+          <div class="settings-group" style="margin-bottom: 0;">
+            <p style="margin: 0; font-size: 0.82rem; line-height: 1.6; color: #cbd5e1;" data-t="controlsHelp">
+              Kontroller: Klavyede WASD/Yön Tuşları veya Ekran D-Padi. Etkileşime geçmek için sandıklara, kapılara ve NPC'lere doğru yürüyün.
+            </p>
+          </div>
+        </div>
+
+        <!-- CARD 2: Obstacles & Key Items -->
+        <div class="settings-card">
+          <div class="settings-card-title">🔑 <span data-t="howToPlayTitle2">Engeller & Çözümler</span></div>
+          <div class="settings-group" style="margin-bottom: 0;">
+            <ul class="guide-list" style="margin: 0; padding: 0 0 0 4px; list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 0.82rem; color: #cbd5e1;">
+              <li data-t="obstacleGate">🚪 Demir Kapı: Anahtar (Key) gerektirir.</li>
+              <li data-t="obstacleIvy">🌿 Sarmaşıklar: Bahçe Makası (Garden Shears) gerektirir.</li>
+              <li data-t="obstacleBarricade">🪵 Ahşap Barikat: Balta (Axe) gerektirir.</li>
+              <li data-t="obstacleChasm">🕳️ Uçurum: Halat (Rope) gerektirir.</li>
+              <li data-t="obstacleCodeLock">🔢 Şifreli Geçit: Labirentte bulacağınız 4 haneli şifreyi girin.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- CARD 3: Chests & Mimics -->
+        <div class="settings-card">
+          <div class="settings-card-title">📦 <span data-t="howToPlayTitle3">Sandıklar & Mimicler</span></div>
+          <div class="settings-group" style="margin-bottom: 0;">
+            <p data-t="howToPlayChestsHelp" style="margin: 0; font-size: 0.82rem; line-height: 1.6; color: #cbd5e1;">
+              Her sandık risk taşır. Değerli altınlar, fener pili veya ekipman çıkabileceği gibi; tuzaklar veya sandık canavarları (Mimic) da çıkabilir.
+            </p>
+          </div>
+        </div>
+
+        <!-- CARD 4: Sponsor Ads -->
+        <div class="settings-card">
+          <div class="settings-card-title">📺 <span data-t="howToPlayTitle4">Ödüllü Reklamlar</span></div>
+          <div class="settings-group" style="margin-bottom: 0;">
+            <p data-t="howToPlayAdsIntro" style="margin: 0 0 8px 0; font-size: 0.82rem; line-height: 1.5; color: #cbd5e1;">
+              Oyun tamamen ücretsizdir! İsteğe bağlı olarak ödüllü reklam izleyerek:
+            </p>
+            <ul style="margin: 0; padding: 0 0 0 12px; font-size: 0.80rem; color: #cbd5e1; display: flex; flex-direction: column; gap: 4px;">
+              <li data-t="howToPlayAdsItem1">Tuzak hasarını iptal edebilirsiniz (Undo).</li>
+              <li data-t="howToPlayAdsItem2">Öldüğünüzde tam sağlıkla canlanabilirsiniz (Revive).</li>
+              <li data-t="howToPlayAdsItem3">Pusula olmasa bile çıkış yönünü görebilirsiniz.</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+
+      <button class="btn btn-primary btn-back" data-t="back" style="width: 100%; max-width: 200px; padding: 12px; margin-top: 15px;">Back</button>
+    </div>
+
+    <!-- 3B. ACHIEVEMENTS SCREEN -->
+    <div id="screen-achievements" class="screen hidden" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box;">
+      <h2 class="glow-text text-violet text-3xl mb-8" data-t="achievements" style="margin-top: 0;">Achievements</h2>
+      <div id="achievements-list" class="settings-grid" style="overflow-y: auto; max-height: 60vh; padding: 5px; width: 100%; box-sizing: border-box;">
+        <!-- Populated dynamically in UI.js -->
+      </div>
+      <button class="btn btn-primary btn-back" data-t="back" style="width: 100%; max-width: 200px; padding: 12px; margin-top: 15px;">Back</button>
+    </div>
+
+    <!-- 5. IN-GAME PAUSE SCREEN (Beautiful blur overlay that prevents canvas display:none WebGL context loss) -->
+    <div id="screen-pause" class="screen hidden" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1500; background: rgba(8, 10, 15, 0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box;">
+      <h2 class="glow-text text-cyan text-3xl mb-8" data-t="gamePaused" style="margin-top: 0;">Oyun Durduruldu</h2>
+      
+      <div class="menu-buttons" style="width: 100%; max-width: 300px; display: flex; flex-direction: column; gap: 15px; margin: 0 auto;">
+        <button class="btn btn-primary glow-box" id="btn-pause-resume" data-t="resume" style="padding: 14px;">Devam Et</button>
+        <button class="btn" id="btn-pause-restart" data-t="restart" style="padding: 14px; background: linear-gradient(135deg, #d97706, #b45309); border: none;">Yeniden Başla</button>
+        <button class="btn btn-danger" id="btn-pause-mainmenu" data-t="exitToMenu" style="padding: 14px;">Ana Menüye Dön</button>
+      </div>
+    </div>
+
+    <!-- 4. ACTIVE GAMEPLAY SCREEN -->
+    <div id="screen-game" class="screen hidden">
+      
+      <!-- Sleek Floating HUD Left Pill -->
+      <div id="hud-left-pill" class="hud-pill glass">
+        <span style="display: flex; flex-direction: column; gap: 2px;">
+          <span style="display: flex; align-items: center; gap: 4px;">❤️ <span id="hud-health-val">100%</span></span>
+          <span class="progress-bar" style="width: 80px; height: 6px; border: none; border-radius: 3px; overflow: hidden; margin: 0; background: rgba(255,255,255,0.15); box-shadow: inset 0 1px 2px rgba(0,0,0,0.45);">
+            <span class="progress-bar-fill bg-green" id="hud-health-bar" style="width: 100%;"></span>
+          </span>
+        </span>
+        <span class="hud-separator">|</span>
+        <span style="display: flex; flex-direction: column; gap: 2px;">
+          <span style="display: flex; align-items: center; gap: 4px;">⚡ <span id="hud-stamina-val">100%</span></span>
+          <span class="progress-bar" style="width: 80px; height: 6px; border: none; border-radius: 3px; overflow: hidden; margin: 0; background: rgba(255,255,255,0.15); box-shadow: inset 0 1px 2px rgba(0,0,0,0.45);">
+            <span class="progress-bar-fill bg-gold" id="hud-stamina-bar" style="width: 100%;"></span>
+          </span>
+        </span>
+        <span class="hud-separator">|</span>
+        <span>💰 <span id="hud-gold-val">0</span></span>
+        <span class="hud-separator">|</span>
+        <span>🪜 <span id="hud-floor-val">1</span>/<span id="hud-max-floor-val">1</span></span>
+        <span class="hud-separator">|</span>
+        <span style="display: flex; align-items: center;" class="battery-wrapper">
+          <div class="battery-shell" style="width: 38px; height: 18px; border: 1.5px solid var(--gold); border-radius: 4px; padding: 1px; display: inline-flex; align-items: center; position: relative; background: rgba(0,0,0,0.35);">
+            <div id="hud-fuel-bar" class="battery-fill bg-gold" style="height: 100%; width: 100%; border-radius: 1.5px; transition: width 0.1s linear;"></div>
+            <span id="hud-fuel-val" style="position: absolute; width: 100%; height: 100%; left: 0; top: 0; display: flex; align-items: center; justify-content: center; font-size: 0.55rem; font-weight: 900; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.85); pointer-events: none;">100%</span>
+            <div style="position: absolute; right: -3.5px; top: 4.5px; width: 2px; height: 6px; background: var(--gold); border-radius: 0 1px 1px 0;"></div>
+          </div>
+        </span>
+      </div>
+
+      <!-- Crosshair for FPS pointer lock -->
+      <div id="fps-crosshair" class="fps-crosshair"></div>
+
+      <!-- Sleek Floating HUD Right Pill -->
+      <div id="hud-right-pill" class="hud-pill glass" style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 0.8rem; font-weight: bold; color: var(--gray); display: flex; align-items: center; gap: 4px;">
+          🚪 Lvl: <span id="hud-level-val" class="text-cyan font-bold">1</span>
+        </span>
+        <span class="hud-separator">|</span>
+        <button id="btn-ingame-settings" style="background: none; border: none; font-size: 0.95rem; cursor: pointer; padding: 0 4px; display: flex; align-items: center; justify-content: center; z-index: 200; outline: none;" title="Ayarlar">⚙️</button>
+      </div>
+
+      <!-- Quests Panel (Floats below Left Pill) -->
+      <div class="quests-panel glass" id="hud-quests-panel">
+        <ul id="hud-quests-list">
+          <!-- Active quests appended here -->
+        </ul>
+      </div>
+
+      <!-- Canvas Playfield -->
+      <div class="canvas-container">
+        <canvas id="game-canvas"></canvas>
+      </div>
+
+      <!-- Floating HUD Left Cluster (Joystick + Map/Bag buttons) -->
+      <div class="floating-left-controls">
+        <div class="left-btn-row">
+          <button id="btn-open-inventory" class="circle-btn btn-primary" title="Çanta" data-tr-title="Çanta" data-en-title="Backpack">🎒</button>
+          <button id="btn-open-map" class="circle-btn btn-secondary" title="Harita">🗺️</button>
+          <button id="btn-mic-toggle" class="circle-btn btn-secondary hidden" title="Mikrofon">🎤</button>
+        </div>
+        <audio id="coop-remote-audio" autoplay style="display: none;"></audio>
+        <div class="joystick-container" id="joystick-zone">
+          <div class="joystick-base" id="joystick-base">
+            <div class="joystick-handle" id="joystick-handle"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Floating Translucent 3D Compass (Bottom-Center) -->
+      <div class="floating-compass" id="hud-compass-panel">
+        <div class="compass-ring"></div>
+        <div class="compass-heading-tick"></div>
+        <div class="compass-needle-wrapper">
+          <div id="compass-needle"></div>
+        </div>
+        <div class="compass-pivot"></div>
+      </div>
+
+      <!-- Floating HUD Right Cluster (Action buttons) -->
+      <div class="floating-right-controls">
+        <!-- Action buttons cluster -->
+        <div class="right-action-cluster">
+          <!-- Flashlight Toggle (Yellow/Gold glow) -->
+          <button id="btn-toggle-lantern" class="circle-btn action-btn-lantern" title="Fener">🔦</button>
+          <!-- Run / Sprint (Orange/Red glow) -->
+          <button id="btn-run" class="circle-btn action-btn-run" title="Koş" data-tr-title="Koş" data-en-title="Run">🏃</button>
+          <!-- Interact (Green glow, larger primary button) -->
+          <button id="btn-interact" class="circle-btn action-btn-interact" title="Etkileşim" data-tr-title="Etkileşim" data-en-title="Interact">🖐️</button>
+        </div>
+      </div>
+
+      <!-- Introductory Tip Overlay -->
+      <div id="intro-tip-overlay" class="intro-tip-overlay">
+        <div class="intro-tip-content">
+          <p class="intro-tip-text">Fenerinizi açın, burası çok karanlık...</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Toast Container for fluid chest loot / items notifications -->
+    <div id="toast-container"></div>
+
+    <!-- --- OVERLAY MODALS --- -->
+
+    <!-- Dialogue Modal -->
+    <div id="modal-dialog" class="overlay hidden">
+      <!-- Generated in UI.js -->
+    </div>
+
+    <!-- Chest Modal -->
+    <div id="modal-chest" class="overlay hidden">
+      <!-- Generated in UI.js -->
+    </div>
+
+    <!-- Keypad Lock Modal -->
+    <div id="modal-keypad" class="overlay hidden">
+      <!-- Generated in UI.js -->
+    </div>
+
+    <!-- Inventory Modal -->
+    <div id="modal-inventory" class="overlay hidden">
+      <div class="modal-content glass" style="max-width: 340px; width: 90%; padding: 18px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); border: 1px solid var(--border-violet);">
+        <h3 class="modal-title text-violet glow-text" style="margin-bottom: 12px; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px;">
+          <span style="display: flex; align-items: center; gap: 6px;">🎒 <span data-t="inventory">Inventory</span></span>
+          <button id="btn-close-inventory" style="background: none; border: none; color: var(--gray); font-size: 1.5rem; cursor: pointer; line-height: 1;">&times;</button>
+        </h3>
+        
+        <!-- Grid list of slots -->
+        <div id="inv-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px;"></div>
+        
+        <!-- Detail Info & Actions -->
+        <div id="inv-detail-panel" class="hidden" style="background: rgba(0, 0, 0, 0.25); border-radius: 10px; padding: 10px; border: 1px solid var(--border-light);">
+          <h4 id="inv-item-title" class="text-cyan font-bold" style="margin-bottom: 2px; font-size: 0.85rem;"></h4>
+          <p id="inv-item-desc" style="font-size: 0.72rem; color: var(--gray); margin-bottom: 8px; line-height: 1.3;"></p>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; gap: 6px;">
+              <button id="btn-inv-use" class="btn-modal btn-primary" style="flex: 1; padding: 6px 0; font-size: 0.75rem; border-radius: 6px; font-weight: bold;">Kullan</button>
+              <button id="btn-inv-equip" class="btn-modal btn-warning" style="flex: 1; padding: 6px 0; font-size: 0.75rem; border-radius: 6px; font-weight: bold;" data-tr="Kuşan" data-en="Equip">Kuşan</button>
+            </div>
+            <button id="btn-inv-send" class="btn-modal btn-success hidden" style="width: 100%; padding: 6px 0; font-size: 0.75rem; border-radius: 6px; font-weight: bold; background: linear-gradient(135deg, #10b981, #059669); border: none;" data-tr="Arkadaşına Gönder" data-en="Send to Friend">Arkadaşına Gönder</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mock Ad Modal -->
+    <div id="modal-ad" class="overlay hidden">
+      <!-- Generated in UI.js -->
+    </div>
+
+    <!-- Game Over / Victory Modal -->
+    <div id="modal-end" class="overlay hidden">
+      <!-- Generated in UI.js -->
+    </div>
+
+    <!-- Map Modal -->
+    <div id="modal-map" class="overlay hidden" style="background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 100;">
+      <div class="modal-content glass" style="max-width: 500px; width: 95%; padding: 10px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); border: 1px solid var(--border-light);">
+        <div id="map-instructions" style="font-size: 0.95rem; font-weight: bold; color: #fbbf24; text-align: center; width: 100%; padding: 4px; display: none;"></div>
+        <canvas id="map-canvas" width="480" height="480" style="width: 100%; max-width: min(440px, 66vh); aspect-ratio: 1; image-rendering: pixelated; display: block; border-radius: 12px; border: 4px double #854d0e; box-shadow: 0 8px 30px rgba(0,0,0,0.6);"></canvas>
+        
+        <div style="font-size: 0.72rem; color: var(--gray); text-align: center; line-height: 1.4; display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;">
+          <span><span style="color: #f43f5e; font-weight: bold;">●</span> Konumunuz</span>
+          <span><span style="color: #ea580c; font-weight: bold;">❌</span> Açılmış Sandık</span>
+          <span><span style="color: #fbbf24; font-weight: bold;">📦</span> Kapalı Sandık</span>
+          <span><span style="color: #ef4444; font-weight: bold;">■■■</span> İzlenen Patika</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- HUD Layout Editor Overlay -->
+  <div id="hud-editor-overlay" class="overlay hidden" style="z-index: 1000; background: rgba(0,0,0,0.65); display: flex; flex-direction: column; justify-content: space-between; padding: 20px; box-sizing: border-box; pointer-events: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;">
+    <!-- Top Control Panel (Interactable) -->
+    <div class="glass" style="width: 100%; max-width: 600px; margin: 0 auto; padding: 12px; border-radius: 12px; display: flex; flex-direction: column; gap: 8px; pointer-events: auto; align-items: center; border: 1px solid var(--border-violet);">
+      <h4 style="margin: 0; color: var(--violet); font-weight: bold; font-size: 0.95rem; text-shadow: 0 0 8px rgba(139, 92, 246, 0.4);" data-t="hudEditorTitle">Buton Düzenleme Modu / HUD Editor</h4>
+      <p style="margin: 0; font-size: 0.72rem; color: var(--gray); text-align: center;" data-t="hudEditorHelp">Taşımak için butonları sürükleyin. Seçili butonu boyutlandırmak için aşağıdaki kaydırıcıyı kullanın.</p>
+      
+      <!-- Size Slider -->
+      <div style="display: flex; align-items: center; gap: 8px; width: 100%; max-width: 300px; margin-top: 4px;">
+        <span style="font-size: 0.7rem; color: var(--gray);" data-t="hudEditorSize">Boyut:</span>
+        <input type="range" id="hud-editor-size-slider" min="50" max="150" value="100" style="flex: 1; accent-color: var(--violet);" disabled>
+        <span id="hud-editor-size-val" style="font-size: 0.7rem; color: var(--cyan); font-weight: bold; width: 35px;">100%</span>
+      </div>
+    </div>
+    
+    <!-- Bottom Action Buttons (Interactable) -->
+    <div style="width: 100%; max-width: 400px; margin: 0 auto; display: flex; gap: 12px; pointer-events: auto; padding-bottom: calc(10px + env(safe-area-inset-bottom));">
+      <button id="btn-hud-editor-reset" class="btn btn-danger" style="flex: 1;" data-t="reset">Sıfırla</button>
+      <button id="btn-hud-editor-save" class="btn btn-success" style="flex: 1;" data-t="save">Kaydet</button>
+    </div>
+  </div>
+
+
+
+  <!-- Interactive Onboarding Tutorial Modal -->
+  <div id="modal-tutorial" class="overlay hidden" style="z-index: 10000; background: rgba(4, 2, 8, 0.92); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center;">
+    <div class="modal-content glass" style="max-width: 440px; width: 92%; padding: 22px; border-radius: 20px; box-shadow: 0 15px 50px rgba(0,0,0,0.85); border: 1.5px solid var(--border-violet); position: relative; display: flex; flex-direction: column; gap: 14px;">
+      
+      <!-- Header & Step Counter -->
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span id="tut-step-counter" style="font-size: 0.8rem; font-weight: 800; color: var(--cyan); letter-spacing: 1px; text-transform: uppercase;">REHBER: ADIM 1 / 5</span>
+        <button id="btn-tut-skip" style="background: rgba(255,255,255,0.08); border: none; color: var(--gray); font-size: 0.8rem; font-weight: bold; cursor: pointer; padding: 4px 10px; border-radius: 6px;">Atla ✕</button>
+      </div>
+
+      <!-- Slide Content Box -->
+      <div id="tut-slide-box" style="background: rgba(0, 0, 0, 0.4); border-radius: 14px; padding: 20px; border: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; min-height: 180px; justify-content: center;">
+        <div id="tut-icon" style="font-size: 3rem; filter: drop-shadow(0 4px 10px rgba(139,92,246,0.4)); margin-bottom: 2px;">🔦</div>
+        <h3 id="tut-title" class="glow-text text-violet" style="font-size: 1.15rem; margin: 0;">Fener & Gölge Canavarı</h3>
+        <p id="tut-desc" style="font-size: 0.84rem; color: #cbd5e1; line-height: 1.55; margin: 0;"></p>
+      </div>
+
+      <!-- Dots Indicator -->
+      <div id="tut-dots" style="display: flex; justify-content: center; gap: 8px; margin: 2px 0;"></div>
+
+      <!-- Navigation Buttons -->
+      <div style="display: flex; gap: 10px;">
+        <button id="btn-tut-prev" class="btn btn-secondary" style="flex: 1; padding: 10px 0; font-size: 0.85rem; font-weight: bold; display: none;">◀ Geri</button>
+        <button id="btn-tut-next" class="btn btn-primary glow-box" style="flex: 2; padding: 10px 0; font-size: 0.9rem; font-weight: bold;">İleri ▶</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Ancient Altar Upgrade Modal -->
+  <div id="modal-altar" class="overlay hidden" style="z-index: 1000;">
+    <div class="modal-content glass text-center" style="max-width: 540px; width: 92%; padding: 24px; background: rgba(10, 15, 26, 0.95); border: 1px solid rgba(251, 191, 36, 0.4); box-shadow: 0 0 30px rgba(0, 0, 0, 0.9);">
+      <div style="font-size: 3.5rem; filter: drop-shadow(0 0 16px rgba(239, 68, 68, 0.6)); margin-bottom: 2px;">💀</div>
+      <h2 class="modal-title text-amber text-2xl font-bold" style="color: #fbbf24; text-shadow: 0 0 10px rgba(251,191,36,0.5);" data-t="altar.title">💀 Kadim Sunak Lütfu</h2>
+      <p class="modal-text text-slate-200 text-sm my-3" style="color: #e2e8f0; font-size: 0.92rem; line-height: 1.5;" data-t="altar.desc">Kutsal ruhlara 60 Altın adayarak yolculuğun için kalıcı bir lütuf kazan.</p>
+      
+      <div class="altar-cost-tag" style="background: rgba(234,179,8,0.2); border: 1px solid rgba(234,179,8,0.6); border-radius: 8px; padding: 6px 14px; display: inline-block; color: #fef08a; font-weight: 800; font-size: 0.95rem; margin-bottom: 14px;">
+        💰 <span data-t="altar.cost">Bedel: 60 Altın</span>
+      </div>
+
+      <!-- Cooldown Warning Banner -->
+      <div id="altar-cooldown-text" class="hidden" style="background: rgba(225, 29, 72, 0.2); border: 1px solid #f43f5e; border-radius: 8px; padding: 8px; color: #fecdd3; font-weight: bold; font-size: 0.88rem; margin-bottom: 14px;">
+        <span data-tr="⏳ Sunak Yeniden Dolum Bekleme Süresi:" data-en="⏳ Altar Cooldown Remaining:">⏳ Sunak Yeniden Dolum Bekleme Süresi:</span> <span id="altar-cooldown-sec" style="color: #fbbf24; font-size: 1rem;">30</span>s
+      </div>
+
+      <!-- Upgrade Options Container -->
+      <div id="altar-options-container" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px;">
+        <!-- Option A1 -->
+        <button id="btn-altar-a1" class="btn-modal w-full text-left p-3.5" style="background: rgba(30, 41, 59, 0.92); border: 1px solid rgba(251, 191, 36, 0.5); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer; transition: all 0.2s ease;">
+          <div style="text-align: left; display: flex; flex-direction: column; align-items: flex-start;">
+            <div class="font-bold text-base" style="color: #fef08a; font-size: 1.02rem; font-weight: 800; text-align: left;" data-t="altar.optionA1Title">🔦 Uzun Menzilli Odak</div>
+            <div class="text-xs" style="color: #ffffff; font-size: 0.85rem; margin-top: 3px; font-weight: 500; text-align: left;" data-t="altar.optionA1Desc">Fener Işığı Menzili ve Canavar Yakma Mesafesi +%40</div>
+          </div>
+          <span class="btn-badge" style="background: #fbbf24; color: #000; font-weight: 900; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; shrink: 0;">60 💰</span>
+        </button>
+
+        <!-- Option A2 -->
+        <button id="btn-altar-a2" class="btn-modal w-full text-left p-3.5" style="background: rgba(30, 41, 59, 0.92); border: 1px solid rgba(251, 191, 36, 0.5); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer; transition: all 0.2s ease;">
+          <div style="text-align: left; display: flex; flex-direction: column; align-items: flex-start;">
+            <div class="font-bold text-base" style="color: #fef08a; font-size: 1.02rem; font-weight: 800; text-align: left;" data-t="altar.optionA2Title">🔋 Güçlendirilmiş Hücre</div>
+            <div class="text-xs" style="color: #ffffff; font-size: 0.85rem; margin-top: 3px; font-weight: 500; text-align: left;" data-t="altar.optionA2Desc">Pil Tüketim Hızı %40 Yavaşlar</div>
+          </div>
+          <span class="btn-badge" style="background: #fbbf24; color: #000; font-weight: 900; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; shrink: 0;">60 💰</span>
+        </button>
+
+        <!-- Option B1 -->
+        <button id="btn-altar-b1" class="btn-modal w-full text-left p-3.5" style="background: rgba(30, 41, 59, 0.92); border: 1px solid rgba(16, 185, 129, 0.5); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer; transition: all 0.2s ease;">
+          <div style="text-align: left; display: flex; flex-direction: column; align-items: flex-start;">
+            <div class="font-bold text-base" style="color: #6ee7b7; font-size: 1.02rem; font-weight: 800; text-align: left;" data-t="altar.optionB1Title">👟 Hızlı Adımlar</div>
+            <div class="text-xs" style="color: #ffffff; font-size: 0.85rem; margin-top: 3px; font-weight: 500; text-align: left;" data-t="altar.optionB1Desc">Temel Yürüme Hızı Kalıcı +%35</div>
+          </div>
+          <span class="btn-badge" style="background: #10b981; color: #000; font-weight: 900; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; shrink: 0;">60 💰</span>
+        </button>
+
+        <!-- Option B2 -->
+        <button id="btn-altar-b2" class="btn-modal w-full text-left p-3.5" style="background: rgba(30, 41, 59, 0.92); border: 1px solid rgba(16, 185, 129, 0.5); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer; transition: all 0.2s ease;">
+          <div style="text-align: left; display: flex; flex-direction: column; align-items: flex-start;">
+            <div class="font-bold text-base" style="color: #6ee7b7; font-size: 1.02rem; font-weight: 800; text-align: left;" data-t="altar.optionB2Title">🫁 Derin Soluk</div>
+            <div class="text-xs" style="color: #ffffff; font-size: 0.85rem; margin-top: 3px; font-weight: 500; text-align: left;" data-t="altar.optionB2Desc">Koşma Stamina Harcaması %60 Yavaşlar</div>
+          </div>
+          <span class="btn-badge" style="background: #10b981; color: #000; font-weight: 900; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; shrink: 0;">60 💰</span>
+        </button>
+      </div>
+      <button id="btn-altar-close" class="btn-modal btn-danger w-full" style="font-weight: bold; padding: 12px;" data-t="close">Kapat</button>
+    </div>
+  </div>
+
+
+
+  <!-- 🎮 Play Mode Selection Modal -->
+  <div id="modal-play-mode" class="overlay hidden" style="z-index: 1000;">
+    <div class="modal-content glass text-center" style="max-width: 600px; width: 92%; padding: 24px; background: rgba(15, 23, 42, 0.96); border: 1px solid rgba(245, 158, 11, 0.4); box-shadow: 0 0 35px rgba(0, 0, 0, 0.9); border-radius: 18px; position: relative;">
+      <button id="btn-play-mode-close" style="position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.1); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; justify-content: center;">✕</button>
+      
+      <h2 class="glow-text text-amber text-2xl font-bold mb-2 uppercase" style="margin-top: 0; color: #fbbf24; text-shadow: 0 0 10px rgba(245, 158, 11, 0.5);" data-tr="Oyun Modunu Seç" data-en="Select Play Mode">Oyun Modunu Seç</h2>
+      <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 20px;" data-tr="Zindana nasıl girmek istiyorsun?" data-en="How do you want to enter the dungeon?">Zindana nasıl girmek istiyorsun?</p>
+      
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; text-align: left;">
+        <!-- Story Mode Card -->
+        <div id="card-mode-story" class="glow-box" style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(245, 158, 11, 0.5); padding: 18px; border-radius: 14px; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, border-color 0.2s;">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <span style="font-size: 2rem;">📖</span>
+              <span id="play-mode-level-badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold;">Seviye 1</span>
+            </div>
+            <h3 style="color: #fef08a; font-size: 1.1rem; font-weight: bold; margin: 0 0 6px 0;" data-tr="Hikaye Modu" data-en="Story Mode">Hikaye Modu</h3>
+            <p style="color: #94a3b8; font-size: 0.75rem; line-height: 1.4; margin-bottom: 16px;" data-tr="Zindanın karanlık koridorlarında tek başına hayatta kal ve kaçış yolunu bul." data-en="Survive alone in the dark corridors of the dungeon and find the way out.">Zindanın karanlık koridorlarında tek başına hayatta kal ve kaçış yolunu bul.</p>
+          </div>
+          <button id="btn-launch-story" class="btn btn-primary" style="width: 100%; padding: 10px; font-weight: bold; font-size: 0.85rem;" data-tr="⚔️ BAŞLA / DEVAM ET" data-en="⚔️ START / CONTINUE">⚔️ BAŞLA / DEVAM ET</button>
+        </div>
+
+        <!-- Co-Op Mode Card -->
+        <div id="card-mode-coop" class="glow-box" style="background: rgba(46, 16, 101, 0.5); border: 1px solid rgba(167, 139, 250, 0.5); padding: 18px; border-radius: 14px; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, border-color 0.2s;">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <span style="font-size: 2rem;">👥</span>
+              <span style="background: rgba(167, 139, 250, 0.2); color: #c4b5fd; border: 1px solid rgba(167, 139, 250, 0.4); padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold;" data-tr="Çok Oyunculu" data-en="Multiplayer">Çok Oyunculu</span>
+            </div>
+            <h3 style="color: #ddd6fe; font-size: 1.1rem; font-weight: bold; margin: 0 0 6px 0;" data-tr="Co-Op Modu" data-en="Co-Op Mode">Co-Op Modu</h3>
+            <p style="color: #94a3b8; font-size: 0.75rem; line-height: 1.4; margin-bottom: 16px;" data-tr="Bir arkadaşınla oda kur veya katılarak karanlıkta omuz omuza mücadele et." data-en="Create or join a room with a friend to fight side-by-side in the dark.">Bir arkadaşınla oda kur veya katılarak karanlıkta omuz omuza mücadele et.</p>
+          </div>
+          <button id="btn-launch-coop" class="btn" style="width: 100%; padding: 10px; font-weight: bold; font-size: 0.85rem; background: linear-gradient(135deg, #8b5cf6, #5b21b6); border: none;" data-tr="🚪 LOBİYE GİR" data-en="🚪 ENTER LOBBY">🚪 LOBİYE GİR</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🎭 Character Skin Selection Modal -->
+  <div id="modal-character" class="overlay hidden" style="z-index: 1000;">
+    <div class="modal-content glass text-center" style="max-width: 540px; width: 92%; padding: 22px; background: rgba(15, 23, 42, 0.96); border: 1px solid rgba(139, 92, 246, 0.4); box-shadow: 0 0 35px rgba(0, 0, 0, 0.9); border-radius: 18px;">
+      <h2 class="modal-title text-violet text-xl font-bold" style="color: #a78bfa; text-shadow: 0 0 10px rgba(167,139,250,0.5); display: flex; align-items: center; justify-content: center; gap: 8px;" data-tr="🎭 Karakter Seçimi" data-en="🎭 Character Selection">🎭 Karakter Seçimi</h2>
+      <p class="modal-text text-slate-300 text-sm my-2" style="color: #cbd5e1; font-size: 0.88rem; line-height: 1.4;" data-tr="Zindanda kullanmak istediğin karakter kostümünü seç." data-en="Select the character skin you want to use in the dungeon.">Zindanda kullanmak istediğin karakter kostümünü seç.</p>
+      
+      <div id="character-skins-list" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 16px 0; max-height: 360px; overflow-y: auto; padding-right: 4px;">
+        <!-- Character Cards injected dynamically by js/ui.js -->
+      </div>
+
+      <button id="btn-character-close" class="btn-modal btn-danger w-full" style="font-weight: bold; padding: 10px; border-radius: 10px; font-size: 0.9rem;" data-t="close">Kapat</button>
+    </div>
+  </div>
+
+  <!-- Landscape Only Orientation Lock Warning -->
+  <div id="orientation-warning" class="orientation-warning">
+    <div class="warning-content">
+      <div class="phone-icon">📱</div>
+      <p data-t="rotateDevice">Lütfen cihazınızı yatay konuma getirin.</p>
+    </div>
+  </div>
+
+  <!-- Jumpscare Overlay -->
+  <div id="modal-jumpscare" class="overlay hidden" style="background: #000; z-index: 999; display: flex; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100%; height: 100%;">
+    <img src="assets/jumpscare.png" style="width: 100%; height: 100%; object-fit: contain; filter: brightness(1.2) contrast(1.3); transform: scale(1.1);" />
+  </div>
+
+  <script type="module" src="js/ui.js?v=182"></script>
+</body>
+</html>

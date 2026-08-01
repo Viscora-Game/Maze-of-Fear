@@ -1,0 +1,3414 @@
+import { Game } from "./game.js?v=182";
+import { MultiplayerManager } from "./multiplayer.js?v=182";
+
+const init = () => {
+  const game = new Game();
+  setupUI(game);
+
+  // Initialize Web Audio context and resume AudioContext on user interaction
+  const initAudioOnGesture = () => {
+    if (game.audio) {
+      game.audio.init();
+    }
+  };
+  window.addEventListener("click", initAudioOnGesture, { passive: true });
+  window.addEventListener("touchstart", initAudioOnGesture, { passive: true });
+  window.addEventListener("pointerdown", initAudioOnGesture, { passive: true });
+
+  window.addEventListener("beforeunload", () => {
+    if (game && game.multiplayer) {
+      game.multiplayer.cleanup();
+    }
+  });
+};
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
+} else {
+  init();
+}
+
+function setupUI(game) {
+  const triggerLoadingAndStart = async (isRetry = false, showIntroTip = false) => {
+    const loadingScreen = document.getElementById("loading-screen");
+    const loadingBar = document.getElementById("loading-bar");
+    const loadingText = document.getElementById("loading-text");
+    
+    if (loadingScreen) {
+      loadingScreen.classList.remove("hidden");
+      if (loadingBar) loadingBar.style.width = "0%";
+    }
+    
+    showScreen("game");
+    
+    const isEn = localStorage.getItem("maze_lang") === "en";
+    const delay = ms => new Promise(r => setTimeout(r, ms));
+    
+    try {
+      // Step 1: Blaupause (Blueprints)
+      if (loadingText) loadingText.textContent = isEn ? "Drawing dungeon blueprints..." : "Labirent planı çiziliyor...";
+      if (loadingBar) loadingBar.style.width = "20%";
+      await delay(80);
+      
+      // Step 2: Carve rooms
+      if (loadingText) loadingText.textContent = isEn ? "Carving passages and stone rooms..." : "Koridorlar ve odalar oyuluyor...";
+      if (loadingBar) loadingBar.style.width = "40%";
+      await delay(80);
+      
+      // Step 3: Initialize new game math (generate maze & rebuildScene)
+      game.initNewGame(isRetry);
+      
+      // Step 4: Spawning items and souls
+      if (loadingText) loadingText.textContent = isEn ? "Scattering items and lost souls..." : "Eşyalar ve kayıp ruhlar yerleştiriliyor...";
+      if (loadingBar) loadingBar.style.width = "70%";
+      await delay(80);
+      
+      // Step 5: Lighting torches and compile GPU
+      if (loadingText) loadingText.textContent = isEn ? "Lighting torches and pre-compiling shadows..." : "Gölgeler derleniyor ve meşaleler yakılıyor...";
+      if (loadingBar) loadingBar.style.width = "90%";
+      await delay(80);
+      
+      // Step 6: Finalize
+      game.state.gameState = "playing";
+      game.resizeCanvas();
+      
+      if (loadingBar) loadingBar.style.width = "100%";
+      if (loadingText) loadingText.textContent = isEn ? "Entering the darkness..." : "Karanlığa adım atılıyor...";
+      await delay(80);
+    } catch (e) {
+      console.error("Error during game startup:", e);
+      if (typeof window.onerror === "function") {
+        window.onerror("Startup Error: " + e.message, "js/ui.js", 73, 0, e);
+      }
+    } finally {
+      if (loadingScreen) loadingScreen.classList.add("hidden");
+      game.state.gameState = "playing";
+      game.resizeCanvas();
+      game.draw();
+    }
+
+    if (showIntroTip) {
+      const introTip = document.getElementById("intro-tip-overlay");
+      if (introTip) {
+        introTip.style.display = "block";
+        introTip.style.opacity = "0";
+        void introTip.offsetWidth;
+        introTip.style.opacity = "1";
+        
+        if (game._introTipTimeout) clearTimeout(game._introTipTimeout);
+        if (game._introTipFadeTimeout) clearTimeout(game._introTipFadeTimeout);
+
+        game._introTipTimeout = setTimeout(() => {
+          introTip.style.opacity = "0";
+          game._introTipFadeTimeout = setTimeout(() => {
+            introTip.style.display = "none";
+          }, 500);
+        }, 4000);
+      }
+    }
+  };
+
+  // 1. DOM Element Cache
+  const screens = {
+    menu: document.getElementById("screen-menu"),
+    coop: document.getElementById("screen-coop"),
+    settings: document.getElementById("screen-settings"),
+    howtoplay: document.getElementById("screen-howtoplay"),
+    achievements: document.getElementById("screen-achievements"),
+    game: document.getElementById("screen-game"),
+    pause: document.getElementById("screen-pause"),
+  };
+
+  const hud = {
+    healthVal: document.getElementById("hud-health-val"),
+    healthBar: document.getElementById("hud-health-bar"),
+    staminaVal: document.getElementById("hud-stamina-val"),
+    staminaBar: document.getElementById("hud-stamina-bar"),
+    goldVal: document.getElementById("hud-gold-val"),
+    fuelVal: document.getElementById("hud-fuel-val"),
+    fuelBar: document.getElementById("hud-fuel-bar"),
+    questsList: document.getElementById("hud-quests-list"),
+    compassNeedle: document.getElementById("compass-needle"),
+    levelVal: document.getElementById("hud-level-val"),
+    floorVal: document.getElementById("hud-floor-val"),
+    maxFloorVal: document.getElementById("hud-max-floor-val"),
+    btnOpenInventory: document.getElementById("btn-open-inventory"),
+    btnCloseInventory: document.getElementById("btn-close-inventory"),
+    modalInventory: document.getElementById("modal-inventory"),
+    invGrid: document.getElementById("inv-grid"),
+    invDetailPanel: document.getElementById("inv-detail-panel"),
+    invItemTitle: document.getElementById("inv-item-title"),
+    invItemDesc: document.getElementById("inv-item-desc"),
+    btnInvUse: document.getElementById("btn-inv-use"),
+    btnInvEquip: document.getElementById("btn-inv-equip"),
+    btnInvSend: document.getElementById("btn-inv-send"),
+    equippedVal: document.getElementById("hud-equipped-val")
+  };
+
+  const modals = {
+    dialog: document.getElementById("modal-dialog"),
+    chest: document.getElementById("modal-chest"),
+    keypad: document.getElementById("modal-keypad"),
+    ad: document.getElementById("modal-ad"),
+    end: document.getElementById("modal-end"),
+    map: document.getElementById("modal-map"),
+    altar: document.getElementById("modal-altar")
+  };
+
+  const showScreen = (screenName) => {
+    if (screenName === "menu" || screenName === "coop") {
+      if (game && game.multiplayer) {
+        game.multiplayer.cleanup();
+      }
+    }
+    // Hide all active modals and clear dialogue typewriter animations if transitioning to non-game screens (e.g. pause menu, settings, main menu)
+    if (screenName !== "game") {
+      if (typeof closeMap === "function") closeMap();
+      Object.values(modals).forEach(m => {
+        if (m) m.classList.add("hidden");
+      });
+      if (window._dialogTypewriterInterval) {
+        clearInterval(window._dialogTypewriterInterval);
+        window._dialogTypewriterInterval = null;
+      }
+    }
+
+    Object.entries(screens).forEach(([name, el]) => {
+      if (name === screenName) {
+        el.classList.remove("hidden");
+        // Apply a quick, hardware-accelerated fade-in transition only on entering screen (excluding Three.js game screen to prevent size bugs)
+        if (screenName !== "game") {
+          el.classList.remove("screen-fade-in");
+          // Use a micro-delay (15ms) to force mobile browsers to repaint before running the transition
+          setTimeout(() => {
+            el.classList.add("screen-fade-in");
+          }, 15);
+        }
+      } else {
+        // Keep the game screen (and its WebGL canvas) active and visible in the DOM when the pause menu is opened on top of it.
+        // This prevents the browser/WebView from suspending WebGL and destroying compiled shaders/textures, which causes 20-30s black screen delays when resuming.
+        if (name === "game" && screenName === "pause") {
+          return;
+        }
+        el.classList.add("hidden");
+        el.classList.remove("screen-fade-in");
+      }
+    });
+
+    // Control Main Menu Background Music (drone_doom.wav loop)
+    if (["menu", "coop", "settings", "howtoplay", "achievements"].includes(screenName)) {
+      if (game.audio) {
+        game.audio.init();
+        game.audio.startMenuMusic();
+      }
+    } else if (screenName === "game") {
+      if (game.audio) {
+        game.audio.stopMenuMusic();
+      }
+    }
+  };
+
+  const translateUI = () => {
+    const isTr = game.lang === "tr";
+
+    // Translate all elements with [data-t]
+    document.querySelectorAll("[data-t]").forEach(el => {
+      const key = el.getAttribute("data-t");
+      el.textContent = game.t(key);
+    });
+
+    // Translate all elements with [data-tr] and [data-en]
+    document.querySelectorAll("[data-tr][data-en]").forEach(el => {
+      const val = isTr ? el.getAttribute("data-tr") : el.getAttribute("data-en");
+      if (val) el.textContent = val;
+    });
+
+    // Translate tooltips and titles with [data-tr-title] and [data-en-title]
+    document.querySelectorAll("[data-tr-title][data-en-title]").forEach(el => {
+      const titleVal = isTr ? el.getAttribute("data-tr-title") : el.getAttribute("data-en-title");
+      if (titleVal) el.title = titleVal;
+    });
+
+    // Translate input placeholders
+    document.querySelectorAll("[data-t-placeholder]").forEach(el => {
+      const key = el.getAttribute("data-t-placeholder");
+      el.placeholder = game.t(key);
+    });
+    document.querySelectorAll("[data-tr-placeholder][data-en-placeholder]").forEach(el => {
+      const phVal = isTr ? el.getAttribute("data-tr-placeholder") : el.getAttribute("data-en-placeholder");
+      if (phVal) el.placeholder = phVal;
+    });
+
+    // Re-render settings buttons check
+    document.getElementById("btn-lang-tr").classList.toggle("active", game.lang === "tr");
+    document.getElementById("btn-lang-en").classList.toggle("active", game.lang === "en");
+    
+    const soundBtn = document.getElementById("btn-sound");
+    if (soundBtn) {
+      soundBtn.textContent = game.audio.muted ? game.t("soundOff") : game.t("soundOn");
+      soundBtn.classList.toggle("btn-danger", game.audio.muted);
+    }
+
+    // Dynamic settings translations
+    const btnVib = document.getElementById("btn-settings-vibration");
+    if (btnVib) {
+      btnVib.classList.toggle("active", game.vibrationEnabled);
+      btnVib.textContent = game.lang === "tr"
+        ? (game.vibrationEnabled ? "Titreşim: AÇIK / ON" : "Titreşim: KAPALI / OFF")
+        : (game.vibrationEnabled ? "Vibration: ON" : "Vibration: OFF");
+    }
+
+    const btnShad = document.getElementById("btn-settings-shadows");
+    if (btnShad) {
+      btnShad.classList.toggle("active", game.shadowsEnabled);
+      btnShad.textContent = game.lang === "tr"
+        ? (game.shadowsEnabled ? "Gölgeler: AÇIK / ON" : "Gölgeler: KAPALI / OFF")
+        : (game.shadowsEnabled ? "Shadows: ON" : "Shadows: OFF");
+    }
+
+    // Difficulty buttons toggle
+    const difficulties = ["easy", "medium", "hard", "nightmare", "peaceful"];
+    difficulties.forEach(diff => {
+      const btn = document.getElementById(`btn-diff-${diff}`);
+      if (btn) btn.classList.toggle("active", game.difficulty === diff);
+    });
+  };
+
+  // Initialize Canvas (Safe Try/Catch to prevent WebGL startup failures from blocking main menu touch events)
+  const canvas = document.getElementById("game-canvas");
+  try {
+    game.setCanvas(canvas);
+  } catch (err) {
+    console.error("WebGL / Canvas Renderer initialization failed on startup:", err);
+  }
+
+  // Translate initial UI
+  translateUI();
+
+  // 3. Main Menu Event Listeners
+  let settingsFromGame = false;
+
+  const updateAnalogModeUI = () => {
+    const joystickBase = document.getElementById("joystick-base");
+    if (!joystickBase) return;
+    
+    document.getElementById("btn-analog-floating").classList.toggle("active", game.analogMode === "floating");
+    document.getElementById("btn-analog-fixed").classList.toggle("active", game.analogMode === "fixed");
+    
+    if (game.analogMode === "floating") {
+      joystickBase.style.opacity = "0";
+    } else {
+      joystickBase.style.opacity = "1";
+    }
+  };
+
+  const applySavedHUDLayout = () => {
+    const saved = localStorage.getItem("maze_hud_layout");
+    if (!saved) return;
+    try {
+      const layout = JSON.parse(saved);
+      const btnOpenMap = document.getElementById("btn-open-map");
+      const btnToggleLantern = document.getElementById("btn-toggle-lantern");
+      const btnRun = document.getElementById("btn-run");
+      const btnInteract = document.getElementById("btn-interact");
+      
+      const buttonsToEdit = [
+        { id: "btn-open-inventory", el: hud.btnOpenInventory },
+        { id: "btn-open-map", el: btnOpenMap },
+        { id: "btn-toggle-lantern", el: btnToggleLantern },
+        { id: "btn-run", el: btnRun },
+        { id: "btn-interact", el: btnInteract }
+      ];
+      
+      buttonsToEdit.forEach(b => {
+        const data = layout[b.id];
+        if (data && b.el) {
+          b.el.style.position = "fixed";
+          b.el.style.left = `${data.left}px`;
+          b.el.style.top = `${data.top}px`;
+          b.el.style.margin = "0";
+          b.el.style.transform = `scale(${data.scale})`;
+          b.el.dataset.scale = data.scale.toString();
+        }
+      });
+    } catch (e) {
+      console.error("Error loading saved HUD layout:", e);
+    }
+  };
+
+  const clampButtonsToScreen = () => {
+    const btnOpenMap = document.getElementById("btn-open-map");
+    const btnToggleLantern = document.getElementById("btn-toggle-lantern");
+    const btnRun = document.getElementById("btn-run");
+    const btnInteract = document.getElementById("btn-interact");
+    
+    const buttonsToEdit = [
+      { el: hud.btnOpenInventory },
+      { el: btnOpenMap },
+      { el: btnToggleLantern },
+      { el: btnRun },
+      { el: btnInteract }
+    ];
+    buttonsToEdit.forEach(b => {
+      if (b.el && b.el.style.position === "fixed") {
+        let left = parseFloat(b.el.style.left || "0");
+        let top = parseFloat(b.el.style.top || "0");
+        
+        left = Math.max(0, Math.min(window.innerWidth - b.el.clientWidth, left));
+        top = Math.max(0, Math.min(window.innerHeight - b.el.clientHeight, top));
+        
+        b.el.style.left = `${left}px`;
+        b.el.style.top = `${top}px`;
+      }
+    });
+  };
+  window.addEventListener("resize", clampButtonsToScreen);
+  window.addEventListener("orientationchange", () => {
+    setTimeout(clampButtonsToScreen, 200);
+  });
+
+  // HUD Layout Customizer Mode
+  const customizeHUD = () => {
+    const overlay = document.getElementById("hud-editor-overlay");
+    const slider = document.getElementById("hud-editor-size-slider");
+    const sliderVal = document.getElementById("hud-editor-size-val");
+    const btnSettings = document.getElementById("btn-ingame-settings");
+    
+    const btnOpenMap = document.getElementById("btn-open-map");
+    const btnToggleLantern = document.getElementById("btn-toggle-lantern");
+    const btnRun = document.getElementById("btn-run");
+    const btnInteract = document.getElementById("btn-interact");
+    
+    // Temporarily show the game screen so buttons have physical size/positions in the DOM
+    const gameScreen = document.getElementById("screen-game");
+    const wasGameScreenHidden = gameScreen.classList.contains("hidden");
+    gameScreen.classList.remove("hidden");
+    
+    // Apply special dark HUD editor preview backdrop style class
+    gameScreen.classList.add("hud-editor-active");
+
+    // Hide gameplay panels during editing so the editor screen is clean
+    const canvasContainer = gameScreen.querySelector(".canvas-container");
+    const leftPill = document.getElementById("hud-left-pill");
+    const rightPill = document.getElementById("hud-right-pill");
+    const questsPanel = document.getElementById("hud-quests-panel");
+    const compassPanel = document.getElementById("hud-compass-panel");
+    const crosshair = document.getElementById("fps-crosshair");
+
+    if (canvasContainer) canvasContainer.style.visibility = "hidden";
+    if (leftPill) leftPill.style.visibility = "hidden";
+    if (rightPill) rightPill.style.visibility = "hidden";
+    if (questsPanel) questsPanel.style.visibility = "hidden";
+    if (compassPanel) compassPanel.style.visibility = "hidden";
+    if (crosshair) crosshair.style.visibility = "hidden";
+
+    // Force control containers to be visible on all screen sizes/types during layout editing
+    const leftControls = gameScreen.querySelector(".floating-left-controls");
+    const rightControls = gameScreen.querySelector(".floating-right-controls");
+    if (leftControls) {
+      leftControls.style.display = "flex";
+      leftControls.style.visibility = "visible";
+    }
+    if (rightControls) {
+      rightControls.style.display = "flex";
+      rightControls.style.visibility = "visible";
+    }
+
+    // Temporarily make the joystick base visible at 70% opacity for preview alignment
+    const joystickBase = document.getElementById("joystick-base");
+    if (joystickBase) {
+      joystickBase.style.opacity = "0.7";
+      joystickBase.style.border = "2px dashed var(--violet)";
+    }
+
+    const buttonsToEdit = [
+      { id: "btn-open-inventory", el: hud.btnOpenInventory },
+      { id: "btn-open-map", el: btnOpenMap },
+      { id: "btn-toggle-lantern", el: btnToggleLantern },
+      { id: "btn-run", el: btnRun },
+      { id: "btn-interact", el: btnInteract }
+    ];
+    
+    let selectedButton = null;
+    let dragActive = false;
+    let dragTouchId = null;
+    let dragStartX = 0, dragStartY = 0;
+    let initialLeft = 0, initialTop = 0;
+    
+    const originalPositions = {};
+    
+    buttonsToEdit.forEach(b => {
+      const rect = b.el.getBoundingClientRect();
+      const currentScale = parseFloat(b.el.dataset.scale || "1.0");
+      
+      b.el.style.position = "fixed";
+      b.el.style.left = `${rect.left}px`;
+      b.el.style.top = `${rect.top}px`;
+      b.el.style.margin = "0";
+      b.el.style.transform = `scale(${currentScale})`;
+      b.el.style.zIndex = "999";
+      b.el.style.border = "2px dashed rgba(255, 255, 255, 0.4)";
+      b.el.style.touchAction = "none"; // prevent mobile page scrolling while dragging buttons!
+      
+      originalPositions[b.id] = {
+        left: rect.left,
+        top: rect.top,
+        scale: currentScale
+      };
+    });
+    
+    overlay.classList.remove("hidden");
+    
+    const selectButton = (b) => {
+      selectedButton = b;
+      buttonsToEdit.forEach(btn => {
+        if (btn.id === b.id) {
+          btn.el.style.border = "3px solid var(--violet)";
+          btn.el.style.boxShadow = "0 0 15px var(--violet)";
+        } else {
+          btn.el.style.border = "2px dashed rgba(255, 255, 255, 0.4)";
+          btn.el.style.boxShadow = "";
+        }
+      });
+      slider.disabled = false;
+      const currentScale = parseFloat(b.el.dataset.scale || "1.0");
+      slider.value = Math.round(currentScale * 100);
+      sliderVal.textContent = `${slider.value}%`;
+    };
+    
+    const pointerDownHandler = (e) => {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      
+      const target = e.target;
+      const matchedBtn = buttonsToEdit.find(b => b.el.contains(target));
+      if (!matchedBtn) return;
+      
+      e.preventDefault();
+      selectButton(matchedBtn);
+      
+      dragActive = true;
+      dragTouchId = e.pointerId;
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      initialLeft = parseFloat(matchedBtn.el.style.left);
+      initialTop = parseFloat(matchedBtn.el.style.top);
+    };
+    
+    const pointerMoveHandler = (e) => {
+      if (!dragActive || e.pointerId !== dragTouchId) return;
+      e.preventDefault();
+      
+      const dx = e.clientX - dragStartX;
+      const dy = e.clientY - dragStartY;
+      
+      let newLeft = initialLeft + dx;
+      let newTop = initialTop + dy;
+      
+      newLeft = Math.max(0, Math.min(window.innerWidth - selectedButton.el.clientWidth, newLeft));
+      newTop = Math.max(0, Math.min(window.innerHeight - selectedButton.el.clientHeight, newTop));
+      
+      selectedButton.el.style.left = `${newLeft}px`;
+      selectedButton.el.style.top = `${newTop}px`;
+    };
+    
+    const pointerUpHandler = (e) => {
+      if (!dragActive || e.pointerId !== dragTouchId) return;
+      dragActive = false;
+      dragTouchId = null;
+      
+      // Smoothly update position coordinates - no overlap snap-back restrictions!
+      if (selectedButton) {
+        originalPositions[selectedButton.id].left = parseFloat(selectedButton.el.style.left);
+        originalPositions[selectedButton.id].top = parseFloat(selectedButton.el.style.top);
+      }
+    };
+    
+    const sliderHandler = (e) => {
+      if (!selectedButton) return;
+      const scale = parseInt(e.target.value) / 100;
+      sliderVal.textContent = `${e.target.value}%`;
+      
+      selectedButton.el.style.transform = `scale(${scale})`;
+      selectedButton.el.dataset.scale = scale.toString();
+      originalPositions[selectedButton.id].scale = scale;
+    };
+    
+    window.addEventListener("pointerdown", pointerDownHandler, { passive: false });
+    window.addEventListener("pointermove", pointerMoveHandler, { passive: false });
+    window.addEventListener("pointerup", pointerUpHandler);
+    window.addEventListener("pointercancel", pointerUpHandler);
+    slider.addEventListener("input", sliderHandler);
+    
+    const saveLayout = () => {
+      const layout = {};
+      buttonsToEdit.forEach(b => {
+        const scale = parseFloat(b.el.dataset.scale || "1.0");
+        layout[b.id] = {
+          left: parseFloat(b.el.style.left),
+          top: parseFloat(b.el.style.top),
+          scale: scale
+        };
+        b.el.style.border = "";
+        b.el.style.boxShadow = "";
+        b.el.style.zIndex = "";
+      });
+      localStorage.setItem("maze_hud_layout", JSON.stringify(layout));
+      
+      cleanup();
+      overlay.classList.add("hidden");
+      showScreen("settings");
+    };
+    
+    const resetLayout = () => {
+      buttonsToEdit.forEach(b => {
+        b.el.style.position = "";
+        b.el.style.left = "";
+        b.el.style.top = "";
+        b.el.style.margin = "";
+        b.el.style.transform = "";
+        b.el.style.border = "";
+        b.el.style.boxShadow = "";
+        b.el.style.zIndex = "";
+        delete b.el.dataset.scale;
+      });
+      localStorage.removeItem("maze_hud_layout");
+      
+      cleanup();
+      overlay.classList.add("hidden");
+      showScreen("settings");
+    };
+    
+    const cleanup = () => {
+      window.removeEventListener("pointerdown", pointerDownHandler);
+      window.removeEventListener("pointermove", pointerMoveHandler);
+      window.removeEventListener("pointerup", pointerUpHandler);
+      window.removeEventListener("pointercancel", pointerUpHandler);
+      slider.removeEventListener("input", sliderHandler);
+      slider.disabled = true;
+
+      // Remove backdrop style class
+      gameScreen.classList.remove("hud-editor-active");
+
+      // Restore visibility of in-game elements
+      if (canvasContainer) canvasContainer.style.visibility = "";
+      if (leftPill) leftPill.style.visibility = "";
+      if (rightPill) rightPill.style.visibility = "";
+      if (questsPanel) questsPanel.style.visibility = "";
+      if (compassPanel) compassPanel.style.visibility = "";
+      if (crosshair) crosshair.style.visibility = "";
+      
+      // Restore default controls container styles
+      if (leftControls) {
+        leftControls.style.display = "";
+        leftControls.style.visibility = "";
+      }
+      if (rightControls) {
+        rightControls.style.display = "";
+        rightControls.style.visibility = "";
+      }
+
+      // Reset joystick preview state
+      if (joystickBase) {
+        joystickBase.style.border = "";
+      }
+      updateAnalogModeUI();
+
+      buttonsToEdit.forEach(b => {
+        b.el.style.touchAction = "";
+      });
+
+      // Hide game screen if it was previously hidden
+      if (wasGameScreenHidden) {
+        gameScreen.classList.add("hidden");
+      }
+    };
+    
+    document.getElementById("btn-hud-editor-save").onclick = saveLayout;
+    document.getElementById("btn-hud-editor-reset").onclick = resetLayout;
+  };
+
+  // Set up config on load
+  game.analogMode = localStorage.getItem("maze_analog_mode") || "floating";
+  setTimeout(() => {
+    updateAnalogModeUI();
+    applySavedHUDLayout();
+    clampButtonsToScreen();
+
+    translateUI();
+
+    // Initialize audio volume slider and percentage label from saved state
+    const volSlider = document.getElementById("settings-volume-slider");
+    const volVal = document.getElementById("settings-volume-val");
+    if (volSlider && volVal) {
+      const savedVol = Math.round(game.audio.volume * 100);
+      volSlider.value = savedVol;
+      volVal.textContent = `${savedVol}%`;
+      
+      // If initialized in a muted/creepy state, display the warnings
+      if (game.audio.muted) {
+        document.getElementById("btn-sound").classList.add("btn-danger");
+        document.getElementById("creepy-sound-warning").classList.remove("hidden");
+      }
+    }
+  }, 100);
+
+  // Top Right Question Mark Help Button
+  const btnHelpTop = document.getElementById("btn-help-top");
+  if (btnHelpTop) {
+    btnHelpTop.addEventListener("click", () => {
+      if (game.audio) game.audio.playClick();
+      showScreen("howtoplay");
+    });
+  }
+
+  // Play Mode Selection Modal Listeners
+  const modalPlayMode = document.getElementById("modal-play-mode");
+  const openPlayModal = () => {
+    if (game.audio) game.audio.playClick();
+    if (modalPlayMode) {
+      const badge = document.getElementById("play-mode-level-badge");
+      if (badge) {
+        badge.textContent = game.lang === "tr" 
+          ? `Seviye ${game.currentLevel}` 
+          : `Level ${game.currentLevel}`;
+      }
+      modalPlayMode.classList.remove("hidden");
+    } else {
+      triggerLoadingAndStart(false, true);
+    }
+  };
+
+  const btnStartGame = document.getElementById("btn-start-game");
+  if (btnStartGame) btnStartGame.addEventListener("click", openPlayModal);
+  const btnPlay = document.getElementById("btn-play");
+  if (btnPlay) btnPlay.addEventListener("click", openPlayModal);
+
+  const btnPlayModeClose = document.getElementById("btn-play-mode-close");
+  if (btnPlayModeClose) {
+    btnPlayModeClose.addEventListener("click", () => {
+      if (game.audio) game.audio.playClick();
+      if (modalPlayMode) modalPlayMode.classList.add("hidden");
+    });
+  }
+
+  const launchStoryMode = () => {
+    if (game.audio) {
+      game.audio.init();
+      game.audio.playClick();
+      game.audio.stopMenuMusic();
+    }
+    if (modalPlayMode) modalPlayMode.classList.add("hidden");
+    if (game.multiplayer && game.multiplayer.isConnected) {
+      game.multiplayer.disconnect();
+    }
+    triggerLoadingAndStart(false, true);
+  };
+
+  const btnLaunchStory = document.getElementById("btn-launch-story");
+  if (btnLaunchStory) btnLaunchStory.addEventListener("click", launchStoryMode);
+  const cardModeStory = document.getElementById("card-mode-story");
+  if (cardModeStory) cardModeStory.addEventListener("click", launchStoryMode);
+
+  const ensureMultiplayer = () => {
+    if (!game.multiplayer) {
+      game.multiplayer = new MultiplayerManager(game);
+      game.multiplayer.onStatusChange = (statusText, replacements = {}) => {
+        const statusEl = document.getElementById("coop-status");
+        if (statusEl) {
+          statusEl.textContent = statusText;
+        }
+        if (replacements.code) {
+          const codeEl = document.getElementById("coop-room-code");
+          if (codeEl) codeEl.textContent = replacements.code;
+        }
+      };
+    }
+    return game.multiplayer;
+  };
+
+  const launchCoopMode = () => {
+    if (game.audio) game.audio.playClick();
+    if (modalPlayMode) modalPlayMode.classList.add("hidden");
+    ensureMultiplayer();
+    showScreen("coop");
+  };
+
+  const btnLaunchCoop = document.getElementById("btn-launch-coop");
+  if (btnLaunchCoop) btnLaunchCoop.addEventListener("click", launchCoopMode);
+  const cardModeCoop = document.getElementById("card-mode-coop");
+  if (cardModeCoop) cardModeCoop.addEventListener("click", launchCoopMode);
+
+
+  // --- CHARACTER SKIN SELECTION MODAL LOGIC ---
+  const updateCharacterModalUI = () => {
+    const list = document.getElementById("character-skins-list");
+    if (!list) return;
+    list.innerHTML = "";
+
+    const unlocked = ["ghost", "vampire", "zombie", "skeleton", "ghoul", "traveler"];
+    const activeSkin = game.characterSkin || "ghost";
+
+    const skins = [
+      { id: "ghost", nameTr: "Hayalet", nameEn: "Ghost", portrait: "assets/portrait_ghost.png", questTr: "Başlangıç Karakteri", questEn: "Starter Character" },
+      { id: "skeleton", nameTr: "Polis", nameEn: "Police Officer", portrait: "assets/portrait_police.png", questTr: "Güvenlik Paketi", questEn: "Security Pack" },
+      { id: "vampire", nameTr: "Doktor", nameEn: "Doctor", portrait: "assets/portrait_doctor.png", questTr: "Sağlık Paketi", questEn: "Medical Pack" },
+      { id: "zombie", nameTr: "Katil", nameEn: "Killer", portrait: "assets/portrait_killer.png", questTr: "Karanlık Paket", questEn: "Dark Pack" },
+      { id: "ghoul", nameTr: "İtfaiyeci", nameEn: "Firefighter", portrait: "assets/portrait_firefighter.png", questTr: "Kurtarma Paketi", questEn: "Rescue Pack" },
+      { id: "traveler", nameTr: "Gezgin", nameEn: "Explorer", portrait: "assets/portrait_explorer.png", questTr: "Maceracı Paketi", questEn: "Explorer Pack" }
+    ];
+
+    skins.forEach(s => {
+      const isUnlocked = unlocked.includes(s.id);
+      const isSelected = activeSkin === s.id;
+
+      const card = document.createElement("div");
+      card.style.cssText = `background: ${isSelected ? 'rgba(217, 119, 6, 0.22)' : isUnlocked ? 'rgba(30, 41, 59, 0.85)' : 'rgba(15, 23, 42, 0.95)'}; border: 1.5px solid ${isSelected ? '#f59e0b' : isUnlocked ? 'rgba(148, 163, 184, 0.3)' : 'rgba(220, 38, 38, 0.4)'}; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; cursor: pointer; transition: all 0.15s ease;`;
+      
+      card.innerHTML = `
+        <div style="position: relative; width: 68px; height: 68px; border-radius: 50%; overflow: hidden; border: 2px solid ${isSelected ? '#f59e0b' : isUnlocked ? '#94a3b8' : '#ef4444'};">
+          <img src="${s.portrait}" style="width: 100%; height: 100%; object-fit: cover; ${!isUnlocked ? 'filter: grayscale(1) brightness(0.5);' : ''}" />
+          ${!isUnlocked ? '<div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; background: rgba(0,0,0,0.6);">🔒</div>' : ''}
+        </div>
+        <div style="font-weight: bold; color: ${isSelected ? '#fbbf24' : '#f8fafc'}; font-size: 0.90rem;">${game.lang === 'tr' ? s.nameTr : s.nameEn}</div>
+        <div style="font-size: 0.72rem; color: ${isUnlocked ? '#94a3b8' : '#ef4444'}; line-height: 1.2;">${game.lang === 'tr' ? s.questTr : s.questEn}</div>
+        <button class="btn-modal ${isSelected ? 'btn-warning' : isUnlocked ? 'btn-primary' : 'btn-muted'}" style="margin-top: 4px; padding: 4px 12px; font-size: 0.75rem; border-radius: 6px; font-weight: bold; width: 100%;">
+          ${isSelected ? 'SEÇİLDİ' : isUnlocked ? 'SEÇ' : 'KİLİTLİ'}
+        </button>
+      `;
+
+      card.addEventListener("click", () => {
+        if (!isUnlocked) {
+          const lockMsg = `🔒 ${game.lang === 'tr' ? 'KİLİTLİ: ' + s.questTr : 'LOCKED: ' + s.questEn}`;
+          if (typeof game.showNotification === "function") {
+            game.showNotification(lockMsg);
+          } else if (typeof game.showToast === "function") {
+            game.showToast(lockMsg);
+          } else {
+            console.log(lockMsg);
+          }
+          return;
+        }
+        if (game.audio) game.audio.playClick();
+        game.characterSkin = s.id;
+        localStorage.setItem("selected_character_skin", s.id);
+        if (game.state && game.state.player) {
+          game.state.player.characterSkin = s.id;
+        }
+        updateCharacterModalUI();
+      });
+
+      list.appendChild(card);
+    });
+  };
+
+  const btnCharSelect = document.getElementById("btn-character-select");
+  if (btnCharSelect) {
+    btnCharSelect.addEventListener("click", () => {
+      if (game.audio) game.audio.playClick();
+      updateCharacterModalUI();
+      document.getElementById("modal-character").classList.remove("hidden");
+    });
+  }
+
+  const btnCharClose = document.getElementById("btn-character-close");
+  if (btnCharClose) {
+    btnCharClose.addEventListener("click", () => {
+      if (game.audio) game.audio.playClick();
+      document.getElementById("modal-character").classList.add("hidden");
+    });
+  }
+
+  document.getElementById("btn-settings").addEventListener("click", () => {
+    settingsFromGame = false;
+    showScreen("settings");
+  });
+
+  // In-game Settings Gear button
+  const btnIngameSettings = document.getElementById("btn-ingame-settings");
+  if (btnIngameSettings) {
+    btnIngameSettings.addEventListener("click", () => {
+      game.state.gameState = "paused";
+      showScreen("pause");
+    });
+  }
+
+  // --- In-Game Pause Screen Event Listeners ---
+  document.getElementById("btn-pause-resume").addEventListener("click", () => {
+    game.state.gameState = "playing";
+    showScreen("game");
+  });
+
+  document.getElementById("btn-pause-restart").addEventListener("click", () => {
+    triggerLoadingAndStart(true);
+  });
+
+  document.getElementById("btn-pause-mainmenu").addEventListener("click", () => {
+    game.stopLoop();
+    game.state.gameState = "menu";
+    showScreen("menu");
+  });
+
+  const btnHowToPlayOld = document.getElementById("btn-howtoplay");
+  if (btnHowToPlayOld) btnHowToPlayOld.addEventListener("click", () => {
+    showScreen("howtoplay");
+  });
+
+  // --- Co-op Lobby Screen Event Listeners ---
+  const updateCoopLobbyUI = () => {
+    const hostDetails = document.getElementById("coop-host-details");
+    if (hostDetails) hostDetails.classList.add("hidden");
+    const statusEl = document.getElementById("coop-status");
+    if (statusEl) statusEl.textContent = "";
+    const joinInput = document.getElementById("coop-join-input");
+    if (joinInput) joinInput.value = "";
+
+    // Sync Co-op lobby difficulty buttons with current game difficulty
+    ["easy", "medium", "hard", "nightmare", "peaceful"].forEach(d => {
+      const b = document.getElementById(`btn-coop-diff-${d}`);
+      if (b) {
+        if (d === game.difficulty) b.classList.add("active");
+        else b.classList.remove("active");
+      }
+    });
+
+    // Sync Co-op lobby map size buttons with current game coopMapSize
+    const currentMapSize = game.coopMapSize || "small";
+    ["small", "medium", "large"].forEach(s => {
+      const b = document.getElementById(`btn-coop-map-${s}`);
+      if (b) {
+        if (s === currentMapSize) b.classList.add("active");
+        else b.classList.remove("active");
+      }
+    });
+    const descEl = document.getElementById("coop-map-desc");
+    if (descEl) {
+      const descKeys = { small: "mapSmallDesc", medium: "mapMediumDesc", large: "mapLargeDesc" };
+      descEl.textContent = game.t(descKeys[currentMapSize]);
+    }
+
+    // Apply nightmare glow effect if nightmare is selected
+    const nightmareBtn = document.getElementById("btn-coop-diff-nightmare");
+    if (nightmareBtn) {
+      nightmareBtn.classList.toggle("nightmare-active", game.difficulty === "nightmare");
+    }
+
+    // Apply translations to the co-op screen
+    translateUI();
+  };
+
+  // Co-op difficulty button listeners
+  ["easy", "medium", "hard", "nightmare", "peaceful"].forEach(diff => {
+    const btn = document.getElementById(`btn-coop-diff-${diff}`);
+    if (btn) {
+      btn.addEventListener("click", () => {
+        game.difficulty = diff;
+        ["easy", "medium", "hard", "nightmare", "peaceful"].forEach(d => {
+          const b = document.getElementById(`btn-coop-diff-${d}`);
+          if (b) {
+            if (d === diff) b.classList.add("active");
+            else b.classList.remove("active");
+          }
+        });
+        // Toggle nightmare glow effect
+        const nightmareBtn = document.getElementById("btn-coop-diff-nightmare");
+        if (nightmareBtn) {
+          nightmareBtn.classList.toggle("nightmare-active", diff === "nightmare");
+        }
+      });
+    }
+  });
+
+  // Co-op map size button listeners
+  const mapSizeDescriptions = {
+    small: () => game.t("mapSmallDesc"),
+    medium: () => game.t("mapMediumDesc"),
+    large: () => game.t("mapLargeDesc")
+  };
+
+  ["small", "medium", "large"].forEach(size => {
+    const btn = document.getElementById(`btn-coop-map-${size}`);
+    if (btn) {
+      btn.addEventListener("click", () => {
+        game.coopMapSize = size;
+        ["small", "medium", "large"].forEach(s => {
+          const b = document.getElementById(`btn-coop-map-${s}`);
+          if (b) {
+            if (s === size) b.classList.add("active");
+            else b.classList.remove("active");
+          }
+        });
+        const descEl = document.getElementById("coop-map-desc");
+        if (descEl) descEl.textContent = mapSizeDescriptions[size]();
+      });
+    }
+  });
+
+  const btnVoiceOn = document.getElementById("btn-coop-voice-on");
+  const btnVoiceOff = document.getElementById("btn-coop-voice-off");
+  if (btnVoiceOn && btnVoiceOff) {
+    btnVoiceOn.addEventListener("click", () => {
+      if (game.multiplayer) {
+        game.multiplayer.enableVoice = true;
+        game.multiplayer.updateMicUI();
+      }
+      btnVoiceOn.classList.add("active");
+      btnVoiceOff.classList.remove("active");
+    });
+    btnVoiceOff.addEventListener("click", () => {
+      if (game.multiplayer) {
+        game.multiplayer.enableVoice = false;
+        game.multiplayer.updateMicUI();
+      }
+      btnVoiceOff.classList.add("active");
+      btnVoiceOn.classList.remove("active");
+    });
+  }
+
+  // Sound Test Panel preview buttons handler
+  document.querySelectorAll(".btn-test-sfx").forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (!game.audio) return;
+      game.audio.init(); // ensure Web Audio API is initialized & unlocked
+      const sound = btn.getAttribute("data-sound");
+      if (sound === "wood_chop") game.audio.playWoodChop();
+      else if (sound === "shears_cut") game.audio.playShearsCut();
+      else if (sound === "water_fill") game.audio.playWaterFill();
+      else if (sound === "shadow_spawn") game.audio.playShadowSpawn();
+      else if (sound === "shadow_groan") game.audio.playShadowGroan(2.0);
+      else if (sound === "shadow_burn") game.audio.playShadowBurn();
+      else if (sound === "scream") game.audio.playFemaleScream();
+      else if (sound === "door") game.audio.playDoorOpen();
+      else if (sound === "unlock") game.audio.playUnlock();
+      else if (sound === "flashlight") game.audio.playFlashlightOn();
+    });
+  });
+
+  const btnMicToggle = document.getElementById("btn-mic-toggle");
+  if (btnMicToggle) {
+    btnMicToggle.addEventListener("click", () => {
+      if (game.multiplayer) {
+        game.multiplayer.toggleMicMute();
+      }
+    });
+  }
+
+  document.getElementById("btn-coop-host").addEventListener("click", () => {
+    if (game.multiplayer) {
+      const btnVoiceOff = document.getElementById("btn-coop-voice-off");
+      game.multiplayer.enableVoice = btnVoiceOff ? !btnVoiceOff.classList.contains("active") : true;
+      if (!game.multiplayer.enableVoice) {
+        if (game.multiplayer.localAudioStream) {
+          game.multiplayer.localAudioStream.getTracks().forEach(track => track.stop());
+          game.multiplayer.localAudioStream = null;
+        }
+        game.multiplayer.isMicMuted = true;
+      }
+      game.multiplayer.updateMicUI();
+      game.multiplayer.hostRoom(() => {
+        document.getElementById("coop-host-details").classList.remove("hidden");
+      });
+    }
+  });
+
+  document.getElementById("btn-coop-copy-link").addEventListener("click", () => {
+    if (game.multiplayer && game.multiplayer.roomCode) {
+      const link = `${window.location.origin}${window.location.pathname}?room=${game.multiplayer.roomCode}`;
+      navigator.clipboard.writeText(link).then(() => {
+        const isTr = game.lang === "tr";
+        alert(isTr ? "Davet linki kopyalandı!" : "Invite link copied to clipboard!");
+      });
+    }
+  });
+
+  const btnCoopBack = document.getElementById("btn-coop-back");
+  if (btnCoopBack) {
+    btnCoopBack.addEventListener("click", () => {
+      if (game.audio) game.audio.playClick();
+      if (game.multiplayer) {
+        if (typeof game.multiplayer.disconnect === "function") {
+          game.multiplayer.disconnect();
+        } else if (typeof game.multiplayer.cleanup === "function") {
+          game.multiplayer.cleanup();
+        }
+      }
+      showScreen("menu");
+    });
+  }
+
+  document.getElementById("btn-coop-join").addEventListener("click", () => {
+    let inputVal = document.getElementById("coop-join-input").value.trim();
+    
+    // Extract room parameter if a full URL or query string is pasted
+    if (inputVal.includes("room=")) {
+      try {
+        const queryStart = inputVal.indexOf("?");
+        if (queryStart !== -1) {
+          const urlParams = new URLSearchParams(inputVal.substring(queryStart));
+          inputVal = urlParams.get("room") || inputVal;
+        } else {
+          const parts = inputVal.split("room=");
+          if (parts[1]) inputVal = parts[1].split("&")[0];
+        }
+      } catch (e) {
+        const parts = inputVal.split("room=");
+        if (parts[1]) inputVal = parts[1].split("&")[0];
+      }
+    }
+    
+    inputVal = inputVal.toUpperCase().trim();
+    if (inputVal && game.multiplayer) {
+      const btnVoiceOff = document.getElementById("btn-coop-voice-off");
+      game.multiplayer.enableVoice = btnVoiceOff ? !btnVoiceOff.classList.contains("active") : true;
+      if (!game.multiplayer.enableVoice) {
+        if (game.multiplayer.localAudioStream) {
+          game.multiplayer.localAudioStream.getTracks().forEach(track => track.stop());
+          game.multiplayer.localAudioStream = null;
+        }
+        game.multiplayer.isMicMuted = true;
+      }
+      game.multiplayer.updateMicUI();
+      game.multiplayer.joinRoom(inputVal);
+    }
+  });
+
+  document.getElementById("btn-coop-back").addEventListener("click", () => {
+    if (game.multiplayer) {
+      game.multiplayer.cleanup();
+    }
+    showScreen("menu");
+  });
+
+  // --- Page Visibility / Background Auto-Pause Event Listeners ---
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      // 1. If playing, pause game state and show pause screen
+      if (game.state && game.state.gameState === "playing") {
+        game.state.gameState = "paused";
+        showScreen("pause");
+      }
+      // 2. Suspend AudioContext to stop all sounds immediately
+      if (game.audio && game.audio.ctx && game.audio.ctx.state === "running") {
+        game.audio.ctx.suspend();
+      }
+    } else {
+      // 1. Resume AudioContext when returning to the game
+      if (game.audio && game.audio.ctx && game.audio.ctx.state === "suspended") {
+        game.audio.ctx.resume().catch(err => {
+          console.warn("AudioContext resume failed on visibility change:", err);
+        });
+      }
+    }
+  });
+
+  // --- Dynamic Main Menu Animations (Flashlight Sway / Mouse Track & Dust Particles) ---
+  const menuScreen = document.getElementById("screen-menu");
+  const menuFlashlight = document.getElementById("menu-flashlight");
+  const menuDust = document.getElementById("menu-dust");
+
+  if (menuScreen && menuFlashlight) {
+    let lastX = window.innerWidth / 2;
+    let lastY = window.innerHeight / 2;
+    let currentX = lastX;
+    let currentY = lastY;
+    let swayTime = 0;
+
+    menuScreen.addEventListener("pointermove", (e) => {
+      if (e.pointerType === "mouse") {
+        currentX = e.clientX;
+        currentY = e.clientY;
+      }
+    });
+
+    const animateMenuFlashlight = () => {
+      if (!menuScreen.classList.contains("hidden")) {
+        swayTime += 0.015;
+        const swayX = Math.sin(swayTime * 0.8) * 45 + Math.cos(swayTime * 1.5) * 15;
+        const swayY = Math.cos(swayTime * 0.6) * 35 + Math.sin(swayTime * 1.2) * 10;
+
+        let targetX = currentX;
+        let targetY = currentY;
+
+        if (targetX === window.innerWidth / 2 && targetY === window.innerHeight / 2) {
+          targetX += swayX;
+          targetY += swayY;
+        } else {
+          targetX += swayX * 0.35;
+          targetY += swayY * 0.35;
+        }
+
+        lastX += (targetX - lastX) * 0.08;
+        lastY += (targetY - lastY) * 0.08;
+
+        menuFlashlight.style.transform = `translate3d(${lastX}px, ${lastY}px, 0)`;
+      }
+      requestAnimationFrame(animateMenuFlashlight);
+    };
+    requestAnimationFrame(animateMenuFlashlight);
+
+    menuScreen.addEventListener("pointerleave", () => {
+      currentX = window.innerWidth / 2;
+      currentY = window.innerHeight / 2;
+    });
+  }
+
+  if (menuDust) {
+    const particleCount = 18;
+    for (let i = 0; i < particleCount; i++) {
+      const p = document.createElement("div");
+      p.className = "dust-particle";
+      
+      const size = Math.random() * 3 + 1.5;
+      p.style.width = `${size}px`;
+      p.style.height = `${size}px`;
+      p.style.left = `${Math.random() * 100}%`;
+      
+      const duration = Math.random() * 8 + 8;
+      const delay = Math.random() * -15;
+      p.style.animationDuration = `${duration}s`;
+      p.style.animationDelay = `${delay}s`;
+      p.style.opacity = (Math.random() * 0.35 + 0.15).toString();
+      
+      menuDust.appendChild(p);
+    }
+  }
+
+  // Settings Menu Listeners
+  document.getElementById("btn-lang-tr").addEventListener("click", () => {
+    game.lang = "tr";
+    localStorage.setItem("maze_lang", "tr");
+    translateUI();
+  });
+
+  document.getElementById("btn-lang-en").addEventListener("click", () => {
+    game.lang = "en";
+    localStorage.setItem("maze_lang", "en");
+    translateUI();
+  });
+
+  document.getElementById("btn-sound").addEventListener("click", () => {
+    const isMuted = game.audio.toggleMute();
+    localStorage.setItem("maze_audio", (!isMuted).toString());
+    translateUI();
+
+    const warningEl = document.getElementById("creepy-sound-warning");
+    const volSlider = document.getElementById("settings-volume-slider");
+    const volVal = document.getElementById("settings-volume-val");
+
+    if (isMuted) {
+      if (warningEl) warningEl.classList.remove("hidden");
+      if (volSlider) volSlider.value = 10;
+      if (volVal) volVal.textContent = "10%";
+      
+      // Force volume to 10% even on mute toggle!
+      game.audio.setVolume(0.1);
+      
+      // Play a creepy stinger sound as an easter egg!
+      if (game.audio && typeof game.audio.init === "function") {
+        game.audio.init();
+        if (typeof game.audio._playBuffer === "function") {
+          game.audio._playBuffer("slow_stinger", 0.7);
+        }
+      }
+    } else {
+      if (warningEl) warningEl.classList.add("hidden");
+      const savedVol = Math.round(game.audio.volume * 100);
+      if (volSlider) volSlider.value = savedVol;
+      if (volVal) volVal.textContent = `${savedVol}%`;
+      game.audio.setVolume(game.audio.volume);
+    }
+  });
+
+  const settingsVolSlider = document.getElementById("settings-volume-slider");
+  if (settingsVolSlider) {
+    const handleVolumeChange = (e) => {
+      let val = parseInt(e.target.value);
+      const warningEl = document.getElementById("creepy-sound-warning");
+      const volVal = document.getElementById("settings-volume-val");
+
+      if (val < 10) {
+        // Snap back to 10% - NO MUTE OR LOW VOLUME ALLOWED!
+        e.target.value = 10;
+        val = 10;
+        
+        if (warningEl) warningEl.classList.remove("hidden");
+        game.audio.setVolume(0.1);
+        
+        // Trigger a creepy stinger sound with debouncing to prevent overlapping sound clutter
+        const now = Date.now();
+        if (!settingsVolSlider._lastStingerTime || now - settingsVolSlider._lastStingerTime > 2500) {
+          settingsVolSlider._lastStingerTime = now;
+          if (game.audio && typeof game.audio.init === "function") {
+            game.audio.init();
+            if (typeof game.audio._playBuffer === "function") {
+              game.audio._playBuffer("slow_stinger", 0.7);
+            }
+          }
+        }
+      } else {
+        if (warningEl) warningEl.classList.add("hidden");
+        game.audio.setVolume(val / 100);
+      }
+      
+      if (volVal) volVal.textContent = `${val}%`;
+    };
+
+    settingsVolSlider.addEventListener("input", handleVolumeChange);
+    settingsVolSlider.addEventListener("change", handleVolumeChange);
+  }
+
+  const difficulties = ["easy", "medium", "hard", "nightmare", "peaceful"];
+  difficulties.forEach(diff => {
+    const btn = document.getElementById(`btn-diff-${diff}`);
+    if (btn) {
+      btn.addEventListener("click", () => {
+        game.difficulty = diff;
+        localStorage.setItem("maze_diff", diff);
+        difficulties.forEach(d => {
+          const b = document.getElementById(`btn-diff-${d}`);
+          if (b) b.classList.toggle("active", d === diff);
+        });
+        translateUI();
+      });
+    }
+  });
+
+  // Analog Mode Toggles
+  document.getElementById("btn-analog-floating").addEventListener("click", () => {
+    game.analogMode = "floating";
+    localStorage.setItem("maze_analog_mode", "floating");
+    updateAnalogModeUI();
+  });
+  
+  document.getElementById("btn-analog-fixed").addEventListener("click", () => {
+    game.analogMode = "fixed";
+    localStorage.setItem("maze_analog_mode", "fixed");
+    updateAnalogModeUI();
+  });
+
+  // Custom HUD Customize trigger button
+  document.getElementById("btn-edit-hud").addEventListener("click", () => {
+    screens.settings.classList.add("hidden");
+    customizeHUD();
+  });
+
+  // Vibration settings toggle
+  const btnSettingsVib = document.getElementById("btn-settings-vibration");
+  if (btnSettingsVib) {
+    btnSettingsVib.addEventListener("click", () => {
+      game.vibrationEnabled = !game.vibrationEnabled;
+      localStorage.setItem("maze_vibration", game.vibrationEnabled.toString());
+      translateUI();
+      game.vibrateDevice("light");
+    });
+  }
+
+  // Shadows settings toggle
+  const btnSettingsShad = document.getElementById("btn-settings-shadows");
+  if (btnSettingsShad) {
+    btnSettingsShad.addEventListener("click", () => {
+      game.shadowsEnabled = !game.shadowsEnabled;
+      localStorage.setItem("maze_shadows", game.shadowsEnabled.toString());
+      translateUI();
+      
+      // If the renderer is active, immediately update shadows!
+      if (game.renderer) {
+        game.renderer.shadowsEnabled = game.shadowsEnabled;
+        game.renderer.renderer.shadowMap.enabled = game.shadowsEnabled;
+        if (game.renderer.dirLight) {
+          game.renderer.dirLight.castShadow = game.shadowsEnabled;
+        }
+        // Force scene update
+        game.draw();
+      }
+    });
+  }
+
+  // Achievements Screen Trigger
+  const btnAchievements = document.getElementById("btn-achievements");
+  if (btnAchievements) {
+    btnAchievements.addEventListener("click", () => {
+      renderAchievementsList();
+      showScreen("achievements");
+    });
+  }
+
+  const renderAchievementsList = () => {
+    const listContainer = document.getElementById("achievements-list");
+    if (!listContainer) return;
+    listContainer.innerHTML = "";
+
+    const unlockedIds = JSON.parse(localStorage.getItem("maze_achievements") || "[]");
+
+    const groups = [
+      { id: "easy", titleKey: "achGroupEasy" },
+      { id: "medium", titleKey: "achGroupMedium" },
+      { id: "hard", titleKey: "achGroupHard" },
+      { id: "nightmare", titleKey: "achGroupNightmare" },
+      { id: "coop", titleKey: "achGroupCoop" },
+      { id: "general", titleKey: "achGroupGeneral" }
+    ];
+
+    groups.forEach(g => {
+      const gAchievements = game.achievements.filter(a => a.group === g.id);
+      if (gAchievements.length === 0) return;
+
+      // Group Header Element
+      const header = document.createElement("div");
+      header.className = "settings-card-title";
+      header.style.gridColumn = "1 / -1";
+      header.style.marginTop = "20px";
+      header.style.marginBottom = "10px";
+      header.style.textAlign = "left";
+      header.style.fontSize = "1.05rem";
+      header.style.color = "#c084fc";
+      header.style.borderBottom = "1px solid rgba(192, 132, 252, 0.25)";
+      header.style.paddingBottom = "4px";
+      header.textContent = game.t(g.titleKey);
+      listContainer.appendChild(header);
+
+      gAchievements.forEach(ach => {
+        const isUnlocked = unlockedIds.includes(ach.id);
+        const name = game.lang === "tr" ? ach.nameTr : ach.nameEn;
+        const desc = game.lang === "tr" ? ach.descTr : ach.descEn;
+
+        const card = document.createElement("div");
+        card.className = `achievement-card ${isUnlocked ? "unlocked" : "locked"}`;
+        card.innerHTML = `
+          <div class="achievement-icon">${isUnlocked ? ach.icon : "🔒"}</div>
+          <div class="achievement-details">
+            <div class="achievement-title">${name}</div>
+            <div class="achievement-desc">${desc}</div>
+          </div>
+          <div class="achievement-status ${isUnlocked ? "unlocked-lbl" : "locked-lbl"}">
+            ${isUnlocked 
+              ? (game.lang === "tr" ? "Açıldı" : "Unlocked")
+              : (game.lang === "tr" ? "Kilitli" : "Locked")
+            }
+          </div>
+        `;
+        listContainer.appendChild(card);
+      });
+    });
+  };
+
+  // Back Buttons
+  document.querySelectorAll(".btn-back").forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (settingsFromGame) {
+        settingsFromGame = false;
+        game.state.gameState = "playing";
+        showScreen("game");
+      } else {
+        showScreen("menu");
+      }
+    });
+  });
+
+  // 4. In-Game HUD & Inventory Sync
+  game.onStateChange = () => {
+    const s = game.state;
+    if (!s) return;
+    const p = s.player;
+
+    // Level and Floor
+    if (hud.levelVal) hud.levelVal.textContent = s.currentLevel;
+    if (hud.floorVal) hud.floorVal.textContent = s.currentFloor + 1;
+    if (hud.maxFloorVal) hud.maxFloorVal.textContent = s.numFloors;
+
+    // Health
+    hud.healthVal.textContent = `${Math.ceil(p.health)}%`;
+    hud.healthBar.style.width = `${p.health}%`;
+    hud.healthBar.className = "progress-bar-fill " + (p.health < 30 ? "bg-red" : p.health < 60 ? "bg-orange" : "bg-green");
+
+    // Stamina
+    if (hud.staminaVal && hud.staminaBar) {
+      const staminaPercent = Math.ceil((p.stamina || 0) / (p.maxStamina || 100) * 100);
+      hud.staminaVal.textContent = `${staminaPercent}%`;
+      hud.staminaBar.style.width = `${staminaPercent}%`;
+      hud.staminaBar.className = "progress-bar-fill " + (staminaPercent < 25 ? "bg-red low-stamina-pulse" : "bg-gold");
+    }
+
+    // Gold
+    hud.goldVal.textContent = p.gold;
+
+    // Fuel
+    if (hud.fuelVal && hud.fuelBar) {
+      hud.fuelVal.textContent = `${Math.ceil(p.fuel)}%`;
+      hud.fuelBar.style.width = `${p.fuel}%`;
+      hud.fuelBar.className = "battery-fill " + (p.fuel < 25 ? "bg-red-pulse" : "bg-gold");
+      
+      const fuelWrapper = document.getElementById("hud-fuel");
+      if (fuelWrapper) {
+        if (p.fuel < 20 && s.lanternOn) {
+          fuelWrapper.classList.add("battery-low-shake");
+        } else {
+          fuelWrapper.classList.remove("battery-low-shake");
+        }
+      }
+    }
+
+    // Toggle crosshair visibility in gameplay
+    const crosshair = document.getElementById("fps-crosshair");
+    if (crosshair) {
+      crosshair.style.display = s.gameState === "playing" ? "block" : "none";
+    }
+
+    // Sync Lantern Button state (Toggles icon and glow border/background)
+    const lanternBtn = document.getElementById("btn-toggle-lantern");
+    if (lanternBtn) {
+      if (s.lanternOn && p.fuel > 0) {
+        lanternBtn.innerHTML = "🔦✨";
+        lanternBtn.style.filter = "none";
+        lanternBtn.style.background = "rgba(251, 191, 38, 0.35)"; // Amber active background
+        lanternBtn.style.borderColor = "rgba(251, 191, 38, 0.75)";  // Glowing amber border
+        lanternBtn.style.boxShadow = "0 0 15px rgba(251, 191, 38, 0.4)";
+      } else {
+        lanternBtn.innerHTML = "🔦";
+        lanternBtn.style.filter = "grayscale(1) brightness(0.6)";
+        lanternBtn.style.background = "rgba(15, 23, 42, 0.45)";    // Dark inactive background
+        lanternBtn.style.borderColor = "rgba(251, 191, 38, 0.25)";  // Inactive border
+        lanternBtn.style.boxShadow = "0 0 10px rgba(0, 0, 0, 0.3)";
+      }
+    }
+
+    // Sync Sprint Button state (Toggles glow border/background based on shift state)
+    const btnRun = document.getElementById("btn-run");
+    if (btnRun) {
+      if (game.keys && game.keys["shift"]) {
+        btnRun.style.background = "rgba(249, 115, 22, 0.4)"; // Orange active background
+        btnRun.style.borderColor = "rgba(249, 115, 22, 0.85)";  // Glowing orange border
+        btnRun.style.boxShadow = "0 0 18px rgba(249, 115, 22, 0.5)";
+      } else {
+        btnRun.style.background = "rgba(15, 23, 42, 0.6)";    // Dark inactive background
+        btnRun.style.borderColor = "rgba(249, 115, 22, 0.25)";  // Inactive border
+        btnRun.style.boxShadow = "0 0 10px rgba(0, 0, 0, 0.3)";
+      }
+    }
+
+    // Quests
+    hud.questsList.innerHTML = "";
+    
+    // Main Quest
+    const mainLi = document.createElement("li");
+    mainLi.textContent = `🎯 ${game.t("exitFound")}`;
+    hud.questsList.appendChild(mainLi);
+
+    // Well & Child Quest
+    if (s.quests.childState !== "solved" && p.inventory.bucket > 0) {
+      const qLi = document.createElement("li");
+      qLi.textContent = `💧 ${game.t("npc.well.drawWater")} (1/2)`;
+      hud.questsList.appendChild(qLi);
+    } else if (s.quests.childState !== "solved" && p.inventory.bucket_full > 0) {
+      const qLi = document.createElement("li");
+      qLi.textContent = `👶 ${game.t("npc.child.greeting")} (2/2)`;
+      hud.questsList.appendChild(qLi);
+    }
+
+    // Mouse Quest
+    if (s.quests.mouseState !== "solved" && p.inventory.cheese > 0) {
+      const qLi = document.createElement("li");
+      qLi.textContent = `🐭 ${game.t("npc.mouse.hasCheese")}`;
+      hud.questsList.appendChild(qLi);
+    }
+
+    // Show compass HUD only after player has found a compass
+    const compassPanel = document.getElementById("hud-compass-panel");
+    if (compassPanel) {
+      compassPanel.style.display = p.hasCompass ? "" : "none";
+    }
+  };
+
+  // 5. Virtual Joystick Setup (Mobile & Mouse)
+  const joystickZone = document.getElementById("joystick-zone");
+  const joystickBase = document.getElementById("joystick-base");
+  const joystickHandle = document.getElementById("joystick-handle");
+
+  if (joystickZone && joystickBase && joystickHandle) {
+    let joystickActive = false;
+    let joystickTouchId = null;
+    let startX = 0;
+    let startY = 0;
+    const maxDistance = 40; // Max visual displacement in pixels
+
+    const handleStart = (clientX, clientY, touchId = null) => {
+      joystickActive = true;
+      joystickTouchId = touchId;
+      
+      // Center the joystick base dynamically at the touch coordinate (base size is 120px, so 60px offset)
+      joystickBase.style.position = "fixed";
+      joystickBase.style.left = `${clientX - 60}px`;
+      joystickBase.style.top = `${clientY - 60}px`;
+      joystickBase.style.margin = "0";
+      
+      startX = clientX;
+      startY = clientY;
+    };
+
+    const handleMove = (clientX, clientY) => {
+      if (!joystickActive) return;
+
+      let dx = clientX - startX;
+      let dy = clientY - startY;
+      const distance = Math.hypot(dx, dy);
+
+      if (distance > maxDistance) {
+        dx = (dx / distance) * maxDistance;
+        dy = (dy / distance) * maxDistance;
+      }
+
+      // Move visual handle
+      joystickHandle.style.transform = `translate(${dx}px, ${dy}px)`;
+
+      // Map to game inputs:
+      // X maps to strafeDir (left/right, positive is right)
+      // Y maps to moveDir (forward/backward, positive Y is forward, so invert screen Y delta)
+      if (game.joystick) {
+        game.joystick.x = dx / maxDistance;
+        game.joystick.y = -dy / maxDistance;
+      }
+    };
+
+    const handleEnd = () => {
+      if (!joystickActive) return;
+      joystickActive = false;
+      joystickTouchId = null;
+      
+      // Snap the joystick base back to its default layout position
+      joystickBase.style.position = "";
+      joystickBase.style.left = "";
+      joystickBase.style.top = "";
+      joystickBase.style.margin = "";
+      
+      // Reset position
+      joystickHandle.style.transform = "translate(0px, 0px)";
+      if (game.joystick) {
+        game.joystick.x = 0;
+        game.joystick.y = 0;
+      }
+    };
+
+    // Listen to touchstart on window to allow dynamic floating/fixed joystick placement
+    window.addEventListener("touchstart", (e) => {
+      if (!game.state || game.state.gameState !== "playing" || joystickActive) return;
+      
+      const target = e.target;
+      const touch = e.changedTouches[0];
+      
+      // If we are in fixed mode, only start if touch is inside the joystick zone/base
+      if (game.analogMode === "fixed") {
+        if (target.closest("#joystick-zone") || target.closest(".joystick-base")) {
+          joystickActive = true;
+          joystickTouchId = touch.identifier;
+          
+          const rect = joystickBase.getBoundingClientRect();
+          startX = rect.left + rect.width / 2;
+          startY = rect.top + rect.height / 2;
+        }
+        return;
+      }
+      
+      // Ignore if user touches an interactive button or HUD element in floating mode
+      if (target.closest("button") || target.closest(".circle-btn") || target.closest("#hud-left-pill") || target.closest("#hud-right-pill") || target.closest(".btn-toggle")) {
+        return;
+      }
+      
+      // Only capture if touch is on the left half of the screen
+      if (touch.clientX < window.innerWidth / 2) {
+        handleStart(touch.clientX, touch.clientY, touch.identifier);
+      }
+    }, { passive: true });
+
+    window.addEventListener("touchmove", (e) => {
+      if (!joystickActive) return;
+      if (e.cancelable) e.preventDefault(); // Prevent default page bounce/scrolling
+      for (let i = 0; i < e.touches.length; i++) {
+        if (e.touches[i].identifier === joystickTouchId) {
+          handleMove(e.touches[i].clientX, e.touches[i].clientY);
+          break;
+        }
+      }
+    }, { passive: false });
+
+    window.addEventListener("touchend", (e) => {
+      if (!joystickActive) return;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === joystickTouchId) {
+          handleEnd();
+          break;
+        }
+      }
+    });
+
+    window.addEventListener("touchcancel", (e) => {
+      if (!joystickActive) return;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === joystickTouchId) {
+          handleEnd();
+          break;
+        }
+      }
+    });
+
+    // Mouse fallback for testing
+    joystickZone.addEventListener("mousedown", (e) => {
+      handleStart(e.clientX, e.clientY);
+      
+      const mouseMove = (me) => {
+        handleMove(me.clientX, me.clientY);
+      };
+      
+      const mouseUp = () => {
+        handleEnd();
+        window.removeEventListener("mousemove", mouseMove);
+        window.removeEventListener("mouseup", mouseUp);
+      };
+      
+      window.addEventListener("mousemove", mouseMove);
+      window.addEventListener("mouseup", mouseUp);
+    });
+  }
+
+  // Handle resizing window
+  window.addEventListener("resize", () => {
+    game.resizeCanvas();
+  });
+
+  // 7. Modal Callbacks
+  // Dialogue Overlay (NPCs, Obstacles & Ancient Scrolls)
+  game.onDialog = (config) => {
+    // Broadcast dialog opening to the co-op partner
+    if (game.multiplayer && game.multiplayer.isConnected && !config._isCoopReceived) {
+      game.multiplayer.send({
+        type: "SHOW_DIALOG",
+        title: config.title,
+        text: config.text,
+        isClue: config.isClue || false
+      });
+    }
+
+    modals.dialog.innerHTML = "";
+    modals.dialog.classList.remove("hidden");
+
+    // Render as a spooky ancient parchment note if it is a clue
+    if (config.isClue) {
+      if (game.audio && typeof game.audio.playPaperRustle === "function") {
+        game.audio.playPaperRustle();
+      }
+      const container = document.createElement("div");
+      container.className = "parchment-container animate-fade-in";
+      container.innerHTML = `
+        <div class="parchment-scroll">
+          <div class="parchment-seal">📜</div>
+          <h2 class="parchment-title">${config.title}</h2>
+          <p class="parchment-text">${config.text.replace(/\n/g, '<br>')}</p>
+          <div class="parchment-buttons" id="dialog-buttons"></div>
+        </div>
+      `;
+      modals.dialog.appendChild(container);
+
+      const btnContainer = container.querySelector("#dialog-buttons");
+      config.choices.forEach(c => {
+        const btn = document.createElement("button");
+        btn.className = "btn-parchment";
+        btn.textContent = c.text;
+        btn.addEventListener("click", () => {
+          modals.dialog.classList.add("hidden");
+          // Broadcast dialog closure
+          if (game.multiplayer && game.multiplayer.isConnected) {
+            game.multiplayer.send({
+              type: "CLOSE_DIALOG"
+            });
+          }
+          c.action();
+        });
+        btnContainer.appendChild(btn);
+      });
+      return;
+    }
+
+    // Determine NPC avatar/portrait
+    const portraitExplorer = new URL('../assets/portrait_explorer.png', import.meta.url).href;
+    const portraitSage = new URL('../assets/portrait_sage.png', import.meta.url).href;
+    const portraitMerchant = new URL('../assets/portrait_merchant.png', import.meta.url).href;
+    const portraitChild = new URL('../assets/portrait_child.png', import.meta.url).href;
+    const portraitMouse = new URL('../assets/portrait_mouse.png', import.meta.url).href;
+
+    let hasNpcPortrait = false;
+    let npcPortrait = "";
+    const titleLower = config.title.toLowerCase();
+    if (titleLower.includes("gezgin") || titleLower.includes("traveler") || titleLower.includes("bilge") || titleLower.includes("sage")) {
+      npcPortrait = portraitSage;
+      hasNpcPortrait = true;
+    } else if (titleLower.includes("tüccar") || titleLower.includes("merchant")) {
+      npcPortrait = portraitMerchant;
+      hasNpcPortrait = true;
+    } else if (titleLower.includes("çocuk") || titleLower.includes("child") || titleLower.includes("genç") || titleLower.includes("youth") || titleLower.includes("teen")) {
+      npcPortrait = portraitChild;
+      hasNpcPortrait = true;
+    } else if (titleLower.includes("fare") || titleLower.includes("sıçan") || titleLower.includes("mouse") || titleLower.includes("rat")) {
+      npcPortrait = portraitMouse;
+      hasNpcPortrait = true;
+    }
+
+    // Clear any active typewriter interval
+    if (window._dialogTypewriterInterval) {
+      clearInterval(window._dialogTypewriterInterval);
+      window._dialogTypewriterInterval = null;
+    }
+
+    const container = document.createElement("div");
+    container.className = "dialog-container";
+
+    container.innerHTML = `
+      <!-- NPC Speech Bubble on Left -->
+      <div class="dialog-npc-side animate-fade-in-left">
+        ${hasNpcPortrait ? `
+        <div class="dialog-portrait-wrapper">
+          <div class="dialog-avatar-box">
+            <img src="${npcPortrait}" class="dialog-portrait-img">
+            <div class="dialog-crt-overlay"></div>
+          </div>
+          <span class="dialog-name">${config.title}</span>
+        </div>
+        ` : `
+        <div class="dialog-portrait-wrapper" style="display: none;"></div>
+        `}
+        <div class="dialog-bubble dialog-bubble-npc" style="${hasNpcPortrait ? '' : 'margin-left: 0; width: 100%;'}">
+          <p class="dialog-text" style="margin: 0;"></p>
+          <div class="dialog-typewriter-prompt">${game.lang === "tr" ? "▶ Hızlandırmak için buraya tıkla" : "▶ Click here to skip"}</div>
+        </div>
+      </div>
+
+      <!-- Player Options Bubble on Right -->
+      <div class="dialog-player-side animate-fade-in-right">
+        <div class="dialog-portrait-wrapper">
+          <div class="dialog-avatar-box">
+            <img src="${portraitExplorer}" class="dialog-portrait-img">
+            <div class="dialog-crt-overlay"></div>
+          </div>
+          <span class="dialog-name">${game.lang === "tr" ? "Kaşif" : "Explorer"}</span>
+        </div>
+        <div class="dialog-bubble dialog-bubble-player" style="display: flex; flex-direction: column; gap: 8px;">
+          <div class="modal-buttons" id="dialog-buttons" style="flex-direction: column; width: 100%;"></div>
+        </div>
+      </div>
+    `;
+
+    modals.dialog.appendChild(container);
+
+    const dialogTextEl = container.querySelector(".dialog-text");
+    const btnContainer = container.querySelector("#dialog-buttons");
+    const promptEl = container.querySelector(".dialog-typewriter-prompt");
+    const npcSide = container.querySelector(".dialog-npc-side");
+
+    // Build choices inside container
+    btnContainer.innerHTML = "";
+    config.choices.forEach(c => {
+      const btn = document.createElement("button");
+      btn.className = "btn-modal btn-primary";
+      btn.style.width = "100%";
+      btn.style.margin = "0";
+      btn.textContent = c.text;
+      btn.addEventListener("click", () => {
+        if (window._dialogTypewriterInterval) {
+          clearInterval(window._dialogTypewriterInterval);
+          window._dialogTypewriterInterval = null;
+        }
+        modals.dialog.classList.add("hidden");
+        // Broadcast dialog closure
+        if (game.multiplayer && game.multiplayer.isConnected) {
+          game.multiplayer.send({
+            type: "CLOSE_DIALOG"
+          });
+        }
+        c.action();
+      });
+      btnContainer.appendChild(btn);
+    });
+
+    // Temporarily disable buttons
+    btnContainer.style.opacity = "0.2";
+    btnContainer.style.pointerEvents = "none";
+    btnContainer.style.transition = "opacity 0.25s ease";
+
+    const textToType = config.text;
+    let index = 0;
+    let visibleText = "";
+
+    const finishTypewriter = () => {
+      if (window._dialogTypewriterInterval) {
+        clearInterval(window._dialogTypewriterInterval);
+        window._dialogTypewriterInterval = null;
+      }
+      dialogTextEl.innerHTML = textToType.replace(/\n/g, '<br>');
+      btnContainer.style.opacity = "1";
+      btnContainer.style.pointerEvents = "auto";
+      if (promptEl) promptEl.style.display = "none";
+    };
+
+    window._dialogTypewriterInterval = setInterval(() => {
+      if (index >= textToType.length) {
+        finishTypewriter();
+        return;
+      }
+      if (textToType[index] === '\n') {
+        visibleText += "<br>";
+        index++;
+      } else {
+        visibleText += textToType[index];
+        index++;
+      }
+      dialogTextEl.innerHTML = visibleText;
+    }, 15);
+
+    if (npcSide) {
+      npcSide.addEventListener("click", () => {
+        if (window._dialogTypewriterInterval) {
+          finishTypewriter();
+        }
+      });
+    }
+  };
+
+  // Chest Overlay
+  game.onChest = (config) => {
+    modals.chest.innerHTML = "";
+    modals.chest.classList.remove("hidden");
+
+    const content = document.createElement("div");
+    content.className = "modal-content glass text-center";
+
+    if (config.isOpeningPrompt) {
+      content.innerHTML = `
+        <div class="chest-icon-anim animate-float">📦</div>
+        <h3 class="modal-title glow-text" data-t="chest.prompt">${game.t("chest.prompt")}</h3>
+        <div class="modal-buttons mt-6">
+          <button class="btn-modal btn-success" id="btn-chest-open" data-t="chest.openBtn">${game.t("chest.openBtn")}</button>
+          <button class="btn-modal btn-danger" id="btn-chest-leave" data-t="chest.leaveBtn">${game.t("chest.leaveBtn")}</button>
+        </div>
+      `;
+      modals.chest.appendChild(content);
+
+      content.querySelector("#btn-chest-open").addEventListener("click", config.onOpen);
+      content.querySelector("#btn-chest-leave").addEventListener("click", config.onLeave);
+    } else {
+      // Chest opening outcome screen
+      let adButtonHTML = "";
+      if (config.detail) {
+        // Only allow ad undo for traps
+        adButtonHTML = `<button class="btn-modal btn-warning w-full" id="btn-chest-ad" data-t="chest.adUndo">${game.t("chest.adUndo")}</button>`;
+      }
+
+      content.innerHTML = `
+        <div class="outcome-title text-violet glow-text text-2xl font-bold">${config.title}</div>
+        <p class="modal-text my-6">${config.text}</p>
+        <div class="modal-buttons flex-col gap-3">
+          ${adButtonHTML}
+          <button class="btn-modal btn-primary w-full" id="btn-chest-close">${config.detail ? game.t("chest.adClose") : game.t("close")}</button>
+        </div>
+      `;
+      modals.chest.appendChild(content);
+
+      if (config.detail) {
+        content.querySelector("#btn-chest-ad").addEventListener("click", () => {
+          modals.chest.classList.add("hidden");
+          config.onWatchAd();
+        });
+      }
+      content.querySelector("#btn-chest-close").addEventListener("click", () => {
+        modals.chest.classList.add("hidden");
+        config.onClose();
+      });
+    }
+  };
+
+  // Ancient Altar Overlay
+  game.onAltar = (config) => {
+    if (!modals.altar) return;
+    modals.altar.classList.remove("hidden");
+
+    const cooldownBox = modals.altar.querySelector("#altar-cooldown-text");
+    const cooldownSecSpan = modals.altar.querySelector("#altar-cooldown-sec");
+
+    const checkCooldown = () => {
+      const p = game.state ? game.state.player : null;
+      const nowMs = Date.now();
+      const lastUse = (p && p.lastAltarUseTime) ? p.lastAltarUseTime : 0;
+      const rem = Math.max(0, Math.ceil((30000 - (nowMs - lastUse)) / 1000));
+
+      if (rem > 0) {
+        if (cooldownBox) cooldownBox.classList.remove("hidden");
+        if (cooldownSecSpan) cooldownSecSpan.textContent = rem;
+      } else {
+        if (cooldownBox) cooldownBox.classList.add("hidden");
+      }
+      return rem;
+    };
+
+    const remSeconds = checkCooldown();
+
+    const setupBtn = (id, type) => {
+      const btn = modals.altar.querySelector(id);
+      if (!btn) return;
+      
+      const newBtn = btn.cloneNode(true);
+      btn.parentNode.replaceChild(newBtn, btn);
+
+      if (remSeconds > 0) {
+        newBtn.style.opacity = "0.5";
+        newBtn.style.cursor = "not-allowed";
+        newBtn.onclick = () => {
+          const rem = checkCooldown();
+          if (game.showToast) game.showToast(game.t("altar.coopCooldown", { sec: rem }), true);
+        };
+      } else {
+        newBtn.style.opacity = "1.0";
+        newBtn.style.cursor = "pointer";
+        newBtn.onclick = () => {
+          const success = config.onUpgrade(type);
+          if (success) {
+            modals.altar.classList.add("hidden");
+          } else {
+            checkCooldown();
+          }
+        };
+      }
+    };
+
+    setupBtn("#btn-altar-a1", "A1");
+    setupBtn("#btn-altar-a2", "A2");
+    setupBtn("#btn-altar-b1", "B1");
+    setupBtn("#btn-altar-b2", "B2");
+
+    // Live real-time cooldown ticker while modal is open
+    if (window._altarTimerInterval) clearInterval(window._altarTimerInterval);
+    window._altarTimerInterval = setInterval(() => {
+      if (modals.altar.classList.contains("hidden")) {
+        clearInterval(window._altarTimerInterval);
+        return;
+      }
+      const rem = checkCooldown();
+      if (rem === 0) {
+        setupBtn("#btn-altar-a1", "A1");
+        setupBtn("#btn-altar-a2", "A2");
+        setupBtn("#btn-altar-b1", "B1");
+        setupBtn("#btn-altar-b2", "B2");
+      }
+    }, 500);
+
+    const closeBtn = modals.altar.querySelector("#btn-altar-close");
+    if (closeBtn) {
+      const newClose = closeBtn.cloneNode(true);
+      closeBtn.parentNode.replaceChild(newClose, closeBtn);
+      newClose.onclick = () => {
+        if (window._altarTimerInterval) clearInterval(window._altarTimerInterval);
+        modals.altar.classList.add("hidden");
+        config.onClose();
+      };
+    }
+  };
+
+  // Toast Notification System
+  game.showToast = (message, isWarning = false) => {
+    const container = document.getElementById("toast-container");
+    if (!container) return;
+
+    const toast = document.createElement("div");
+    toast.className = `game-toast${isWarning ? " warning-toast" : ""}`;
+
+    let icon = "🎒";
+    if (isWarning) {
+      icon = "⚠️";
+    } else if (message.toLowerCase().includes("altın") || message.toLowerCase().includes("gold")) {
+      icon = "💰";
+    } else if (message.toLowerCase().includes("anahtar") || message.toLowerCase().includes("key")) {
+      icon = "🔑";
+    } else if (message.toLowerCase().includes("makas") || message.toLowerCase().includes("shears")) {
+      icon = "✂️";
+    } else if (message.toLowerCase().includes("balta") || message.toLowerCase().includes("axe")) {
+      icon = "🪓";
+    } else if (message.toLowerCase().includes("halat") || message.toLowerCase().includes("rope")) {
+      icon = "🪢";
+    } else if (message.toLowerCase().includes("pusula") || message.toLowerCase().includes("compass")) {
+      icon = "🧭";
+    } else if (message.toLowerCase().includes("harita") || message.toLowerCase().includes("map")) {
+      icon = "🗺️";
+    } else if (message.toLowerCase().includes("pil") || message.toLowerCase().includes("battery")) {
+      icon = "🔋";
+    } else if (message.toLowerCase().includes("peynir") || message.toLowerCase().includes("cheese")) {
+      icon = "🧀";
+    }
+
+    toast.innerHTML = `
+      <span class="toast-icon">${icon}</span>
+      <span class="toast-text">${message}</span>
+    `;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+      toast.remove();
+    }, 3000);
+  };
+
+  // Combination Keypad Overlay
+  game.onKeypad = (correctCode, onSubmit) => {
+    modals.keypad.innerHTML = "";
+    modals.keypad.classList.remove("hidden");
+
+    let entered = "";
+    const content = document.createElement("div");
+    content.className = "modal-content glass text-center max-w-sm";
+
+    content.innerHTML = `
+      <h3 class="modal-title text-cyan glow-text" data-t="puzzle.keypadTitle">${game.t("puzzle.keypadTitle")}</h3>
+      <div class="keypad-display" id="keypad-display">----</div>
+      <div class="keypad-grid">
+        <button class="btn-key" data-num="1">1</button>
+        <button class="btn-key" data-num="2">2</button>
+        <button class="btn-key" data-num="3">3</button>
+        <button class="btn-key" data-num="4">4</button>
+        <button class="btn-key" data-num="5">5</button>
+        <button class="btn-key" data-num="6">6</button>
+        <button class="btn-key" data-num="7">7</button>
+        <button class="btn-key" data-num="8">8</button>
+        <button class="btn-key" data-num="9">9</button>
+        <button class="btn-key btn-danger" id="btn-key-clear">C</button>
+        <button class="btn-key" data-num="0">0</button>
+        <button class="btn-key btn-success" id="btn-key-enter">OK</button>
+      </div>
+      <button class="btn-modal btn-primary mt-4 w-full" id="btn-keypad-close">${game.t("close")}</button>
+    `;
+    modals.keypad.appendChild(content);
+
+    const display = content.querySelector("#keypad-display");
+
+    const updateDisplay = () => {
+      display.textContent = entered.padEnd(4, "-");
+    };
+
+    content.querySelectorAll(".btn-key[data-num]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        if (entered.length < 4) {
+          entered += btn.getAttribute("data-num");
+          game.audio.playClick();
+          updateDisplay();
+        }
+      });
+    });
+
+    content.querySelector("#btn-key-clear").addEventListener("click", () => {
+      entered = "";
+      game.audio.playClick();
+      updateDisplay();
+    });
+
+    content.querySelector("#btn-key-enter").addEventListener("click", () => {
+      modals.keypad.classList.add("hidden");
+      if (entered === correctCode) {
+        game.showToast(game.t("puzzle.keypadCorrect"));
+        onSubmit(true);
+      } else {
+        game.showToast(game.t("puzzle.keypadIncorrect"));
+        onSubmit(false);
+      }
+    });
+
+    content.querySelector("#btn-keypad-close").addEventListener("click", () => {
+      modals.keypad.classList.add("hidden");
+      game.state.gameState = "playing";
+      if (game.onStateChange) game.onStateChange();
+    });
+  };
+
+  // Random Event Dialogue overlay
+  game.onEvent = (config) => {
+    modals.dialog.innerHTML = "";
+    modals.dialog.classList.remove("hidden");
+
+    const content = document.createElement("div");
+    content.className = "modal-content glass border-orange";
+
+    content.innerHTML = `
+      <h3 class="modal-title text-orange glow-text">⚠️ Olay / Event</h3>
+      <p class="modal-text">${config.text}</p>
+      <div class="modal-buttons" id="event-buttons"></div>
+    `;
+
+    modals.dialog.appendChild(content);
+
+    const btnContainer = content.querySelector("#event-buttons");
+    config.choices.forEach(c => {
+      const btn = document.createElement("button");
+      btn.className = "btn-modal btn-primary w-full text-left";
+      btn.textContent = c.text;
+      btn.addEventListener("click", () => {
+        modals.dialog.classList.add("hidden");
+        c.action();
+      });
+      btnContainer.appendChild(btn);
+    });
+  };
+
+  // Mock Rewarded Ad Overlay
+  game.onAd = (durationSeconds, onFinished, onSkip) => {
+    modals.ad.innerHTML = "";
+    modals.ad.classList.remove("hidden");
+
+    const adMockBrands = [
+      {
+        title: "Angry Goblins 3D",
+        desc: "CRUSH Goblins. DEFEND the Castle. Solve puzzles with explosions! Play FREE now!",
+        icon: "💥"
+      },
+      {
+        title: "Candy Match RPG",
+        desc: "Connect 3 jellies to cast fireballs! Level 10,000 awaits! Extremely addictive!",
+        icon: "🍬"
+      },
+      {
+        title: "Subway Run 4D",
+        desc: "Infinite running, now in 4 dimensions! Dodge temporal anomaly cars! Grab the coins!",
+        icon: "🏃‍♂️"
+      }
+    ];
+
+    const ad = adMockBrands[Math.floor(Math.random() * adMockBrands.length)];
+    let timeLeft = durationSeconds;
+
+    const content = document.createElement("div");
+    content.className = "modal-content glass ad-mock text-center";
+
+    content.innerHTML = `
+      <div class="ad-label" data-t="adWatchTitle">${game.t("adWatchTitle")}</div>
+      <div class="ad-card glass my-6">
+        <div class="ad-icon animate-bounce">${ad.icon}</div>
+        <h4 class="ad-name text-violet glow-text text-xl font-bold mt-2">${ad.title}</h4>
+        <p class="ad-desc text-gray text-sm mt-3 px-4">${ad.desc}</p>
+        <button class="btn-modal btn-success mt-4 scale-95 pointer-events-none">DOWNLOAD FREE</button>
+      </div>
+      <div class="progress-bar my-4 w-full">
+        <div class="progress-bar-fill bg-violet" id="ad-progress" style="width: 100%;"></div>
+      </div>
+      <div class="flex justify-between items-center px-4">
+        <span class="text-sm font-semibold text-gray" id="ad-timer">${game.t("adSeconds", { sec: timeLeft })}</span>
+        <button class="btn-skip disabled" id="btn-ad-skip" disabled data-t="skip">${game.t("skip")}</button>
+      </div>
+    `;
+    modals.ad.appendChild(content);
+
+    const timerText = content.querySelector("#ad-timer");
+    const progress = content.querySelector("#ad-progress");
+    const skipBtn = content.querySelector("#btn-ad-skip");
+
+    const interval = setInterval(() => {
+      timeLeft--;
+      if (timeLeft <= 0) {
+        clearInterval(interval);
+        progress.style.width = "0%";
+        timerText.textContent = game.t("adRewardText");
+        
+        // Enable Skip to claim
+        skipBtn.removeAttribute("disabled");
+        skipBtn.className = "btn-skip active";
+        skipBtn.textContent = game.t("close");
+        skipBtn.addEventListener("click", () => {
+          modals.ad.classList.add("hidden");
+          onFinished();
+        });
+      } else {
+        progress.style.width = `${(timeLeft / durationSeconds) * 100}%`;
+        timerText.textContent = game.t("adSeconds", { sec: timeLeft });
+      }
+    }, 1000);
+
+    // Initial skip button binds to early exit without reward
+    skipBtn.addEventListener("click", () => {
+      if (timeLeft > 0) {
+        clearInterval(interval);
+        modals.ad.classList.add("hidden");
+        onSkip();
+      }
+    });
+  };
+
+  // Asynchronous Floor Transition Screen (Rope climbing/descending)
+  game.onFloorTransition = async (nextFloor, direction) => {
+    const loadingScreen = document.getElementById("loading-screen");
+    const loadingBar = document.getElementById("loading-bar");
+    const loadingText = document.getElementById("loading-text");
+    
+    // Temporarily pause the game to prevent updates/movement during transition
+    const prevGameState = game.state.gameState;
+    game.state.gameState = "paused";
+    
+    if (loadingScreen) {
+      loadingScreen.classList.remove("hidden");
+      if (loadingBar) loadingBar.style.width = "0%";
+      const isEn = localStorage.getItem("maze_lang") === "en";
+      if (loadingText) {
+        if (direction === "down") {
+          loadingText.textContent = isEn ? "Descending to the lower floor..." : "Halatla alt kata iniliyor...";
+        } else {
+          loadingText.textContent = isEn ? "Climbing to the upper floor..." : "Halatla üst kata tırmanılıyor...";
+        }
+      }
+    }
+    
+    const delay = ms => new Promise(r => setTimeout(r, ms));
+    
+    try {
+      await delay(100);
+      if (loadingBar) loadingBar.style.width = "50%";
+      
+      // Switch state floor
+      game.state.currentFloor = nextFloor;
+      
+      // Rebuild scene for new floor
+      game.renderer.rebuildScene(game.state);
+
+      // Immediately sync position and new floor to Co-op partner
+      if (game.multiplayer && game.multiplayer.isConnected) {
+        const p = game.state.player;
+        game.multiplayer.send({
+          type: "PLAYER_POS",
+          x: Math.round(p.x * 100) / 100,
+          y: Math.round(p.y * 100) / 100,
+          floor: nextFloor,
+          angle: Math.round(p.angle * 100) / 100,
+          pitch: Math.round((p.pitch || 0) * 100) / 100,
+          lanternOn: game.state.lanternOn,
+          fuel: Math.round(p.fuel),
+          isDead: p.isDead || false
+        });
+      }
+      
+      if (loadingBar) loadingBar.style.width = "100%";
+      await delay(100);
+    } catch (e) {
+      console.error("Error during floor transition:", e);
+      if (typeof window.onerror === "function") {
+        window.onerror("Transition Error: " + e.message, "js/ui.js", 1749, 0, e);
+      }
+    } finally {
+      if (loadingScreen) loadingScreen.classList.add("hidden");
+      // Resume game state
+      game.state.gameState = prevGameState;
+      game.resizeCanvas();
+      game.draw();
+    }
+  };
+
+  // Game End Screens (Victory / Game Over)
+  game.onGameEnd = (isVictory, gameCompleted = false) => {
+    modals.end.innerHTML = "";
+    modals.end.classList.remove("hidden");
+
+    const content = document.createElement("div");
+    content.className = `modal-content glass text-center ${isVictory ? "border-success" : "border-danger"}`;
+
+    let title = isVictory ? game.t("victory") : game.t("gameOver");
+    let desc = isVictory ? game.t("victoryDesc") : game.t("gameOverDesc");
+    const emoji = isVictory ? (gameCompleted ? "👑" : "🏆") : "💀";
+    const titleColor = isVictory ? "text-green" : "text-red";
+
+    if (isVictory && gameCompleted) {
+      title = game.lang === "en" ? "GRAND VICTORY!" : "BÜYÜK ZAFER!";
+      desc = game.lang === "en"
+        ? "Congratulations! You have successfully escaped all 20 levels of the Maze of Fear! You are a master explorer!"
+        : "Tebrikler! Korku Labirenti'nin tüm 20 bölümünü de başarıyla geçerek kaçtın! Artık usta bir kaşifsin!";
+    }
+
+    let adReviveBtn = "";
+    if (!isVictory) {
+      // Allow watch ad to revive
+      adReviveBtn = `<button class="btn-modal btn-warning w-full py-3 mb-3 glow-box" id="btn-revive-ad">${game.t("reviveBtn")}</button>`;
+    }
+
+    content.innerHTML = `
+      <div class="end-emoji animate-float">${emoji}</div>
+      <h2 class="modal-title ${titleColor} glow-text text-3xl font-extrabold">${title}</h2>
+      <p class="modal-text my-6 px-4">${desc}</p>
+      
+      <div class="stats-panel glass py-4 px-6 mb-6 inline-block text-left w-full">
+        <div>💰 ${game.t("gold")}: <span class="font-bold text-gold">${game.state.player.gold}</span></div>
+        <div>👣 ${game.t("steps")}: <span class="font-bold text-violet">${Math.round(game.state.stepsTaken)}</span></div>
+        <div>🧩 ${game.t("difficulty")}: <span class="font-bold text-cyan">${game.t("diff" + game.difficulty.charAt(0).toUpperCase() + game.difficulty.slice(1))}</span></div>
+      </div>
+
+      <div class="modal-buttons flex-col w-full">
+        ${adReviveBtn}
+        <button class="btn-modal btn-primary w-full py-3" id="btn-restart" data-t="restart">${game.t("restart")}</button>
+        <button class="btn-modal btn-danger w-full py-3 mt-2" id="btn-main-menu">${game.t("back")}</button>
+      </div>
+    `;
+    modals.end.appendChild(content);
+
+    if (!isVictory) {
+      content.querySelector("#btn-revive-ad").addEventListener("click", () => {
+        modals.end.classList.add("hidden");
+        game.revivePlayer();
+      });
+    }
+
+    content.querySelector("#btn-restart").addEventListener("click", () => {
+      modals.end.classList.add("hidden");
+      const isCoop = game.multiplayer && game.multiplayer.isConnected;
+      if (isCoop && game.multiplayer.isHost) {
+        // Host: start a new co-op game with random level from same map size
+        game.startCoopGame(true);
+      } else if (isCoop && !game.multiplayer.isHost) {
+        // Guest: wait for host to start
+        game.showToast(game.lang === "tr" ? "Oda sahibinin yeni oyunu başlatması bekleniyor..." : "Waiting for host to start a new game...");
+      } else {
+        triggerLoadingAndStart(!isVictory);
+      }
+    });
+
+    content.querySelector("#btn-main-menu").addEventListener("click", () => {
+      modals.end.classList.add("hidden");
+      showScreen("menu");
+    });
+  };
+
+  // --- RPG Inventory Modal Logic ---
+  let selectedItemId = null;
+
+  const renderInventory = () => {
+    const s = game.state;
+    const p = s.player;
+    hud.invGrid.innerHTML = "";
+
+    const emojiMap = {
+      key: "🔑", shears: "✂️", bucket: "🪣", bucket_full: "💧", axe: "🪓", rope: "🪢", compass: "🧭", map_piece: "📜", fuel: "🛢️", fuel_half: "🛢️", cheese: "🧀"
+    };
+
+    Object.entries(p.inventory).forEach(([itemId, count]) => {
+      if (count <= 0) return;
+
+      const slot = document.createElement("div");
+      slot.className = "inv-slot";
+      if (selectedItemId === itemId) slot.classList.add("active");
+      if (p.equippedItem === itemId) {
+        slot.style.borderColor = "var(--gold)";
+        slot.style.borderWidth = "2px";
+      }
+
+      slot.innerHTML = `
+        <div class="inv-slot-emoji">${emojiMap[itemId] || "📦"}</div>
+        <div class="inv-slot-count">x${count}</div>
+      `;
+
+      slot.addEventListener("click", () => {
+        selectedItemId = itemId;
+        renderInventory();
+        showItemDetails(itemId);
+      });
+
+      hud.invGrid.appendChild(slot);
+    });
+
+    if (!selectedItemId || p.inventory[selectedItemId] <= 0) {
+      hud.invDetailPanel.classList.add("hidden");
+      selectedItemId = null;
+    } else {
+      showItemDetails(selectedItemId);
+    }
+  };
+
+  const showItemDetails = (itemId) => {
+    const p = game.state.player;
+    hud.invDetailPanel.classList.remove("hidden");
+    
+    let name = game.t(`items.${itemId}.name`);
+    let desc = game.t(`items.${itemId}.desc`);
+    
+    if (itemId === "revival_scroll") {
+      name = game.lang === "tr" ? "Diriltme Parşömeni" : "Revival Scroll";
+      desc = game.lang === "tr" 
+        ? "Ölen arkadaşınızı hayata döndüren karanlık bir ritüel parşömeni." 
+        : "A dark ritual parchment that can revive a deceased teammate.";
+    }
+
+    hud.invItemTitle.textContent = name;
+    hud.invItemDesc.textContent = desc;
+
+    // Use Button
+    const usableItems = ["fuel", "fuel_half", "map_piece", "compass"];
+    const isCoopActive = game.multiplayer && game.multiplayer.isConnected;
+    const isTeammateDead = isCoopActive && game.state.otherPlayer && game.state.otherPlayer.isDead;
+    
+    if (isCoopActive && isTeammateDead) {
+      usableItems.push("revival_scroll");
+    }
+
+    if (usableItems.includes(itemId)) {
+      hud.btnInvUse.style.display = "block";
+      hud.btnInvUse.textContent = game.lang === "tr" ? "Kullan" : "Use";
+      
+      const newUse = hud.btnInvUse.cloneNode(true);
+      hud.btnInvUse.replaceWith(newUse);
+      hud.btnInvUse = newUse;
+      
+      hud.btnInvUse.addEventListener("click", () => {
+        if (itemId === "revival_scroll") {
+          if (p.inventory.revival_scroll > 0) {
+            p.inventory.revival_scroll--;
+            // Send revive packet
+            game.multiplayer.send({
+              type: "REVIVE_PLAYER",
+              spawnX: p.x,
+              spawnY: p.y
+            });
+            game.showToast(game.lang === "tr" ? "Diriltme ritüeli gerçekleştirildi!" : "Revival ritual performed!");
+            game.reviveOtherPlayerLocally();
+          }
+        } else {
+          game.useInventoryItem(itemId);
+        }
+        renderInventory();
+        game.onStateChange();
+      });
+    } else {
+      hud.btnInvUse.style.display = "none";
+    }
+
+    // Trade / Send button (Co-op specific)
+    if (hud.btnInvSend) {
+      const otherPlayer = game.state.otherPlayer;
+      let canTrade = false;
+      if (isCoopActive && otherPlayer && !otherPlayer.isDead) {
+        const dist = Math.hypot(p.x - otherPlayer.x, p.y - otherPlayer.y);
+        if (dist <= 2.0) {
+          canTrade = true;
+        }
+      }
+      
+      if (canTrade && p.inventory[itemId] > 0) {
+        hud.btnInvSend.classList.remove("hidden");
+        hud.btnInvSend.textContent = game.lang === "tr" ? "Arkadaşına Gönder" : "Send to Friend";
+        
+        const newSend = hud.btnInvSend.cloneNode(true);
+        hud.btnInvSend.replaceWith(newSend);
+        hud.btnInvSend = newSend;
+        
+        hud.btnInvSend.addEventListener("click", () => {
+          if (p.inventory[itemId] > 0) {
+            p.inventory[itemId]--;
+            // Send to peer
+            game.multiplayer.send({
+              type: "RECEIVE_ITEM",
+              item: itemId,
+              amount: 1
+            });
+            
+            let itemLabel = itemId;
+            if (itemId === "revival_scroll") {
+              itemLabel = game.lang === "tr" ? "Diriltme Ayini Parşömeni" : "Revival Ritual Scroll";
+            } else {
+              itemLabel = game.t(`items.${itemId}.name`);
+            }
+            
+            game.showToast(
+              game.lang === "tr"
+                ? `Arkadaşına ${itemLabel} gönderdin.`
+                : `Sent ${itemLabel} to your friend.`
+            );
+            renderInventory();
+            game.onStateChange();
+          }
+        });
+      } else {
+        hud.btnInvSend.classList.add("hidden");
+      }
+    }
+
+    // Equip button disabled (items are used automatically when interacting with obstacles)
+    if (hud.btnInvEquip) {
+      hud.btnInvEquip.style.display = "none";
+    }
+  };
+
+  // Open Bag Button (Mobile touchstart & click support)
+  if (hud.btnOpenInventory) {
+    const handleOpenBag = (e) => {
+      e.preventDefault();
+      if (!game.state || game.state.gameState !== "playing") return;
+      game.state.gameState = "modal";
+      hud.modalInventory.classList.remove("hidden");
+      selectedItemId = null;
+      renderInventory();
+    };
+    hud.btnOpenInventory.addEventListener("click", handleOpenBag);
+    hud.btnOpenInventory.addEventListener("touchstart", handleOpenBag, { passive: false });
+  }
+
+  // Toggle Lantern Button
+  const btnToggleLantern = document.getElementById("btn-toggle-lantern");
+  if (btnToggleLantern) {
+    const handleToggleLantern = (e) => {
+      e.preventDefault();
+      game.toggleLantern();
+    };
+    btnToggleLantern.addEventListener("click", handleToggleLantern);
+    btnToggleLantern.addEventListener("touchstart", handleToggleLantern, { passive: false });
+  }
+
+  // Mobile Interact Button
+  const btnInteract = document.getElementById("btn-interact");
+  if (btnInteract) {
+    const handleInteract = (e) => {
+      e.preventDefault();
+      if (!game.state) return; // Prevent crashes when clicking the button outside a game session (e.g., during HUD editing)
+      
+      if (game.state.gameState === "modal") {
+        // Close modal if already in a modal view
+        const escapeEvent = new KeyboardEvent("keydown", { key: "Escape" });
+        window.dispatchEvent(escapeEvent);
+      } else {
+        game.interactWithClosest();
+      }
+    };
+    btnInteract.addEventListener("click", handleInteract);
+    btnInteract.addEventListener("touchstart", handleInteract, { passive: false });
+  }
+
+  // Run / Sprint Button Binding (Toggles shift key for ergonomics)
+  const btnRun = document.getElementById("btn-run");
+  if (btnRun) {
+    const toggleRun = (e) => {
+      e.preventDefault();
+      if (game.keys && game.state && game.state.player) {
+        if (game.state.player.exhausted) return;
+        game.keys["shift"] = !game.keys["shift"];
+      }
+    };
+
+    btnRun.addEventListener("touchstart", toggleRun, { passive: false });
+    btnRun.addEventListener("click", toggleRun);
+  }
+
+  // Close Bag Button
+  if (hud.btnCloseInventory) {
+    const handleCloseBag = (e) => {
+      e.preventDefault();
+      game.state.gameState = "playing";
+      hud.modalInventory.classList.add("hidden");
+    };
+    hud.btnCloseInventory.addEventListener("click", handleCloseBag);
+    hud.btnCloseInventory.addEventListener("touchstart", handleCloseBag, { passive: false });
+  }
+
+  // Open Map / Close Map helpers
+  let mapAnimId = null;
+  const openMap = () => {
+    if (!game.state || game.state.gameState !== "playing") return;
+    game.state.gameState = "modal";
+    document.getElementById("modal-map").classList.remove("hidden");
+    
+    const updateMapLoop = () => {
+      drawMap();
+      if (!document.getElementById("modal-map").classList.contains("hidden")) {
+        mapAnimId = requestAnimationFrame(updateMapLoop);
+      }
+    };
+    updateMapLoop();
+  };
+
+  const closeMap = () => {
+    if (!game.state) return;
+    game.state.gameState = "playing";
+    document.getElementById("modal-map").classList.add("hidden");
+    
+    // Hide instructions and cancel reveal mode
+    const instructions = document.getElementById("map-instructions");
+    if (instructions) instructions.style.display = "none";
+    game.state.mapRevealMode = false;
+    
+    if (mapAnimId) {
+      cancelAnimationFrame(mapAnimId);
+      mapAnimId = null;
+    }
+  };
+
+  // Open Map Button Click
+  const btnOpenMap = document.getElementById("btn-open-map");
+  if (btnOpenMap) {
+    const handleOpen = (e) => {
+      e.preventDefault();
+      const mapModal = document.getElementById("modal-map");
+      if (mapModal && !mapModal.classList.contains("hidden")) {
+        closeMap();
+      } else {
+        openMap();
+      }
+    };
+    btnOpenMap.addEventListener("click", handleOpen);
+    btnOpenMap.addEventListener("touchstart", handleOpen, { passive: false });
+  }
+
+  // Close Map Button Click & Backdrop Click (Mobile friendly!)
+  const btnCloseMap = document.getElementById("btn-close-map");
+  if (btnCloseMap) {
+    const handleClose = (e) => {
+      e.preventDefault();
+      closeMap();
+    };
+    btnCloseMap.addEventListener("click", handleClose);
+    btnCloseMap.addEventListener("touchstart", handleClose, { passive: false });
+  }
+
+  const modalMap = document.getElementById("modal-map");
+  if (modalMap) {
+    const handleBackdrop = (e) => {
+      // Close map if user taps/clicks the dark background overlay itself
+      if (e.target === modalMap) {
+        e.preventDefault();
+        closeMap();
+      }
+    };
+    modalMap.addEventListener("click", handleBackdrop);
+    modalMap.addEventListener("touchstart", handleBackdrop, { passive: false });
+  }
+
+  // Handle map click/touch for Map Piece target selection
+  const mapCanvas = document.getElementById("map-canvas");
+  if (mapCanvas) {
+    const handleMapClick = (e) => {
+      if (!game.state || !game.state.mapRevealMode) return;
+      
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const rect = mapCanvas.getBoundingClientRect();
+      let clientX, clientY;
+      
+      if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else if (e.changedTouches && e.changedTouches.length > 0) {
+        clientX = e.changedTouches[0].clientX;
+        clientY = e.changedTouches[0].clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
+      
+      const x = ((clientX - rect.left) / rect.width) * mapCanvas.width;
+      const y = ((clientY - rect.top) / rect.height) * mapCanvas.height;
+      
+      game.revealMapAt(x, y, mapCanvas.width, mapCanvas.height);
+      // Brief delay so player can see the revealed area before the map closes
+      setTimeout(() => closeMap(), 400);
+    };
+    
+    mapCanvas.addEventListener("click", handleMapClick);
+    mapCanvas.addEventListener("touchstart", handleMapClick, { passive: false });
+  }
+
+  // Hotkeys (I/E/M and Modal Closers)
+  window.addEventListener("keydown", (e) => {
+    const k = e.key.toLowerCase();
+
+    // If a modal is active, allow closing it with Escape, Backspace, or E
+    if (game.state && game.state.gameState === "modal") {
+      if (e.key === "Escape" || e.key === "Backspace" || k === "e") {
+        e.preventDefault();
+
+        // 1. Dialogue Modal
+        const dialogModal = document.getElementById("modal-dialog");
+        if (dialogModal && !dialogModal.classList.contains("hidden")) {
+          const btns = dialogModal.querySelectorAll(".btn-modal");
+          if (btns.length > 0) {
+            // Click the last option (always Close/Cancel/Leave)
+            btns[btns.length - 1].click();
+            return;
+          }
+        }
+
+        // 2. Chest Modal
+        const chestModal = document.getElementById("modal-chest");
+        if (chestModal && !chestModal.classList.contains("hidden")) {
+          const leaveBtn = chestModal.querySelector("#btn-chest-leave");
+          const closeBtn = chestModal.querySelector("#btn-chest-close");
+          if (leaveBtn) {
+            leaveBtn.click();
+          } else if (closeBtn) {
+            closeBtn.click();
+          }
+          return;
+        }
+
+        // 3. Keypad Modal
+        const keypadModal = document.getElementById("modal-keypad");
+        if (keypadModal && !keypadModal.classList.contains("hidden")) {
+          const closeBtn = keypadModal.querySelector("#btn-keypad-close");
+          if (closeBtn) closeBtn.click();
+          return;
+        }
+
+        // 4. Inventory Modal
+        const invModal = document.getElementById("modal-inventory");
+        if (invModal && !invModal.classList.contains("hidden")) {
+          const closeBtn = document.getElementById("btn-close-inventory");
+          if (closeBtn) closeBtn.click();
+          return;
+        }
+
+        // 5. Map Modal
+        const mapModal = document.getElementById("modal-map");
+        if (mapModal && !mapModal.classList.contains("hidden")) {
+          const closeBtn = document.getElementById("btn-close-map");
+          if (closeBtn) closeBtn.click();
+          return;
+        }
+      }
+    }
+
+    if (k === "i" || k === "b") {
+      if (game.state && game.state.gameState === "playing") {
+        e.preventDefault();
+        game.state.gameState = "modal";
+        hud.modalInventory.classList.remove("hidden");
+        selectedItemId = null;
+        renderInventory();
+      } else if (game.state && game.state.gameState === "modal" && !hud.modalInventory.classList.contains("hidden")) {
+        e.preventDefault();
+        game.state.gameState = "playing";
+        hud.modalInventory.classList.add("hidden");
+      }
+    } else if (k === "m") {
+      if (game.state && game.state.gameState === "playing") {
+        e.preventDefault();
+        openMap();
+      } else if (game.state && game.state.gameState === "modal" && !document.getElementById("modal-map").classList.contains("hidden")) {
+        e.preventDefault();
+        closeMap();
+      }
+    }
+  });
+
+  // Render 2D Treasure Map on canvas
+  const drawMap = () => {
+    const s = game.state;
+    if (!s) return;
+    
+    const canvas = document.getElementById("map-canvas");
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext("2d");
+    const w = canvas.width;
+    const h = canvas.height;
+    
+    // Clear background to antique parchment
+    ctx.fillStyle = "#eedcbe";
+    ctx.fillRect(0, 0, w, h);
+    
+    const grid = s.floors[s.currentFloor];
+    const cellSize = Math.min(w / s.width, h / s.height);
+    const offsetX = (w - s.width * cellSize) / 2;
+    const offsetY = (h - s.height * cellSize) / 2;
+    
+    // Draw cells with Fog of War (unvisited cells remain hidden in dark vintage parchment)
+     for (let y = 0; y < s.height; y++) {
+       for (let x = 0; x < s.width; x++) {
+         const cell = grid[y][x];
+         const cx = offsetX + x * cellSize;
+         const cy = offsetY + y * cellSize;
+         
+         const visited = s.visitedMap && s.visitedMap[s.currentFloor] && s.visitedMap[s.currentFloor][y][x];
+         if (!visited) {
+           ctx.fillStyle = "#854d0e"; // Dark vintage parchment color
+           ctx.fillRect(cx, cy, cellSize, cellSize);
+           ctx.strokeStyle = "rgba(0, 0, 0, 0.05)";
+           ctx.lineWidth = 1;
+           ctx.strokeRect(cx, cy, cellSize, cellSize);
+           continue;
+         }
+        
+        if (cell.type === "wall") {
+          // Draw hedge wall (leaf green)
+          ctx.fillStyle = "#166534";
+          ctx.fillRect(cx, cy, cellSize, cellSize);
+          ctx.strokeStyle = "#14532d";
+          ctx.lineWidth = 1;
+          ctx.strokeRect(cx, cy, cellSize, cellSize);
+        } else if (cell.obstacle && !cell.obstacle.resolved) {
+          // Draw unresolved obstacle block
+          const type = cell.obstacle.type;
+          if (type === "ivy") {
+            ctx.fillStyle = "#15803d"; // Ivy green matching walls
+            ctx.fillRect(cx, cy, cellSize, cellSize);
+            ctx.strokeStyle = "#ef4444"; // Red warning border
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(cx, cy, cellSize, cellSize);
+            
+            ctx.fillStyle = "#ffffff";
+            ctx.font = `${Math.floor(cellSize * 0.55)}px Arial`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("🌿", cx + cellSize/2, cy + cellSize/2);
+          } else if (type === "gate" || type === "codeLock") {
+            ctx.fillStyle = "#4b5563"; // Metal gray gate
+            ctx.fillRect(cx, cy, cellSize, cellSize);
+            ctx.strokeStyle = "#ef4444"; // Red warning border
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(cx, cy, cellSize, cellSize);
+            
+            ctx.fillStyle = "#ffffff";
+            ctx.font = `${Math.floor(cellSize * 0.55)}px Arial`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("🚪", cx + cellSize/2, cy + cellSize/2);
+          } else if (type === "barricade") {
+            ctx.fillStyle = "#78350f"; // Wood brown barricade
+            ctx.fillRect(cx, cy, cellSize, cellSize);
+            ctx.strokeStyle = "#ef4444"; // Red warning border
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(cx, cy, cellSize, cellSize);
+            
+            ctx.fillStyle = "#ffffff";
+            ctx.font = `${Math.floor(cellSize * 0.55)}px Arial`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("🚧", cx + cellSize/2, cy + cellSize/2);
+          } else if (type === "chasm") {
+            ctx.fillStyle = "#0f172a"; // Deep void chasm
+            ctx.fillRect(cx, cy, cellSize, cellSize);
+            ctx.strokeStyle = "#ef4444"; // Red warning border
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(cx, cy, cellSize, cellSize);
+            
+            ctx.fillStyle = "#ffffff";
+            ctx.font = `${Math.floor(cellSize * 0.55)}px Arial`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("🕳️", cx + cellSize/2, cy + cellSize/2);
+          } else {
+            // General fallback obstacle
+            ctx.fillStyle = "#ef4444";
+            ctx.fillRect(cx, cy, cellSize, cellSize);
+          }
+        } else {
+          // Draw floor paths (clean path beige)
+          ctx.fillStyle = "#f5ebd6";
+          ctx.fillRect(cx, cy, cellSize, cellSize);
+          ctx.strokeStyle = "rgba(133, 77, 14, 0.08)";
+          ctx.lineWidth = 1;
+          ctx.strokeRect(cx, cy, cellSize, cellSize);
+          
+          // Draw start / exit indicators
+          if (cell.isEntrance) {
+            ctx.fillStyle = "#16a34a";
+            ctx.font = `bold ${Math.floor(cellSize * 0.7)}px Arial`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("S", cx + cellSize/2, cy + cellSize/2);
+          } else if (cell.isExit) {
+            // Draw a bright cyan glowing background square to highlight the Exit clearly
+            ctx.fillStyle = "rgba(34, 211, 238, 0.45)"; // Cyan glow background
+            ctx.fillRect(cx, cy, cellSize, cellSize);
+            
+            // Draw glowing cyan border
+            ctx.strokeStyle = "#06b6d4";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(cx + 1, cy + 1, cellSize - 2, cellSize - 2);
+
+            // Draw a larger ladder emoji
+            ctx.fillStyle = "#9333ea";
+            ctx.font = `bold ${Math.floor(cellSize * 0.9)}px Arial`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("🪜", cx + cellSize/2, cy + cellSize/2);
+          } else if (cell.staircase) {
+            if (cell.staircase === "down") {
+              // Draw a warm orange/red glowing background for staircase down kuyu
+              ctx.fillStyle = "rgba(239, 68, 68, 0.4)";
+              ctx.fillRect(cx, cy, cellSize, cellSize);
+              ctx.strokeStyle = "#ef4444";
+              ctx.lineWidth = 1.5;
+              ctx.strokeRect(cx + 1, cy + 1, cellSize - 2, cellSize - 2);
+
+              ctx.fillStyle = "#ef4444";
+              ctx.font = `bold ${Math.floor(cellSize * 0.75)}px Arial`;
+              ctx.textAlign = "center";
+              ctx.textBaseline = "middle";
+              ctx.fillText("🕳️", cx + cellSize/2, cy + cellSize/2);
+            } else {
+              // Draw a warm green glowing background for staircase up tırmanma halatı
+              ctx.fillStyle = "rgba(16, 185, 129, 0.4)";
+              ctx.fillRect(cx, cy, cellSize, cellSize);
+              ctx.strokeStyle = "#10b981";
+              ctx.lineWidth = 1.5;
+              ctx.strokeRect(cx + 1, cy + 1, cellSize - 2, cellSize - 2);
+
+              ctx.fillStyle = "#10b981";
+              ctx.font = `bold ${Math.floor(cellSize * 0.75)}px Arial`;
+              ctx.textAlign = "center";
+              ctx.textBaseline = "middle";
+              ctx.fillText("🪜", cx + cellSize/2, cy + cellSize/2);
+            }
+          }
+          
+          // Draw chests
+          if (cell.chest) {
+            if (cell.chest.opened) {
+              // Opened chest: draw chest emoji + red X
+              ctx.font = `${Math.floor(cellSize * 0.65)}px Arial`;
+              ctx.textAlign = "center";
+              ctx.textBaseline = "middle";
+              ctx.fillText("📦", cx + cellSize/2, cy + cellSize/2);
+              
+              ctx.strokeStyle = "#ef4444";
+              ctx.lineWidth = 2.5;
+              ctx.beginPath();
+              ctx.moveTo(cx + 2, cy + 2);
+              ctx.lineTo(cx + cellSize - 2, cy + cellSize - 2);
+              ctx.moveTo(cx + cellSize - 2, cy + 2);
+              ctx.lineTo(cx + 2, cy + cellSize - 2);
+              ctx.stroke();
+            } else {
+              // Closed chest: draw chest emoji
+              ctx.font = `${Math.floor(cellSize * 0.65)}px Arial`;
+              ctx.textAlign = "center";
+              ctx.textBaseline = "middle";
+              ctx.fillText("📦", cx + cellSize/2, cy + cellSize/2);
+            }
+          }
+          
+          // Draw NPCs (distinct colored markers with emojis per NPC type)
+          if (cell.npc && !cell.npc.disappearing) {
+            // Glowing ring for visibility
+            ctx.strokeStyle = "#fbbf24";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(cx + cellSize/2, cy + cellSize/2, cellSize * 0.38, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Colored background circle per NPC type
+            const npcColors = { well: "#2563eb", child: "#f97316", mouse: "#78716c", traveler: "#065f46", merchant: "#7c3aed" };
+            ctx.fillStyle = npcColors[cell.npc.id] || "#0284c7";
+            ctx.beginPath();
+            ctx.arc(cx + cellSize/2, cy + cellSize/2, cellSize * 0.32, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Emoji per NPC type
+            const npcEmojis = { well: "💧", child: "👦", mouse: "🐭", traveler: "🧓", merchant: "💰" };
+            ctx.font = `${Math.floor(cellSize * 0.5)}px Arial`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(npcEmojis[cell.npc.id] || "?", cx + cellSize/2, cy + cellSize/2);
+          }
+
+          // Draw Ancient Altar (🗿)
+          if (cell.altar) {
+            ctx.fillStyle = cell.altar.used ? "rgba(100, 116, 139, 0.4)" : "rgba(234, 179, 8, 0.35)";
+            ctx.fillRect(cx, cy, cellSize, cellSize);
+            ctx.strokeStyle = cell.altar.used ? "#64748b" : "#eab308";
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(cx + 1, cy + 1, cellSize - 2, cellSize - 2);
+
+            ctx.font = `${Math.floor(cellSize * 0.65)}px Arial`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("🗿", cx + cellSize/2, cy + cellSize/2);
+          }
+        }
+      }
+    }
+    
+    // Draw player trail (only segment lines that are on the current floor)
+    if (s.playerTrail && s.playerTrail.length > 0) {
+      ctx.strokeStyle = "#ef4444";
+      ctx.lineWidth = Math.max(3, cellSize * 0.2);
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      
+      // Draw dotted path line
+      ctx.setLineDash([cellSize * 0.3, cellSize * 0.3]);
+      ctx.beginPath();
+      let isFirst = true;
+      s.playerTrail.forEach((pos) => {
+        // Only draw segment if it matches the current active rendering floor!
+        if (Number(pos.floor) === Number(s.currentFloor)) {
+          const cx = offsetX + (pos.x + 0.5) * cellSize;
+          const cy = offsetY + (pos.y + 0.5) * cellSize;
+          if (isFirst) {
+            ctx.moveTo(cx, cy);
+            isFirst = false;
+          } else {
+            ctx.lineTo(cx, cy);
+          }
+        } else {
+          // Break line segment when floor changes to prevent cross-floor diagonal streaks
+          isFirst = true;
+        }
+      });
+      ctx.stroke();
+      ctx.setLineDash([]); // reset dashes
+    }
+    
+    // Draw player current position red dot
+    const px = offsetX + s.player.x * cellSize;
+    const py = offsetY + s.player.y * cellSize;
+    
+    // Blinking pulse ring
+    const pulse = cellSize * 0.4 + Math.sin(Date.now() * 0.01) * cellSize * 0.15;
+    ctx.fillStyle = "rgba(239, 68, 68, 0.35)";
+    ctx.beginPath();
+    ctx.arc(px, py, pulse, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Inner red dot
+    ctx.fillStyle = "#ef4444";
+    ctx.beginPath();
+    ctx.arc(px, py, cellSize * 0.25, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Direction arrow pointer (High-visibility golden compass arrowhead style)
+    const angle = s.player.angle;
+    
+    // Tip of the arrow (pointing in facing direction)
+    const tipX = px + Math.cos(angle) * cellSize * 0.75;
+    const tipY = py + Math.sin(angle) * cellSize * 0.75;
+    
+    // Left and right base wings of the arrowhead
+    const leftX = px + Math.cos(angle - 2.5) * cellSize * 0.35;
+    const leftY = py + Math.sin(angle - 2.5) * cellSize * 0.35;
+    
+    const rightX = px + Math.cos(angle + 2.5) * cellSize * 0.35;
+    const rightY = py + Math.sin(angle + 2.5) * cellSize * 0.35;
+    
+    ctx.fillStyle = "#fbbf24"; // Bright gold arrowhead
+    ctx.strokeStyle = "#991b1b"; // Crimson outline
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(tipX, tipY);
+    ctx.lineTo(leftX, leftY);
+    ctx.lineTo(px, py); // crease back to player center
+    ctx.lineTo(rightX, rightY);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // --- Draw Co-op Partner Position on 2D Map ---
+    if (game.multiplayer && game.multiplayer.isConnected && s.otherPlayer) {
+      const op = s.otherPlayer;
+      
+      // Only draw on map grid if partner is on the current rendering floor
+      if (Number(op.floor) === Number(s.currentFloor)) {
+        const opx = offsetX + op.x * cellSize;
+        const opy = offsetY + op.y * cellSize;
+        
+        if (op.isDead) {
+          // If dead, draw a skull marker 💀
+          ctx.font = `${Math.floor(cellSize * 0.75)}px Arial`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("💀", opx, opy);
+          
+          ctx.fillStyle = "#ef4444";
+          ctx.font = `bold ${Math.max(9, Math.floor(cellSize * 0.4))}px Arial`;
+          ctx.fillText(game.lang === "tr" ? "Öldü" : "Dead", opx, opy + cellSize * 0.55);
+        } else {
+          // Cyan/Violet pulsing ring for Co-op Partner
+          const opPulse = cellSize * 0.4 + Math.sin(Date.now() * 0.008 + 1) * cellSize * 0.15;
+          ctx.fillStyle = "rgba(167, 139, 250, 0.4)"; // Soft violet glow
+          ctx.beginPath();
+          ctx.arc(opx, opy, opPulse, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Inner bright violet dot
+          ctx.fillStyle = "#a78bfa";
+          ctx.beginPath();
+          ctx.arc(opx, opy, cellSize * 0.25, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Partner direction arrow pointer (Bright Cyan arrowhead style)
+          const opAngle = op.angle;
+          const opTipX = opx + Math.cos(opAngle) * cellSize * 0.75;
+          const opTipY = opy + Math.sin(opAngle) * cellSize * 0.75;
+          
+          const opLeftX = opx + Math.cos(opAngle - 2.5) * cellSize * 0.35;
+          const opLeftY = opy + Math.sin(opAngle - 2.5) * cellSize * 0.35;
+          
+          const opRightX = opx + Math.cos(opAngle + 2.5) * cellSize * 0.35;
+          const opRightY = opy + Math.sin(opAngle + 2.5) * cellSize * 0.35;
+          
+          ctx.fillStyle = "#22d3ee"; // Bright cyan arrowhead
+          ctx.strokeStyle = "#4c1d95"; // Deep purple outline
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(opTipX, opTipY);
+          ctx.lineTo(opLeftX, opLeftY);
+          ctx.lineTo(opx, opy);
+          ctx.lineTo(opRightX, opRightY);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          
+          // Text label above player: "Arkadaşın" / "Partner"
+          ctx.fillStyle = "#a78bfa";
+          ctx.font = `bold ${Math.max(10, Math.floor(cellSize * 0.45))}px Arial`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "bottom";
+          ctx.fillText(game.lang === "tr" ? "Arkadaşın" : "Partner", opx, opy - cellSize * 0.45);
+        }
+      }
+    }
+
+    // --- Draw Map Legend (P1 / P2 Status Box at bottom-left corner) ---
+    if (game.multiplayer && game.multiplayer.isConnected && s.otherPlayer) {
+      const isTr = game.lang === "tr";
+      const legendX = 14;
+      const legendY = Math.max(20, ctx.canvas.height - 52);
+      
+      ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+      ctx.fillRect(legendX - 6, legendY - 10, 160, 44);
+      ctx.strokeStyle = "rgba(167, 139, 250, 0.5)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(legendX - 6, legendY - 10, 160, 44);
+      
+      // Local player legend dot
+      ctx.fillStyle = "#ef4444";
+      ctx.beginPath();
+      ctx.arc(legendX + 6, legendY, 5, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 11px Arial";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillText(isTr ? "🔴 Sen (Kırmızı)" : "🔴 You (Red)", legendX + 16, legendY);
+      
+      // Partner legend dot
+      const op = s.otherPlayer;
+      ctx.fillStyle = "#a78bfa";
+      ctx.beginPath();
+      ctx.arc(legendX + 6, legendY + 18, 5, 0, Math.PI * 2);
+      ctx.fill();
+      
+      let p2Text = isTr ? "🟣 Arkadaşın (Mor)" : "🟣 Partner (Purple)";
+      if (op.isDead) {
+        p2Text += isTr ? " (Öldü 💀)" : " (Dead 💀)";
+      } else if (op.floor !== s.currentFloor) {
+        p2Text += ` (${isTr ? "Kat" : "Floor"} ${op.floor + 1})`;
+      }
+      ctx.fillStyle = "#a78bfa";
+      ctx.fillText(p2Text, legendX + 16, legendY + 18);
+    }
+  };
+
+  // Unlock Web Audio API context on first user pointerdown / touch interaction for mobile browsers
+  const unlockAudio = () => {
+    if (game.audio && game.audio.ctx && game.audio.ctx.state === "suspended") {
+      game.audio.ctx.resume();
+    }
+  };
+  document.addEventListener("pointerdown", unlockAudio, { passive: true });
+  document.addEventListener("touchstart", unlockAudio, { passive: true });
+
+  // Prevent context menus (long-press popups on mobile, right-click on PC) globally for a pure native app experience
+  document.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    return false;
+  }, { passive: false });
+
+  // Prevent pinch-to-zoom and gesture zooming globally on iOS/Safari
+  document.addEventListener("gesturestart", (e) => {
+    e.preventDefault();
+  });
+  document.addEventListener("gesturechange", (e) => {
+    e.preventDefault();
+  });
+
+  // Check URL query parameters for room code to auto-join
+  const urlParams = new URLSearchParams(window.location.search);
+  const roomParam = urlParams.get("room");
+  if (roomParam) {
+    setTimeout(() => {
+      const coopBtn = document.getElementById("btn-coop");
+      if (coopBtn) coopBtn.click();
+      
+      const inputEl = document.getElementById("coop-join-input");
+      if (inputEl) {
+        inputEl.value = roomParam;
+        
+        // Add a pulsing effect to the Join button to prompt a physical user click
+        const joinBtn = document.getElementById("btn-coop-join");
+        if (joinBtn) {
+          joinBtn.classList.add("pulse-join-btn");
+          
+          if (!document.getElementById("style-pulse-join")) {
+            const style = document.createElement("style");
+            style.id = "style-pulse-join";
+            style.innerHTML = `
+              @keyframes pulse-join {
+                0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
+                70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+                100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+              }
+              .pulse-join-btn {
+                animation: pulse-join 1.5s infinite !important;
+              }
+            `;
+            document.head.appendChild(style);
+          }
+          
+          // Remove pulsing animation once physically clicked
+          joinBtn.addEventListener("click", () => {
+            joinBtn.classList.remove("pulse-join-btn");
+          }, { once: true });
+        }
+      }
+    }, 800);
+  }
+
+  // --- Interactive Onboarding Tutorial Manager ---
+  const tutorialSlides = [
+    {
+      icon: "🔦",
+      title: { tr: "Fener & Gölge Canavarı", en: "Flashlight & Shadow Monster" },
+      desc: {
+        tr: "Fenerini açık tut! Pili bittiğinde karanlıkta Gölge Canavarı belirir. Fener ışığını canavara tutarak onu yakabilir ve kaçırabilirsin.",
+        en: "Keep your flashlight on! In darkness, the Shadow Monster will stalk you. Focus your light beam on it to burn and repel it."
+      }
+    },
+    {
+      icon: "⚙️",
+      title: { tr: "Ayarlar & Zorluk Seviyesi", en: "Settings & Difficulty Modes" },
+      desc: {
+        tr: "Ayarlar menüsünden oyunun zorluk seviyesini (Barışçıl ☮️, Kolay 🟢, Orta 🟡, Zor 🔴, Kabus 💀) dilediğin zaman değiştirebilir, ses test panelinden sesleri deneyebilir ve arayüz butonlarını boyutlandırabilirsin!",
+        en: "From the Settings menu, you can change the game difficulty (Peaceful ☮️, Easy 🟢, Medium 🟡, Hard 🔴, Nightmare 💀), test sound effects, and resize HUD buttons anytime!"
+      }
+    },
+    {
+      icon: "🕹️",
+      title: { tr: "Kontroller & Hareket", en: "Controls & Movement" },
+      desc: {
+        tr: "Sol parmağınla Joystick'i kullanarak yürü, sağ parmağınla ekrana dokunup sürükleyerek etrafa bak. Fener butonuna basarak fenerini açıp kapatabilirsin.",
+        en: "Use the Joystick on the left to move, and drag your right thumb to look around. Tap the flashlight button to toggle your light."
+      }
+    },
+    {
+      icon: "🪓",
+      title: { tr: "Engeller & Eşyalar", en: "Obstacles & Tools" },
+      desc: {
+        tr: "Ahşap barikatlar için Balta 🪓, sarmaşıklar için Makas ✂️, kapılar için Anahtar 🗝️ ve uçurumlar için Halat 🪢 bulup kullanın.",
+        en: "Collect tools: Use the Axe 🪓 for barricades, Shears ✂️ for vines, Key 🗝️ for gates, and Rope 🪢 to descend chasm shafts."
+      }
+    },
+    {
+      icon: "🎙️",
+      title: { tr: "Co-op & Sesli Sohbet", en: "Co-op & Voice Chat" },
+      desc: {
+        tr: "Arkadaşınla oda kurup birlikte oynayabilir, in-game 🎤 Mikrofon butonuna basarak sesli sohbet edebilirsin. Uzaklaştıkça ses boğuklaşır!",
+        en: "Host a room and play co-op with your friend! Tap the 🎤 mic button for voice chat. Voices muffle naturally across distance."
+      }
+    },
+    {
+      icon: "🪢",
+      title: { tr: "Çıkış & Halatla Kat İnişi", en: "Exit & Rope Shaft Descent" },
+      desc: {
+        tr: "Sandıkları açın, şifre parşömenlerini toplayın ve bulduğunuz Halat 🪢 ile kuyu/uçurumlardan alt katlara inip labirentten kaçın! İyi şanslar!",
+        en: "Open chests, read code parchments, and use your Rope 🪢 to descend chasm shafts into lower floors and escape the maze! Good luck!"
+      }
+    }
+  ];
+
+  let currentTutIndex = 0;
+  const modalTut = document.getElementById("modal-tutorial");
+  const tutIcon = document.getElementById("tut-icon");
+  const tutTitle = document.getElementById("tut-title");
+  const tutDesc = document.getElementById("tut-desc");
+  const tutCounter = document.getElementById("tut-step-counter");
+  const tutDots = document.getElementById("tut-dots");
+  const btnTutPrev = document.getElementById("btn-tut-prev");
+  const btnTutNext = document.getElementById("btn-tut-next");
+  const btnTutSkip = document.getElementById("btn-tut-skip");
+
+  const renderTutorialSlide = (index) => {
+    currentTutIndex = index;
+    const isTr = game.lang === "tr";
+    const slide = tutorialSlides[index];
+
+    if (tutIcon) tutIcon.textContent = slide.icon;
+    if (tutTitle) tutTitle.textContent = slide.title[isTr ? "tr" : "en"];
+    if (tutDesc) tutDesc.textContent = slide.desc[isTr ? "tr" : "en"];
+    if (tutCounter) tutCounter.textContent = `${isTr ? "REHBER: ADIM" : "TUTORIAL: STEP"} ${index + 1} / ${tutorialSlides.length}`;
+
+    // Render Dots
+    if (tutDots) {
+      tutDots.innerHTML = "";
+      tutorialSlides.forEach((_, i) => {
+        const dot = document.createElement("span");
+        dot.style.width = i === index ? "18px" : "8px";
+        dot.style.height = "8px";
+        dot.style.borderRadius = "4px";
+        dot.style.background = i === index ? "var(--cyan)" : "rgba(255, 255, 255, 0.25)";
+        dot.style.transition = "all 0.2s ease";
+        tutDots.appendChild(dot);
+      });
+    }
+
+    // Prev / Next button states
+    if (btnTutPrev) {
+      btnTutPrev.style.display = index === 0 ? "none" : "block";
+      btnTutPrev.textContent = isTr ? "◀ Geri" : "◀ Back";
+    }
+    if (btnTutNext) {
+      if (index === tutorialSlides.length - 1) {
+        btnTutNext.textContent = isTr ? "Başla! 🚀" : "Start! 🚀";
+      } else {
+        btnTutNext.textContent = isTr ? "İleri ▶" : "Next ▶";
+      }
+    }
+  };
+
+  const showTutorialModal = () => {
+    if (modalTut) {
+      modalTut.classList.remove("hidden");
+      renderTutorialSlide(0);
+    }
+  };
+
+  const hideTutorialModal = () => {
+    if (modalTut) {
+      modalTut.classList.add("hidden");
+      localStorage.setItem("maze_tutorial_completed", "true");
+    }
+  };
+
+  if (btnTutPrev) {
+    btnTutPrev.addEventListener("click", () => {
+      if (currentTutIndex > 0) renderTutorialSlide(currentTutIndex - 1);
+    });
+  }
+
+  if (btnTutNext) {
+    btnTutNext.addEventListener("click", () => {
+      if (currentTutIndex < tutorialSlides.length - 1) {
+        renderTutorialSlide(currentTutIndex + 1);
+      } else {
+        hideTutorialModal();
+      }
+    });
+  }
+
+  if (btnTutSkip) {
+    btnTutSkip.addEventListener("click", hideTutorialModal);
+  }
+
+  const btnReplayTut = document.getElementById("btn-replay-tutorial");
+  if (btnReplayTut) {
+    btnReplayTut.addEventListener("click", showTutorialModal);
+  }
+
+  // Auto-show tutorial on very first launch
+  if (localStorage.getItem("maze_tutorial_completed") !== "true") {
+    setTimeout(showTutorialModal, 600);
+  }
+
+  // Expose function globally for replaying tutorial anytime
+  window.openGameTutorial = showTutorialModal;
+}
